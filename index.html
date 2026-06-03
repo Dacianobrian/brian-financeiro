@@ -133,10 +133,11 @@
         <section id="auth" class="panel auth hidden">
           <form id="authForm">
             <h2>Entrar no app</h2>
-            <p>Acesse sua conta para continuar.</p>
+            <p>Entre ou crie sua conta para liberar o menu.</p>
             <label>Email<input name="email" type="email" required /></label>
             <label>Senha<input name="password" type="password" minlength="6" required /></label>
             <div class="actions"><button class="primary" name="mode" value="in">Entrar</button><button class="secondary" name="mode" value="up">Criar conta</button></div>
+            <p id="authMsg"></p>
           </form>
         </section>
 
@@ -238,7 +239,7 @@
 
       const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
       const $ = (q) => document.querySelector(q);
-      const state = { sb: null, session: null, tx: [], rec: [], budgets: [], settings: {} };
+      const state = { sb: null, session: null, view: "dashboard", tx: [], rec: [], budgets: [], settings: {} };
       const sheets = ["2025", "2026", "2027", "2028"];
       const starts = [0,7,14,21,28,35,42,49,56,63,70,77];
       const labels = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
@@ -275,6 +276,7 @@
       }
       function setView(name) {
         if (!state.session) return;
+        state.view = name;
         document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === name));
         document.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b.dataset.view === name));
         const copy = {
@@ -368,6 +370,13 @@
         if (error) throw error;
         await load();
       }
+      async function unlock(session) {
+        state.session = session;
+        setSessionLabel();
+        showAuth();
+        setView(state.view || "dashboard");
+        await load();
+      }
       function txFrom(row) {
         return { tx_date: row.tx_date, type: row.type, category: row.category, description: row.description || null, amount: n(row.amount), status: "previsto", source: row.source || "manual" };
       }
@@ -426,8 +435,13 @@
           const mode = e.submitter.value;
           const res = mode === "up" ? await state.sb.auth.signUp({ email: row.email, password: row.password }) : await state.sb.auth.signInWithPassword({ email: row.email, password: row.password });
           if (res.error) alertErr(res.error);
-          else if (mode === "up" && !res.data.session) alert("Conta criada. Confirme seu email e depois entre no aplicativo.");
-          else e.currentTarget.reset();
+          else if (res.data.session) {
+            $("#authMsg").textContent = "";
+            e.currentTarget.reset();
+            await unlock(res.data.session).catch(alertErr);
+          } else if (mode === "up") {
+            $("#authMsg").textContent = "Conta criada. Confirme seu email e depois clique em Entrar.";
+          }
         };
         $("#txForm").onsubmit = async e => { e.preventDefault(); await insert("transactions", txFrom(formData(e.currentTarget))).catch(alertErr); e.currentTarget.reset(); setDates(); };
         $("#recForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await insert("recurring_items", { name: r.name, day_of_month: n(r.day_of_month), type: r.type, category: r.category, amount: n(r.amount), active: true }).catch(alertErr); e.currentTarget.reset(); };
@@ -461,17 +475,19 @@
         const c = window.BRIAN_FINANCE_CONFIG;
         state.sb = createClient(c.supabaseUrl, c.supabaseAnonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
         state.sb.auth.onAuthStateChange(async (_event, session) => {
+          const wasLocked = !state.session;
           state.session = session;
           setSessionLabel();
           showAuth();
           if (session) {
-            setView("dashboard");
+            if (wasLocked) setView(state.view || "dashboard");
             await load().catch(alertErr);
           } else {
             state.tx = [];
             state.rec = [];
             state.budgets = [];
             state.settings = {};
+            state.view = "dashboard";
           }
         });
         const { data, error } = await state.sb.auth.getSession();
@@ -480,7 +496,7 @@
         setSessionLabel();
         showAuth();
         if (state.session) {
-          setView("dashboard");
+          setView(state.view || "dashboard");
           await load();
         }
       }
