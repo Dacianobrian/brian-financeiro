@@ -30,6 +30,7 @@ create table if not exists public.recurring_items (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
   name text not null,
+  account_kind text not null default 'fixa' check (account_kind in ('fixa', 'variavel')),
   day_of_month integer not null check (day_of_month between 1 and 31),
   type text not null check (type in ('entrada', 'saida', 'investimento', 'diario')),
   category text not null,
@@ -91,7 +92,8 @@ alter table public.transactions
   add column if not exists card_bill_month date;
 
 alter table public.recurring_items
-  add column if not exists payment_method text not null default 'conta_corrente';
+  add column if not exists payment_method text not null default 'conta_corrente',
+  add column if not exists account_kind text not null default 'fixa';
 
 create index if not exists transactions_user_card_bill_idx on public.transactions (user_id, card_bill_month);
 
@@ -109,6 +111,15 @@ begin
   alter table public.recurring_items
     add constraint recurring_items_payment_method_check
     check (payment_method in ('conta_corrente', 'cartao_credito'));
+exception when duplicate_object then null;
+end;
+$$;
+
+do $$
+begin
+  alter table public.recurring_items
+    add constraint recurring_items_account_kind_check
+    check (account_kind in ('fixa', 'variavel'));
 exception when duplicate_object then null;
 end;
 $$;
