@@ -1,4 +1,4 @@
 window.BRIAN_FINANCE_CONFIG = {
-  supabaseUrl: "COLE_AQUI_A_URL_DO_SUPABASE",
-  supabaseAnonKey: "COLE_AQUI_A_CHAVE_ANON_PUBLICA",
+  supabaseUrl: "https://sdyljxblbpqharclfyme.supabase.co",
+  supabaseAnonKey: "sb_publishable_YLZ3Bk8SmUwpHjOli5FGBg_W2FX4ZyH",
 };
