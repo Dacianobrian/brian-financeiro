@@ -90,6 +90,18 @@
       .goal-section { margin: 12px 0; }
       .quickbar { display: grid; grid-template-columns: repeat(4, minmax(140px, 1fr)); gap: 10px; margin-bottom: 12px; }
       .quickbar button { min-height: 48px; }
+      .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-bottom: 12px; }
+      .summary-card { border: 1px solid var(--line); border-radius: 8px; background: #fbfcfa; padding: 12px; display: grid; gap: 6px; }
+      .summary-card span { color: var(--muted); font-size: 12px; font-weight: 900; }
+      .summary-card strong { font-size: 22px; line-height: 1.08; white-space: nowrap; }
+      .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+      .form-grid .full { grid-column: 1 / -1; }
+      .section-note { color: var(--muted); font-size: 13px; font-weight: 700; line-height: 1.4; }
+      .result-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 12px 0; }
+      .result-card { border: 1px solid var(--line); border-radius: 8px; padding: 12px; background: #fbfcfa; }
+      .result-card span { display: block; color: var(--muted); font-size: 12px; font-weight: 900; }
+      .result-card strong { display: block; margin-top: 6px; font-size: 20px; }
+      .allocation-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 12px; }
       .item.bad { border-color: #d86b6b; background: #fff0f0; }
       .item.good { border-color: #8bc9a6; background: #f0fff6; }
       .sim-risk { border-color: #d86b6b; background: #fff0f0; }
@@ -165,6 +177,7 @@
         .goal-strip, .goal-summary { grid-template-columns: 1fr; }
         .metric strong { font-size: 23px; }
         .payline { grid-template-columns: 1fr; }
+        .form-grid { grid-template-columns: 1fr; }
       }
     </style>
   </head>
@@ -273,23 +286,27 @@
         </section>
 
         <section id="transactions" class="view">
+          <div id="txSummary" class="summary-grid"></div>
           <div class="quickbar">
-            <button class="secondary" data-preset="fixed">Pagar conta fixa</button>
-            <button class="secondary" data-pay-card>Registrar fatura</button>
+            <button class="secondary" data-preset="fixed">Despesa na conta</button>
+            <button class="secondary" data-pay-card>Baixar fatura</button>
             <button class="secondary" data-preset="card">Compra no cartao</button>
-            <button class="secondary" data-preset="car">Simular carro</button>
+            <button class="secondary" data-preset="car">Testar compra grande</button>
           </div>
           <div class="split">
             <form id="txForm" class="panel">
               <h2>Novo lancamento</h2>
-              <label>Data<input name="tx_date" type="date" required /></label>
-              <label>Tipo<select name="type"><option value="entrada">Entrada</option><option value="saida">Saida</option><option value="investimento">Investimento</option><option value="diario">Diario/cartao</option></select></label>
-              <label>Meio<select name="payment_method"><option value="conta_corrente">Conta corrente</option><option value="cartao_credito">Cartao de credito</option></select></label>
-              <label>Fatura do cartao<input name="card_bill_month" type="month" /></label>
-              <label>Categoria<input name="category" list="cats" required /></label>
-              <label>Descricao<input name="description" /></label>
-              <label>Valor<input name="amount" type="number" min="0.01" step="0.01" required /></label>
-              <label>Parcelas<input name="installments" type="number" min="1" max="120" value="1" /></label>
+              <p class="section-note">Use entrada para receitas, saida para conta corrente, diario/cartao para compras no cartao e investimento para aportes.</p>
+              <div class="form-grid">
+                <label>Data<input name="tx_date" type="date" required /></label>
+                <label>Tipo<select name="type"><option value="entrada">Entrada</option><option value="saida">Saida</option><option value="investimento">Investimento</option><option value="diario">Diario/cartao</option></select></label>
+                <label>Meio<select name="payment_method"><option value="conta_corrente">Conta corrente</option><option value="cartao_credito">Cartao de credito</option></select></label>
+                <label>Fatura<input name="card_bill_month" type="month" /></label>
+                <label>Categoria<input name="category" list="cats" required /></label>
+                <label>Valor<input name="amount" type="number" min="0.01" step="0.01" required /></label>
+                <label class="full">Descricao<input name="description" /></label>
+                <label>Parcelas<input name="installments" type="number" min="1" max="120" value="1" /></label>
+              </div>
               <button class="primary">Salvar</button>
             </form>
             <section class="panel">
@@ -306,12 +323,15 @@
           <div class="split">
             <form id="simForm" class="panel">
               <h2>Simular compra</h2>
-              <label>Data<input name="tx_date" type="date" required /></label>
-              <label>Fatura do cartao<input name="card_bill_month" type="month" /></label>
-              <label>Categoria<input name="category" list="cats" required /></label>
-              <label>Descricao<input name="description" /></label>
-              <label>Valor<input name="amount" type="number" min="0.01" step="0.01" required /></label>
-              <label>Parcelas<input name="installments" type="number" min="1" max="120" value="1" /></label>
+              <p class="section-note">Aqui nada e salvo. Serve para testar carro, viagem, shopping ou qualquer compra parcelada antes de comprometer o caixa.</p>
+              <div class="form-grid">
+                <label>Data<input name="tx_date" type="date" required /></label>
+                <label>Fatura inicial<input name="card_bill_month" type="month" /></label>
+                <label>Categoria<input name="category" list="cats" required /></label>
+                <label>Valor total da compra<input name="amount" type="number" min="0.01" step="0.01" required /></label>
+                <label class="full">Descricao<input name="description" /></label>
+                <label>Parcelas<input name="installments" type="number" min="1" max="120" value="1" /></label>
+              </div>
               <button class="primary">Analisar</button>
             </form>
             <section id="simResult" class="panel"><h2>Resultado</h2><p>Preencha a compra para analisar impacto no caixa e orcamento.</p></section>
@@ -358,15 +378,19 @@
           <div class="quickbar">
             <button class="secondary" data-refresh-quotes>Atualizar cotacoes</button>
           </div>
+          <div id="allocationRows" class="allocation-grid"></div>
           <div class="split">
             <form id="invForm" class="panel">
               <h2>Operacao de ativo</h2>
-              <label>Operacao<select name="operation"><option value="buy">Compra</option><option value="sell">Venda</option><option value="set">Ajustar posicao</option></select></label>
-              <label>Ativo<input name="asset" placeholder="CDB, Tesouro, MXRF11..." required /></label>
-              <label>Classe<select name="segment"><option value="Renda fixa">Renda fixa</option><option value="FII">FII</option><option value="Acao">Acao</option><option value="ETF">ETF</option><option value="Caixa">Caixa</option></select></label>
-              <label>Quantidade<input name="shares" type="number" min="0" step="0.0001" required /></label>
-              <label>Preco da operacao<input name="price" type="number" min="0" step="0.0001" required /></label>
-              <label>Renda mensal manual por unidade<input name="dividend_per_share" type="number" min="0" step="0.0001" /></label>
+              <p class="section-note">Para renda fixa ou caixinha, use quantidade 1 e preco como valor aplicado. Para FII/acao, use quantidade de cotas/acoes.</p>
+              <div class="form-grid">
+                <label>Operacao<select name="operation"><option value="buy">Compra</option><option value="sell">Venda</option><option value="set">Ajustar posicao</option></select></label>
+                <label>Classe<select name="segment"><option value="Renda fixa">Renda fixa</option><option value="FII">FII</option><option value="Acao">Acao</option><option value="ETF">ETF</option><option value="Caixa">Caixa</option></select></label>
+                <label class="full">Ativo<input name="asset" placeholder="CDB, Tesouro, MXRF11..." required /></label>
+                <label>Quantidade<input name="shares" type="number" min="0" step="0.0001" required /></label>
+                <label>Preco<input name="price" type="number" min="0" step="0.0001" required /></label>
+                <label class="full">Renda mensal manual por unidade<input name="dividend_per_share" type="number" min="0" step="0.0001" /></label>
+              </div>
               <button class="primary">Registrar operacao</button>
             </form>
             <section class="panel" id="portfolioPanel">
@@ -390,23 +414,28 @@
           <div class="split">
             <form id="setForm" class="panel">
               <h2>Metas principais</h2>
-              <label>Saldo inicial<input name="initial_balance" type="number" step="0.01" /></label>
-              <label>Vencimento do cartao<input name="credit_card_due_day" type="number" min="1" max="31" /></label>
-              <label>Meta minima de receita<input name="variable_income_target" type="number" min="0" step="0.01" /></label>
-              <label>Meta mensal de investimento<input name="monthly_invest_target" type="number" min="0" step="0.01" /></label>
-              <label>Meta reserva de emergencia<input name="emergency_goal" type="number" min="0" step="0.01" /></label>
-              <label>Meta patrimonio investido<input name="portfolio_goal" type="number" min="0" step="0.01" /></label>
-              <label>Meta FIIs<input name="fii_goal" type="number" min="0" step="0.01" /></label>
-              <label>Meta dividendos mensais<input name="dividend_goal" type="number" min="0" step="0.01" /></label>
-              <label>Token brapi gratuito<input name="brapi_token" type="password" placeholder="Opcional para cotacoes/dividendos" /></label>
+              <p class="section-note">Esses valores alimentam os cards de metas, saude financeira e projecao.</p>
+              <div class="form-grid">
+                <label>Saldo inicial<input name="initial_balance" type="number" step="0.01" /></label>
+                <label>Vencimento do cartao<input name="credit_card_due_day" type="number" min="1" max="31" /></label>
+                <label>Meta minima de receita<input name="variable_income_target" type="number" min="0" step="0.01" /></label>
+                <label>Meta mensal de investimento<input name="monthly_invest_target" type="number" min="0" step="0.01" /></label>
+                <label>Meta reserva de emergencia<input name="emergency_goal" type="number" min="0" step="0.01" /></label>
+                <label>Meta patrimonio investido<input name="portfolio_goal" type="number" min="0" step="0.01" /></label>
+                <label>Meta FIIs<input name="fii_goal" type="number" min="0" step="0.01" /></label>
+                <label>Meta dividendos mensais<input name="dividend_goal" type="number" min="0" step="0.01" /></label>
+                <label class="full">Token brapi gratuito<input name="brapi_token" type="password" placeholder="Opcional para cotacoes/dividendos" /></label>
+              </div>
               <button class="primary">Salvar</button>
             </form>
             <form id="budgetForm" class="panel">
               <h2>Orcamento por categoria</h2>
+              <p class="section-note">Defina o limite do mes por categoria. O Dashboard fica vermelho quando passar do limite.</p>
               <label>Mes<input name="month" type="month" required /></label>
               <label>Categoria<input name="category" list="cats" required /></label>
               <label>Limite<input name="limit_amount" type="number" min="0" step="0.01" required /></label>
               <button class="primary">Salvar orcamento</button>
+              <div id="budgetRows" class="list"></div>
             </form>
           </div>
         </section>
@@ -422,7 +451,7 @@
 
       const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
       const $ = (q) => document.querySelector(q);
-      const state = { sb: null, session: null, view: "dashboard", projectionDays: 30, tx: [], rec: [], budgets: [], inv: [], market: {}, settings: {} };
+      const state = { sb: null, session: null, view: "dashboard", projectionDays: 30, tx: [], rec: [], budgets: [], inv: [], market: {}, settings: {}, simRows: [] };
       const sheets = ["2025", "2026", "2027", "2028"];
       const starts = [0,7,14,21,28,35,42,49,56,63,70,77];
       const labels = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
@@ -544,10 +573,10 @@
         document.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b.dataset.view === name));
         const copy = {
           dashboard: ["Dashboard", "Fluxo do mes, orcamento e saldo futuro."],
-          transactions: ["Lancamentos", "Cadastre e importe movimentos financeiros."],
-          simulator: ["Simulador", "Teste uma compra antes de comprometer seu caixa."],
+          transactions: ["Lancamentos", "Receitas, despesas, compras no cartao e parcelas."],
+          simulator: ["Simular compra", "Teste antes de comprar e salve quando decidir."],
           recurring: ["Contas", "Contas fixas e variaveis do mes."],
-          investments: ["Investimentos", "Renda fixa, renda variavel e renda mensal."],
+          investments: ["Investimentos", "Carteira, dividendos, metas e cotacoes."],
           settings: ["Configuracoes", "Metas, orcamento e integracoes."]
         }[name];
         $("#title").textContent = copy[0];
@@ -812,6 +841,12 @@
         $("#alertCount").className = `pill ${badAlerts ? "bad" : "good"}`;
         $("#alerts").innerHTML = alerts.map(x => `<article class="item ${x.level}"><div class="row"><strong>${x.title}</strong><span>${x.level === "bad" ? "Alerta" : "OK"}</span></div><small>${x.body}</small></article>`).join("");
         $("#txRows").innerHTML = state.tx.filter(x => iso(x.tx_date).startsWith(m)).map(x => `<tr><td>${iso(x.tx_date)}</td><td>${x.type}</td><td>${method(x) === "cartao_credito" ? "Cartao" : "Conta"}</td><td>${method(x) === "cartao_credito" ? billMonth(x) : "-"}</td><td>${x.category}</td><td>${x.description || "-"}</td><td>${brl.format(n(x.amount))}</td><td><button class="danger" data-del="${x.id}">Excluir</button></td></tr>`).join("") || '<tr><td colspan="8">Sem lancamentos.</td></tr>';
+        $("#txSummary").innerHTML = [
+          `<article class="summary-card"><span>Receitas lancadas</span><strong class="good-text">${brl.format(c.income)}</strong></article>`,
+          `<article class="summary-card"><span>Gastos no cartao</span><strong class="bad-text">${brl.format(c.cardBill)}</strong></article>`,
+          `<article class="summary-card"><span>Saidas da conta</span><strong class="bad-text">${brl.format(c.checkingExpense)}</strong></article>`,
+          `<article class="summary-card"><span>Investimentos</span><strong>${brl.format(c.invest)}</strong></article>`
+        ].join("");
         const paid = paidRecurringIds(m);
         const accountCard = x => `<article class="item account-card ${paid.has(x.id) ? "good" : ""}"><div class="account-title"><strong>${cleanAccountName(x)}</strong><span>${brl.format(n(x.amount))}</span></div><small>Dia ${x.day_of_month} - ${x.category} - ${method(x) === "cartao_credito" ? "cartao" : "conta corrente"}${paid.has(x.id) ? " - pago" : ""}</small><div class="payline"><label>Valor pago<input data-pay-amount="${x.id}" type="number" min="0.01" step="0.01" value="${n(x.amount)}" ${paid.has(x.id) ? "disabled" : ""} /></label><button class="secondary" data-pay-rec="${x.id}" ${paid.has(x.id) ? "disabled" : ""}>Pago</button></div></article>`;
         const fixed = state.rec.filter(x => accountKind(x) === "fixa");
@@ -830,6 +865,7 @@
         $("#setForm").elements.dividend_goal.value = state.settings.dividend_goal || "";
         $("#setForm").elements.brapi_token.value = state.settings.brapi_token || "";
         $("#budgetForm").elements.month.value = m;
+        $("#budgetRows").innerHTML = budgets.length ? budgets.map(b => `<article class="item"><div class="row"><strong>${b.category}</strong><span>${brl.format(n(b.limit_amount))}</span></div><small>${iso(b.month).slice(0,7)}</small></article>`).join("") : "<p>Nenhum orcamento definido para este mes.</p>";
         renderInvestments();
         renderProjection();
       }
@@ -858,6 +894,15 @@
         $("#iFiis").textContent = brl.format(fiis);
         $("#iDividends").textContent = brl.format(dividends);
         $("#iCount").textContent = String(rows.length);
+        const allocations = rows.reduce((map, x) => {
+          const key = x.segment || "Outros";
+          map[key] = (map[key] || 0) + n(x.shares) * assetCurrentPrice(x);
+          return map;
+        }, {});
+        $("#allocationRows").innerHTML = Object.entries(allocations).length ? Object.entries(allocations).sort((a,b) => b[1] - a[1]).map(([label, value]) => {
+          const pct = total ? value / total * 100 : 0;
+          return `<article class="summary-card"><span>${label}</span><strong>${brl.format(value)}</strong><div class="bar"><span style="width:${Math.min(100, pct)}%"></span></div><small>${Math.round(pct)}% da carteira</small></article>`;
+        }).join("") : "";
         const liveCount = Object.keys(state.market).length;
         $("#quoteStatus").textContent = liveCount ? `${liveCount} cotado(s)` : "Manual";
         $("#quoteStatus").className = `pill ${liveCount ? "good" : "bad"}`;
@@ -1146,6 +1191,7 @@
       }
       function sim(row) {
         const fakeRows = installmentRows({ ...row, type: "saida", payment_method: "cartao_credito", card_bill_month: row.card_bill_month || iso(row.tx_date).slice(0,7), source: "simulador" });
+        state.simRows = fakeRows.map(x => ({ ...x, source: String(x.source || "").replace(/^simulador/, "manual") }));
         const fake = fakeRows[0];
         const m = iso(fake.tx_date).slice(0,7), c = calc(m, fakeRows.filter(x => iso(x.tx_date).startsWith(m)));
         const badDay = c.flow.find(x => x.balance < 0);
@@ -1161,7 +1207,7 @@
         const futureRisk = Array.from(new Set(fakeRows.map(x => iso(x.tx_date).slice(0,7)))).map(month => ({ month, c: calc(month, fakeRows.filter(x => iso(x.tx_date).startsWith(month))) })).find(x => x.c.flow.some(d => d.balance < 0) || x.c.perf < 0);
         if (futureRisk && futureRisk.month !== m) risks.push(`Parcelas deixam ${futureRisk.month} em risco.`);
         $("#simResult").className = `panel ${risks.length ? "sim-risk" : "sim-ok"}`;
-        $("#simResult").innerHTML = `<h2 class="${risks.length ? "bad-text" : "good-text"}">${risks.length ? "Compra fora do plano" : "Compra cabe no plano"}</h2><p>Parcelas: <strong>${fakeRows.length}</strong></p><p>Fatura inicial: <strong>${billMonth(fake)}</strong></p><p>Saldo final da conta: <strong>${brl.format(c.final)}</strong></p><p>Performance: <strong>${brl.format(c.perf)}</strong></p>${risks.length ? `<ul>${risks.map(x => `<li>${x}</li>`).join("")}</ul>` : "<p>Nenhum alerta critico encontrado.</p>"}`;
+        $("#simResult").innerHTML = `<h2 class="${risks.length ? "bad-text" : "good-text"}">${risks.length ? "Compra fora do plano" : "Compra cabe no plano"}</h2><div class="result-grid"><article class="result-card"><span>Parcela mensal</span><strong>${brl.format(n(fake.amount))}</strong></article><article class="result-card"><span>Parcelas</span><strong>${fakeRows.length}x</strong></article><article class="result-card"><span>Fatura inicial</span><strong>${billMonth(fake)}</strong></article><article class="result-card"><span>Saldo final</span><strong class="${c.final < 0 ? "bad-text" : "good-text"}">${brl.format(c.final)}</strong></article><article class="result-card"><span>Sobra do mes</span><strong class="${c.perf < 0 ? "bad-text" : "good-text"}">${brl.format(c.perf)}</strong></article></div>${risks.length ? `<div class="list">${risks.map(x => `<article class="item bad"><strong>${x}</strong></article>`).join("")}</div>` : `<article class="item good"><strong>Nenhum alerta critico encontrado.</strong><small>A compra cabe no caixa projetado e no orcamento cadastrado.</small></article>`}<div class="actions" style="margin-top:12px"><button class="primary" data-apply-sim>Salvar compra simulada</button></div>`;
       }
       function excelDate(year, mi, day) {
         const d = Number(day);
@@ -1236,6 +1282,7 @@
         $("#txForm").onsubmit = async e => { e.preventDefault(); await insertRows("transactions", installmentRows(formData(e.currentTarget))).catch(alertErr); e.currentTarget.reset(); setDates(); };
         $("#recForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await insert("recurring_items", { name: r.name, account_kind: r.account_kind || "fixa", day_of_month: n(r.day_of_month), type: r.type, payment_method: r.payment_method || "conta_corrente", category: r.category, amount: n(r.amount), active: true }).catch(alertErr); e.currentTarget.reset(); };
         $("#simForm").onsubmit = e => { e.preventDefault(); sim(formData(e.currentTarget)); };
+        $("#simResult").onclick = async e => { if (e.target.closest("[data-apply-sim]")) { await insertRows("transactions", state.simRows).catch(alertErr); state.simRows = []; setView("transactions"); } };
         $("#quickProjectionForm").onsubmit = async e => { e.preventDefault(); await saveQuickProjection(formData(e.currentTarget), e.submitter.value).catch(alertErr); e.currentTarget.reset(); setDates(); };
         $("#projectionRows").onclick = e => {
           const rec = e.target.closest("[data-proj-pay-rec]");
