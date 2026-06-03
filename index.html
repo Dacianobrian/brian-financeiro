@@ -671,8 +671,13 @@
         const symbols = [...new Set((state.inv || []).map(x => String(x.asset || "").toUpperCase()).filter(Boolean))];
         if (!symbols.length) return alert("Cadastre pelo menos um ativo.");
         $("#quoteStatus").textContent = "Atualizando...";
-        const url = `https://brapi.dev/api/quote/${symbols.join(",")}?range=1mo&interval=1d&fundamental=true&dividends=true&token=${encodeURIComponent(token)}`;
-        const res = await fetch(url);
+        const base = `https://brapi.dev/api/quote/${symbols.join(",")}?range=1mo&interval=1d&fundamental=true&token=${encodeURIComponent(token)}`;
+        let hasDividendAccess = true;
+        let res = await fetch(`${base}&dividends=true`);
+        if (res.status === 403) {
+          hasDividendAccess = false;
+          res = await fetch(base);
+        }
         if (!res.ok) throw new Error(`Brapi retornou ${res.status}. Confira o token/plano.`);
         const data = await res.json();
         const market = {};
@@ -686,6 +691,7 @@
         });
         state.market = market;
         renderInvestments();
+        if (!hasDividendAccess) $("#quoteStatus").textContent = `${Object.keys(market).length} cotado(s) sem dividendos`;
       }
       async function saveInvestmentOperation(row) {
         const asset = String(row.asset || "").trim().toUpperCase();
