@@ -190,8 +190,16 @@
           </div>
           <section class="goal-section">
             <div class="panel-head"><h2>Metas financeiras</h2><span id="goalMonth" class="pill good">Atual</span></div>
-            <div id="goalSummary" class="goal-summary"></div>
-            <div id="dashboardGoals" class="goal-strip"></div>
+            <div id="goalSummary" class="goal-summary">
+              <article class="metric"><span>Metas atingidas</span><strong>0/3</strong></article>
+              <article class="metric"><span>Melhor progresso</span><strong>0%</strong></article>
+              <article class="metric"><span>Mais proxima</span><strong>Configure suas metas</strong></article>
+            </div>
+            <div id="dashboardGoals" class="goal-strip">
+              <article class="panel goal-card empty"><div class="goal-top"><h2>RE Reserva de Emergencia</h2><span class="pill bad">Configurar</span></div><strong class="value">R$ 0,00</strong><small>meta: nao definida</small><div class="bar"><span style="width:0%"></span></div><small>0% concluido</small><strong>Preencha em Configuracoes</strong><small>Renda fixa + caixa</small><small>Prazo estimado: sem meta</small></article>
+              <article class="panel goal-card empty"><div class="goal-top"><h2>PT Patrimonio Total</h2><span class="pill bad">Configurar</span></div><strong class="value">R$ 0,00</strong><small>meta: nao definida</small><div class="bar"><span style="width:0%"></span></div><small>0% concluido</small><strong>Preencha em Configuracoes</strong><small>Conta corrente + carteira</small><small>Prazo estimado: sem meta</small></article>
+              <article class="panel goal-card empty"><div class="goal-top"><h2>RP Renda Passiva Mensal</h2><span class="pill bad">Configurar</span></div><strong class="value">R$ 0,00/mes</strong><small>meta: nao definida</small><div class="bar"><span style="width:0%"></span></div><small>0% concluido</small><strong>Preencha em Configuracoes</strong><small>FIIs e renda mensal manual</small><small>Prazo estimado: sem meta</small></article>
+            </div>
           </section>
           <div class="layout">
             <section class="panel">
@@ -570,6 +578,8 @@
         return d.toLocaleDateString("pt-BR", { month: "short", year: "numeric" }).replace(".", "");
       }
       function renderDashboardGoals(m, c, stats) {
+        const goalsBox = $("#dashboardGoals"), summaryBox = $("#goalSummary");
+        if (!goalsBox || !summaryBox) return;
         const monthlyFixed = state.rec.filter(x => x.active !== false && accountKind(x) === "fixa" && x.type !== "entrada").reduce((s,x) => s + n(x.amount), 0);
         const autoEmergencyTarget = monthlyFixed ? monthlyFixed * 6 : 0;
         const emergencyTarget = n(state.settings.emergency_goal) || autoEmergencyTarget;
@@ -591,15 +601,23 @@
         const best = configured.sort((a,b) => b.pct - a.pct)[0];
         const nearest = goals.filter(g => g.target > 0 && g.pct < 100).sort((a,b) => b.pct - a.pct)[0] || best;
         $("#goalMonth").textContent = m;
-        $("#goalSummary").innerHTML = [
+        summaryBox.innerHTML = [
           `<article class="metric"><span>Metas atingidas</span><strong>${achieved}/${configured.length || 0}</strong></article>`,
           `<article class="metric"><span>Melhor progresso</span><strong>${best ? `${Math.round(best.pct)}%` : "0%"}</strong></article>`,
           `<article class="metric"><span>Mais proxima</span><strong>${nearest ? `${nearest.title} - ${Math.round(nearest.pct)}%` : "Sem meta"}</strong></article>`
         ].join("");
-        $("#dashboardGoals").innerHTML = goals.map(g => {
+        goalsBox.innerHTML = goals.map(g => {
           const cls = !g.target ? "empty" : g.pct >= 100 ? "done" : "";
           return `<article class="panel goal-card ${cls}"><div class="goal-top"><h2>${g.icon} ${g.title}</h2><span class="pill ${g.pct >= 100 ? "good" : "bad"}">${g.target ? g.pct >= 100 ? "Atingida" : "Em progresso" : "Configurar"}</span></div><strong class="value">${brl.format(g.current)}${g.title.includes("Renda") ? "/mes" : ""}</strong><small>meta: ${g.target ? brl.format(g.target) : "nao definida"}</small><div class="bar"><span style="width:${Math.min(100, g.pct)}%"></span></div><small>${Math.round(g.pct)}% concluido</small><strong>${g.target ? g.remaining ? `Faltam ${brl.format(g.remaining)}` : "Meta atingida" : "Preencha em Configuracoes"}</strong><small>${g.detail}</small><small>Prazo estimado: ${g.eta}</small><small>${g.source}</small></article>`;
         }).join("");
+      }
+      function safeRenderDashboardGoals(m, c, stats) {
+        try {
+          renderDashboardGoals(m, c, stats);
+        } catch (err) {
+          console.error("Erro ao renderizar metas", err);
+          $("#goalMonth").textContent = m;
+        }
       }
       function health(c) {
         const neg = c.flow.some(x => x.balance < 0);
@@ -650,7 +668,7 @@
           bar("Meta de receita", incomeTarget ? incomeTargetPct : 0, 100, false)
         ].join("");
         $("#healthNote").textContent = h.note;
-        renderDashboardGoals(m, c, stats);
+        safeRenderDashboardGoals(m, c, stats);
         const today = new Date(), tm = monthNow();
         $("#cash").innerHTML = c.flow.map(x => `<article class="day ${x.balance < 0 ? "negative" : ""} ${m === tm && x.day === today.getDate() ? "today" : ""}"><strong>Dia ${x.day}</strong><small>${brl.format(x.movement)}</small><div>${brl.format(x.balance)}</div><small>${x.items.length} item(ns)</small></article>`).join("");
         const budgets = state.budgets.filter(b => iso(b.month).startsWith(m));
