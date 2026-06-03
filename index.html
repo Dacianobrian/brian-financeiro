@@ -161,7 +161,7 @@
       <main>
         <header>
           <div><h1 id="title">Dashboard</h1><p id="subtitle">Fluxo do mes, orcamento e saldo futuro.</p></div>
-          <div class="actions"><input id="month" type="month" /><button id="refresh" class="secondary">Atualizar</button></div>
+          <div class="actions"><input id="month" type="month" /><button id="demoBtn" class="secondary">Demo visual</button><button id="refresh" class="secondary">Atualizar</button></div>
         </header>
 
         <section id="setup" class="notice hidden">
@@ -885,7 +885,7 @@
           state.budgets = budgets.data || [];
           state.inv = inv.data || [];
           state.settings = Object.fromEntries((settings.data || []).map(x => [x.key, x.value]));
-          if (!state.tx.length && !state.rec.length && !state.budgets.length && !state.inv.length) useDemoData();
+          if (localStorage.getItem("brian_demo_mode") === "1" || (!state.tx.length && !state.rec.length && !state.budgets.length && !state.inv.length)) useDemoData();
         } catch (err) {
           console.warn("Usando dados demonstrativos por falha no carregamento", err);
           useDemoData();
@@ -1059,6 +1059,7 @@
         document.querySelectorAll("[data-projection]").forEach(b => b.onclick = () => { state.projectionDays = n(b.dataset.projection) || 30; renderProjection(); });
         document.querySelector("[data-refresh-quotes]").onclick = () => refreshQuotes().catch(alertErr);
         $("#month").onchange = render;
+        $("#demoBtn").onclick = () => { localStorage.setItem("brian_demo_mode", "1"); useDemoData(); render(); };
         $("#refresh").onclick = () => load().catch(alertErr);
         $("#logout").onclick = () => state.sb.auth.signOut();
         $("#authForm").onsubmit = async (e) => {
