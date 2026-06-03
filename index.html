@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Brian Financeiro</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+    <script src="./config.js" defer></script>
+    <style>
+      :root {
+        --bg: #f6f7f4;
+        --card: #ffffff;
+        --ink: #1c2227;
+        --muted: #66727a;
+        --line: #dbe1da;
+        --brand: #187252;
+        --danger: #b83232;
+        --good: #167147;
+        --warn: #a76500;
+        --soft: #eef3ef;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--bg); color: var(--ink); letter-spacing: 0; }
+      button, input, select { font: inherit; }
+      button { cursor: pointer; }
+      .shell { display: grid; grid-template-columns: 260px minmax(0, 1fr); min-height: 100vh; }
+      aside { border-right: 1px solid var(--line); background: #fbfcfa; padding: 22px 16px; display: flex; flex-direction: column; gap: 22px; }
+      .brand { display: flex; align-items: center; gap: 12px; }
+      .logo { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 8px; background: var(--ink); color: white; font-weight: 900; }
+      .brand strong, .brand small { display: block; }
+      small, p { color: var(--muted); }
+      nav { display: grid; gap: 4px; }
+      .tab { min-height: 42px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); text-align: left; padding: 0 12px; font-weight: 700; }
+      .tab.active { background: var(--soft); color: var(--ink); }
+      main { padding: 28px; min-width: 0; }
+      header { display: flex; justify-content: space-between; gap: 16px; align-items: center; margin-bottom: 16px; }
+      h1, h2, p { margin: 0; }
+      h1 { font-size: 28px; line-height: 1.15; }
+      h2 { font-size: 17px; }
+      .actions { display: flex; gap: 10px; align-items: center; }
+      input, select { width: 100%; min-height: 40px; border: 1px solid var(--line); border-radius: 7px; background: white; color: var(--ink); padding: 8px 10px; }
+      label { display: grid; gap: 6px; font-size: 13px; font-weight: 800; color: #3f484e; }
+      .button, .primary, .secondary, .danger { min-height: 40px; border: 1px solid transparent; border-radius: 8px; padding: 0 14px; font-weight: 900; }
+      .primary { background: var(--brand); color: white; }
+      .secondary { background: white; color: var(--ink); border-color: var(--line); }
+      .danger { background: #fff0f0; color: var(--danger); border-color: #efb7b7; }
+      .view { display: none; }
+      .view.active { display: block; }
+      .panel, .metric, .notice { background: var(--card); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 18px 45px rgba(25, 32, 29, .08); }
+      .notice { padding: 16px; margin-bottom: 14px; display: flex; justify-content: space-between; gap: 14px; align-items: center; }
+      .hidden { display: none !important; }
+      .auth { max-width: 520px; margin: 60px auto; padding: 20px; display: grid; gap: 14px; }
+      .grid-kpi { display: grid; grid-template-columns: repeat(5, minmax(140px, 1fr)); gap: 12px; margin-bottom: 12px; }
+      .metric { padding: 16px; }
+      .metric span { display: block; color: var(--muted); font-weight: 800; font-size: 13px; }
+      .metric strong { display: block; margin-top: 10px; font-size: clamp(19px, 2vw, 27px); }
+      .layout { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(320px, .75fr); gap: 12px; }
+      .split { display: grid; grid-template-columns: minmax(270px, 360px) minmax(0, 1fr); gap: 12px; }
+      .panel { padding: 16px; min-width: 0; }
+      .panel-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; }
+      form { display: grid; gap: 13px; }
+      .cashgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+      .day { min-height: 86px; border: 1px solid var(--line); border-radius: 8px; background: #fbfcfa; padding: 8px; }
+      .day.negative { border-color: #d86b6b; background: #fff0f0; }
+      .day.today { border-color: #2f6fac; }
+      .pill { border-radius: 999px; padding: 5px 9px; font-size: 12px; font-weight: 900; }
+      .pill.good { background: #e7f7ee; color: var(--good); }
+      .pill.bad { background: #ffe7e7; color: var(--danger); }
+      .list { display: grid; gap: 10px; }
+      .item { border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+      .row { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+      .bar { height: 8px; border-radius: 999px; background: var(--soft); overflow: hidden; margin-top: 8px; }
+      .bar span { display: block; height: 100%; background: var(--brand); }
+      .bar.over span { background: var(--danger); }
+      table { width: 100%; min-width: 720px; border-collapse: collapse; }
+      th, td { border-bottom: 1px solid var(--line); padding: 10px 8px; text-align: left; }
+      th { color: var(--muted); font-size: 12px; text-transform: uppercase; }
+      .tablewrap { overflow: auto; }
+      .good-text { color: var(--good); }
+      .bad-text { color: var(--danger); }
+      .file input { display: none; }
+      @media (max-width: 980px) {
+        .shell { grid-template-columns: 1fr; }
+        aside { min-height: auto; }
+        nav { grid-template-columns: repeat(3, 1fr); }
+        .layout, .split { grid-template-columns: 1fr; }
+        .grid-kpi { grid-template-columns: repeat(2, 1fr); }
+      }
+      @media (max-width: 620px) {
+        main, aside { padding: 16px; }
+        header, .notice { flex-direction: column; align-items: stretch; }
+        nav, .grid-kpi { grid-template-columns: 1fr 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside>
+        <div class="brand">
+          <span class="logo">BF</span>
+          <div><strong>Brian Financeiro</strong><small id="sessionLabel">Desconectado</small></div>
+        </div>
+        <nav>
+          <button class="tab active" data-view="dashboard">Dashboard</button>
+          <button class="tab" data-view="transactions">Lancamentos</button>
+          <button class="tab" data-view="simulator">Simulador</button>
+          <button class="tab" data-view="recurring">Contas fixas</button>
+          <button class="tab" data-view="settings">Configuracoes</button>
+        </nav>
+        <button id="logout" class="secondary hidden">Sair</button>
+      </aside>
+
+      <main>
+        <header>
+          <div><h1 id="title">Dashboard</h1><p id="subtitle">Fluxo do mes, orcamento e saldo futuro.</p></div>
+          <div class="actions"><input id="month" type="month" /><button id="refresh" class="secondary">Atualizar</button></div>
+        </header>
+
+        <section id="setup" class="notice hidden">
+          <div><strong>Configure o Supabase</strong><p>Edite `config.js` com URL e anon public key do projeto.</p></div>
+        </section>
+
+        <section id="auth" class="panel auth hidden">
+          <form id="authForm">
+            <h2>Entrar no app</h2>
+            <p>Os dados ficam protegidos por Supabase Auth e RLS.</p>
+            <label>Email<input name="email" type="email" required /></label>
+            <label>Senha<input name="password" type="password" required /></label>
+            <div class="actions"><button class="primary" name="mode" value="in">Entrar</button><button class="secondary" name="mode" value="up">Criar conta</button></div>
+          </form>
+        </section>
+
+        <section id="dashboard" class="view active">
+          <div class="grid-kpi">
+            <article class="metric"><span>Entradas</span><strong id="mIncome">R$ 0,00</strong></article>
+            <article class="metric"><span>Saidas</span><strong id="mExpense">R$ 0,00</strong></article>
+            <article class="metric"><span>Investido</span><strong id="mInvest">R$ 0,00</strong></article>
+            <article class="metric"><span>Performance</span><strong id="mPerf">R$ 0,00</strong></article>
+            <article class="metric"><span>Saldo final</span><strong id="mBalance">R$ 0,00</strong></article>
+          </div>
+          <div class="layout">
+            <section class="panel">
+              <div class="panel-head"><h2>Fluxo diario</h2><span id="risk" class="pill good">OK</span></div>
+              <div id="cash" class="cashgrid"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><h2>Orcamentos</h2></div>
+              <div id="budgets" class="list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="transactions" class="view">
+          <div class="split">
+            <form id="txForm" class="panel">
+              <h2>Novo lancamento</h2>
+              <label>Data<input name="tx_date" type="date" required /></label>
+              <label>Tipo<select name="type"><option value="entrada">Entrada</option><option value="saida">Saida</option><option value="investimento">Investimento</option><option value="diario">Diario</option></select></label>
+              <label>Categoria<input name="category" list="cats" required /></label>
+              <label>Descricao<input name="description" /></label>
+              <label>Valor<input name="amount" type="number" min="0.01" step="0.01" required /></label>
+              <button class="primary">Salvar</button>
+            </form>
+            <section class="panel">
+              <div class="panel-head">
+                <h2>Lancamentos</h2>
+                <label class="secondary file">Importar planilha<input id="xlsx" type="file" accept=".xlsx,.xls" /></label>
+              </div>
+              <div class="tablewrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Descricao</th><th>Valor</th><th></th></tr></thead><tbody id="txRows"></tbody></table></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="simulator" class="view">
+          <div class="split">
+            <form id="simForm" class="panel">
+              <h2>Simular compra</h2>
+              <label>Data<input name="tx_date" type="date" required /></label>
+              <label>Categoria<input name="category" list="cats" required /></label>
+              <label>Descricao<input name="description" /></label>
+              <label>Valor<input name="amount" type="number" min="0.01" step="0.01" required /></label>
+              <button class="primary">Analisar</button>
+            </form>
+            <section id="simResult" class="panel"><h2>Resultado</h2><p>Preencha a compra para analisar impacto no caixa e orcamento.</p></section>
+          </div>
+        </section>
+
+        <section id="recurring" class="view">
+          <div class="split">
+            <form id="recForm" class="panel">
+              <h2>Conta fixa</h2>
+              <label>Nome<input name="name" required /></label>
+              <label>Dia<input name="day_of_month" type="number" min="1" max="31" required /></label>
+              <label>Tipo<select name="type"><option value="saida">Saida</option><option value="entrada">Entrada</option><option value="investimento">Investimento</option></select></label>
+              <label>Categoria<input name="category" list="cats" required /></label>
+              <label>Valor<input name="amount" type="number" min="0.01" step="0.01" required /></label>
+              <button class="primary">Salvar</button>
+            </form>
+            <section class="panel"><h2>Recorrencias</h2><div id="recRows" class="list"></div></section>
+          </div>
+        </section>
+
+        <section id="settings" class="view">
+          <div class="split">
+            <form id="setForm" class="panel">
+              <h2>Configuracoes</h2>
+              <label>Saldo inicial<input name="initial_balance" type="number" step="0.01" /></label>
+              <button class="primary">Salvar</button>
+            </form>
+            <form id="budgetForm" class="panel">
+              <h2>Orcamento mensal</h2>
+              <label>Mes<input name="month" type="month" required /></label>
+              <label>Categoria<input name="category" list="cats" required /></label>
+              <label>Limite<input name="limit_amount" type="number" min="0" step="0.01" required /></label>
+              <button class="primary">Salvar orcamento</button>
+            </form>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <datalist id="cats">
+      <option value="Alimentacao"></option><option value="Carro"></option><option value="Moradia"></option><option value="Saude"></option><option value="Contas"></option><option value="Financiamento"></option><option value="Investimento"></option><option value="MEI"></option><option value="Diario"></option><option value="Outros"></option>
+    </datalist>
+
+    <script type="module">
+      import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+      const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+      const $ = (q) => document.querySelector(q);
+      const state = { sb: null, session: null, tx: [], rec: [], budgets: [], settings: {} };
+      const sheets = ["2025", "2026", "2027", "2028"];
+      const starts = [0,7,14,21,28,35,42,49,56,63,70,77];
+      const labels = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+
+      function cfgOk() {
+        const c = window.BRIAN_FINANCE_CONFIG || {};
+        return c.supabaseUrl && c.supabaseAnonKey && !c.supabaseUrl.includes("COLE_");
+      }
+      function n(v) { const x = Number(v || 0); return Number.isFinite(x) ? x : 0; }
+      function iso(v) { return String(v || "").slice(0, 10); }
+      function monthNow() {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+      }
+      function daysIn(m) {
+        const [y, mo] = m.split("-").map(Number);
+        return new Date(y, mo, 0).getDate();
+      }
+      function formData(form) { return Object.fromEntries(new FormData(form).entries()); }
+      function signed(x) { return x.type === "entrada" ? n(x.amount) : -n(x.amount); }
+      function currentMonth() { return $("#month").value || monthNow(); }
+      function setSessionLabel() {
+        $("#sessionLabel").textContent = state.session?.user?.email || "Desconectado";
+        $("#logout").classList.toggle("hidden", !state.session);
+      }
+      function showAuth() {
+        $("#auth").classList.toggle("hidden", !cfgOk() || state.session);
+        $("#setup").classList.toggle("hidden", cfgOk());
+      }
+      function setView(name) {
+        document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === name));
+        document.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b.dataset.view === name));
+        const copy = {
+          dashboard: ["Dashboard", "Fluxo do mes, orcamento e saldo futuro."],
+          transactions: ["Lancamentos", "Cadastre e importe movimentos financeiros."],
+          simulator: ["Simulador", "Teste uma compra antes de comprometer seu caixa."],
+          recurring: ["Contas fixas", "Recorrencias que alimentam o futuro."],
+          settings: ["Configuracoes", "Saldo inicial e orcamentos."]
+        }[name];
+        $("#title").textContent = copy[0];
+        $("#subtitle").textContent = copy[1];
+      }
+      function recurringFor(m) {
+        const max = daysIn(m);
+        return state.rec.filter(x => x.active !== false).map(x => {
+          const d = Math.min(n(x.day_of_month), max);
+          return { tx_date: `${m}-${String(d).padStart(2,"0")}`, type: x.type, category: x.category, description: x.name, amount: n(x.amount), virtual: true };
+        });
+      }
+      function monthItems(m, extra = []) {
+        return [...state.tx.filter(x => iso(x.tx_date).startsWith(m)), ...recurringFor(m), ...extra].sort((a,b) => iso(a.tx_date).localeCompare(iso(b.tx_date)));
+      }
+      function opening(m) {
+        const start = `${m}-01`;
+        return state.tx.filter(x => iso(x.tx_date) < start).reduce((s,x) => s + signed(x), n(state.settings.initial_balance));
+      }
+      function cashflow(m, extra = []) {
+        const map = new Map();
+        monthItems(m, extra).forEach(x => {
+          const d = Number(iso(x.tx_date).slice(8,10));
+          map.set(d, [...(map.get(d) || []), x]);
+        });
+        let bal = opening(m);
+        return Array.from({ length: daysIn(m) }, (_, i) => {
+          const day = i + 1, items = map.get(day) || [];
+          const mov = items.reduce((s,x) => s + signed(x), 0);
+          bal += mov;
+          return { day, items, movement: mov, balance: bal };
+        });
+      }
+      function calc(m, extra = []) {
+        const items = monthItems(m, extra);
+        const income = items.filter(x => x.type === "entrada").reduce((s,x) => s + n(x.amount), 0);
+        const expense = items.filter(x => x.type === "saida" || x.type === "diario").reduce((s,x) => s + n(x.amount), 0);
+        const invest = items.filter(x => x.type === "investimento").reduce((s,x) => s + n(x.amount), 0);
+        const flow = cashflow(m, extra);
+        return { items, income, expense, invest, perf: income - expense - invest, flow, final: flow.at(-1)?.balance || opening(m) };
+      }
+      function render() {
+        const m = currentMonth(), c = calc(m);
+        $("#mIncome").textContent = brl.format(c.income);
+        $("#mExpense").textContent = brl.format(c.expense);
+        $("#mInvest").textContent = brl.format(c.invest);
+        $("#mPerf").textContent = brl.format(c.perf);
+        $("#mPerf").className = c.perf < 0 ? "bad-text" : "good-text";
+        $("#mBalance").textContent = brl.format(c.final);
+        $("#mBalance").className = c.final < 0 ? "bad-text" : "";
+        const neg = c.flow.some(x => x.balance < 0);
+        $("#risk").textContent = neg ? "Risco" : "OK";
+        $("#risk").className = `pill ${neg ? "bad" : "good"}`;
+        const today = new Date(), tm = monthNow();
+        $("#cash").innerHTML = c.flow.map(x => `<article class="day ${x.balance < 0 ? "negative" : ""} ${m === tm && x.day === today.getDate() ? "today" : ""}"><strong>Dia ${x.day}</strong><small>${brl.format(x.movement)}</small><div>${brl.format(x.balance)}</div><small>${x.items.length} item(ns)</small></article>`).join("");
+        const budgets = state.budgets.filter(b => iso(b.month).startsWith(m));
+        $("#budgets").innerHTML = budgets.length ? budgets.map(b => {
+          const used = c.items.filter(x => x.category === b.category && (x.type === "saida" || x.type === "diario")).reduce((s,x) => s + n(x.amount), 0);
+          const limit = n(b.limit_amount), over = used > limit, pct = limit ? Math.min(140, used / limit * 100) : 0;
+          return `<article class="item"><div class="row"><strong>${b.category}</strong><span class="${over ? "bad-text" : ""}">${brl.format(used)} / ${brl.format(limit)}</span></div><div class="bar ${over ? "over" : ""}"><span style="width:${pct}%"></span></div><small>${over ? "Fora do orcamento" : "Dentro do orcamento"}</small></article>`;
+        }).join("") : "<p>Nenhum orcamento neste mes.</p>";
+        $("#txRows").innerHTML = state.tx.filter(x => iso(x.tx_date).startsWith(m)).map(x => `<tr><td>${iso(x.tx_date)}</td><td>${x.type}</td><td>${x.category}</td><td>${x.description || "-"}</td><td>${brl.format(n(x.amount))}</td><td><button class="danger" data-del="${x.id}">Excluir</button></td></tr>`).join("") || '<tr><td colspan="6">Sem lancamentos.</td></tr>';
+        $("#recRows").innerHTML = state.rec.map(x => `<article class="item"><div class="row"><strong>${x.name}</strong><span>${brl.format(n(x.amount))}</span></div><small>Todo dia ${x.day_of_month} - ${x.category}</small></article>`).join("") || "<p>Sem contas fixas.</p>";
+        $("#setForm").elements.initial_balance.value = state.settings.initial_balance || "";
+        $("#budgetForm").elements.month.value = m;
+      }
+      async function load() {
+        if (!state.sb || !state.session) return;
+        const [tx, rec, budgets, settings] = await Promise.all([
+          state.sb.from("transactions").select("*").order("tx_date", { ascending: false }),
+          state.sb.from("recurring_items").select("*").order("day_of_month"),
+          state.sb.from("budgets").select("*").order("month", { ascending: false }),
+          state.sb.from("app_settings").select("*")
+        ]);
+        for (const r of [tx, rec, budgets, settings]) if (r.error) throw r.error;
+        state.tx = tx.data || [];
+        state.rec = rec.data || [];
+        state.budgets = budgets.data || [];
+        state.settings = Object.fromEntries((settings.data || []).map(x => [x.key, x.value]));
+        render();
+      }
+      async function insert(table, row) {
+        const { error } = await state.sb.from(table).insert(row);
+        if (error) throw error;
+        await load();
+      }
+      function txFrom(row) {
+        return { tx_date: row.tx_date, type: row.type, category: row.category, description: row.description || null, amount: n(row.amount), status: "previsto", source: row.source || "manual" };
+      }
+      function sim(row) {
+        const fake = txFrom({ ...row, type: "saida", source: "simulador" });
+        const m = iso(fake.tx_date).slice(0,7), c = calc(m, [fake]);
+        const badDay = c.flow.find(x => x.balance < 0);
+        const b = state.budgets.find(x => iso(x.month).startsWith(m) && x.category === fake.category);
+        const risks = [];
+        if (b) {
+          const used = c.items.filter(x => x.category === fake.category && (x.type === "saida" || x.type === "diario")).reduce((s,x) => s + n(x.amount), 0);
+          if (used > n(b.limit_amount)) risks.push(`Categoria ${fake.category} passa para ${brl.format(used)} de ${brl.format(n(b.limit_amount))}.`);
+        }
+        if (c.perf < 0) risks.push(`Performance fica negativa: ${brl.format(c.perf)}.`);
+        if (badDay) risks.push(`Saldo fica negativo no dia ${badDay.day}: ${brl.format(badDay.balance)}.`);
+        $("#simResult").innerHTML = `<h2 class="${risks.length ? "bad-text" : "good-text"}">${risks.length ? "Compra fora do plano" : "Compra cabe no plano"}</h2><p>Saldo final: <strong>${brl.format(c.final)}</strong></p><p>Performance: <strong>${brl.format(c.perf)}</strong></p>${risks.length ? `<ul>${risks.map(x => `<li>${x}</li>`).join("")}</ul>` : "<p>Nenhum alerta critico encontrado.</p>"}`;
+      }
+      function excelDate(year, mi, day) {
+        const d = Number(day);
+        if (!Number.isInteger(d) || d < 1 || d > 31) return null;
+        const dt = new Date(Date.UTC(Number(year), mi, d));
+        return dt.getUTCMonth() === mi ? `${year}-${String(mi+1).padStart(2,"0")}-${String(d).padStart(2,"0")}` : null;
+      }
+      async function importXlsx(file) {
+        const wb = XLSX.read(await file.arrayBuffer(), { type: "array", raw: true });
+        const rows = [];
+        sheets.forEach(y => {
+          const sh = wb.Sheets[y]; if (!sh) return;
+          const a = XLSX.utils.sheet_to_json(sh, { header: 1, raw: true, blankrows: false });
+          starts.forEach((st, mi) => {
+            for (let r = 2; r <= 32; r++) {
+              const row = a[r] || [], date = excelDate(y, mi, row[st]);
+              if (!date) continue;
+              [["entrada", st+1, "Receita"], ["saida", st+2, "Saidas"], ["investimento", st+3, "Investimento"], ["diario", st+4, "Diario"]].forEach(([type, col, cat]) => {
+                const amount = Math.abs(n(row[col]));
+                if (amount) rows.push({ tx_date: date, type, category: cat, description: `Importado ${y} ${labels[mi]}`, amount, status: "previsto", source: "planilha" });
+              });
+            }
+          });
+        });
+        if (!rows.length || !confirm(`Importar ${rows.length} lancamentos?`)) return;
+        for (let i = 0; i < rows.length; i += 500) {
+          const { error } = await state.sb.from("transactions").insert(rows.slice(i, i + 500));
+          if (error) throw error;
+        }
+        await load();
+      }
+      function bind() {
+        document.querySelectorAll(".tab").forEach(b => b.onclick = () => setView(b.dataset.view));
+        $("#month").onchange = render;
+        $("#refresh").onclick = () => load().catch(alertErr);
+        $("#logout").onclick = () => state.sb.auth.signOut();
+        $("#authForm").onsubmit = async (e) => {
+          e.preventDefault();
+          const row = formData(e.currentTarget);
+          const res = e.submitter.value === "up" ? await state.sb.auth.signUp({ email: row.email, password: row.password }) : await state.sb.auth.signInWithPassword({ email: row.email, password: row.password });
+          if (res.error) alertErr(res.error);
+        };
+        $("#txForm").onsubmit = async e => { e.preventDefault(); await insert("transactions", txFrom(formData(e.currentTarget))).catch(alertErr); e.currentTarget.reset(); setDates(); };
+        $("#recForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await insert("recurring_items", { name: r.name, day_of_month: n(r.day_of_month), type: r.type, category: r.category, amount: n(r.amount), active: true }).catch(alertErr); e.currentTarget.reset(); };
+        $("#simForm").onsubmit = e => { e.preventDefault(); sim(formData(e.currentTarget)); };
+        $("#setForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await upsertSettings({ initial_balance: n(r.initial_balance) }).catch(alertErr); };
+        $("#budgetForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await upsertBudget(r).catch(alertErr); };
+        $("#txRows").onclick = async e => { const b = e.target.closest("[data-del]"); if (b && confirm("Excluir lancamento?")) { const { error } = await state.sb.from("transactions").delete().eq("id", b.dataset.del); if (error) alertErr(error); else await load(); } };
+        $("#xlsx").onchange = async e => { const f = e.target.files[0]; if (f) await importXlsx(f).catch(alertErr); e.target.value = ""; };
+      }
+      async function upsertSettings(obj) {
+        const rows = Object.entries(obj).map(([key, value]) => ({ user_id: state.session.user.id, key, value }));
+        const { error } = await state.sb.from("app_settings").upsert(rows, { onConflict: "user_id,key" });
+        if (error) throw error;
+        await load();
+      }
+      async function upsertBudget(r) {
+        const { error } = await state.sb.from("budgets").upsert({ user_id: state.session.user.id, month: `${r.month}-01`, category: r.category, limit_amount: n(r.limit_amount) }, { onConflict: "user_id,month,category" });
+        if (error) throw error;
+        await load();
+      }
+      function alertErr(err) { console.error(err); alert(err.message || String(err)); }
+      function setDates() {
+        const d = new Date().toISOString().slice(0, 10);
+        document.querySelectorAll('input[type="date"]').forEach(x => { if (!x.value) x.value = d; });
+      }
+      async function init() {
+        $("#month").value = monthNow();
+        setDates();
+        bind();
+        if (!cfgOk()) { showAuth(); render(); return; }
+        const c = window.BRIAN_FINANCE_CONFIG;
+        state.sb = createClient(c.supabaseUrl, c.supabaseAnonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+        state.sb.auth.onAuthStateChange(async (_event, session) => {
+          state.session = session;
+          setSessionLabel();
+          showAuth();
+          if (session) await load().catch(alertErr);
+        });
+        const { data, error } = await state.sb.auth.getSession();
+        if (error) throw error;
+        state.session = data.session;
+        setSessionLabel();
+        showAuth();
+        if (state.session) await load();
+        else render();
+      }
+      init().catch(alertErr);
+    </script>
+  </body>
+</html>
