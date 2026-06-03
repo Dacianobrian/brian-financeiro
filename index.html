@@ -51,6 +51,15 @@
       .notice { padding: 16px; margin-bottom: 14px; display: flex; justify-content: space-between; gap: 14px; align-items: center; }
       .hidden { display: none !important; }
       .auth { max-width: 520px; margin: 60px auto; padding: 20px; display: grid; gap: 14px; }
+      body.locked nav,
+      body.locked header,
+      body.locked .view,
+      body.locked #logout { display: none !important; }
+      body.locked main { display: grid; align-items: center; min-height: 100vh; }
+      body.locked #auth,
+      body.locked #setup { width: min(520px, 100%); margin: 0 auto; }
+      body.locked .brand { align-items: flex-start; }
+      body.locked aside { justify-content: center; }
       .grid-kpi { display: grid; grid-template-columns: repeat(5, minmax(140px, 1fr)); gap: 12px; margin-bottom: 12px; }
       .metric { padding: 16px; }
       .metric span { display: block; color: var(--muted); font-weight: 800; font-size: 13px; }
@@ -124,9 +133,9 @@
         <section id="auth" class="panel auth hidden">
           <form id="authForm">
             <h2>Entrar no app</h2>
-            <p>Os dados ficam protegidos por Supabase Auth e RLS.</p>
+            <p>Acesse com email e senha. Seus dados ficam protegidos por Supabase Auth e RLS.</p>
             <label>Email<input name="email" type="email" required /></label>
-            <label>Senha<input name="password" type="password" required /></label>
+            <label>Senha<input name="password" type="password" minlength="6" required /></label>
             <div class="actions"><button class="primary" name="mode" value="in">Entrar</button><button class="secondary" name="mode" value="up">Criar conta</button></div>
           </form>
         </section>
@@ -256,10 +265,16 @@
         $("#logout").classList.toggle("hidden", !state.session);
       }
       function showAuth() {
-        $("#auth").classList.toggle("hidden", !cfgOk() || state.session);
+        const locked = !state.session;
+        document.body.classList.toggle("locked", locked);
+        $("#auth").classList.toggle("hidden", !cfgOk() || !locked);
         $("#setup").classList.toggle("hidden", cfgOk());
+        document.querySelectorAll(".tab").forEach(b => { b.disabled = locked; });
+        $("#month").disabled = locked;
+        $("#refresh").disabled = locked;
       }
       function setView(name) {
+        if (!state.session) return;
         document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === name));
         document.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b.dataset.view === name));
         const copy = {
@@ -408,8 +423,11 @@
         $("#authForm").onsubmit = async (e) => {
           e.preventDefault();
           const row = formData(e.currentTarget);
-          const res = e.submitter.value === "up" ? await state.sb.auth.signUp({ email: row.email, password: row.password }) : await state.sb.auth.signInWithPassword({ email: row.email, password: row.password });
+          const mode = e.submitter.value;
+          const res = mode === "up" ? await state.sb.auth.signUp({ email: row.email, password: row.password }) : await state.sb.auth.signInWithPassword({ email: row.email, password: row.password });
           if (res.error) alertErr(res.error);
+          else if (mode === "up" && !res.data.session) alert("Conta criada. Confirme seu email e depois entre no aplicativo.");
+          else e.currentTarget.reset();
         };
         $("#txForm").onsubmit = async e => { e.preventDefault(); await insert("transactions", txFrom(formData(e.currentTarget))).catch(alertErr); e.currentTarget.reset(); setDates(); };
         $("#recForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await insert("recurring_items", { name: r.name, day_of_month: n(r.day_of_month), type: r.type, category: r.category, amount: n(r.amount), active: true }).catch(alertErr); e.currentTarget.reset(); };
@@ -446,15 +464,25 @@
           state.session = session;
           setSessionLabel();
           showAuth();
-          if (session) await load().catch(alertErr);
+          if (session) {
+            setView("dashboard");
+            await load().catch(alertErr);
+          } else {
+            state.tx = [];
+            state.rec = [];
+            state.budgets = [];
+            state.settings = {};
+          }
         });
         const { data, error } = await state.sb.auth.getSession();
         if (error) throw error;
         state.session = data.session;
         setSessionLabel();
         showAuth();
-        if (state.session) await load();
-        else render();
+        if (state.session) {
+          setView("dashboard");
+          await load();
+        }
       }
       init().catch(alertErr);
     </script>
