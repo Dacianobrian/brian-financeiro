@@ -25,7 +25,7 @@
       button, input, select { font: inherit; }
       button { cursor: pointer; }
       .shell { display: grid; grid-template-columns: 260px minmax(0, 1fr); min-height: 100vh; }
-      aside { border-right: 1px solid var(--line); background: #fbfcfa; padding: 22px 16px; display: flex; flex-direction: column; gap: 22px; }
+      .shell > aside { border-right: 1px solid var(--line); background: #fbfcfa; padding: 22px 16px; display: flex; flex-direction: column; gap: 22px; }
       .brand { display: flex; align-items: center; gap: 12px; }
       .logo { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 8px; background: var(--ink); color: white; font-weight: 900; }
       .brand strong, .brand small { display: block; }
@@ -59,7 +59,7 @@
       body.locked #auth,
       body.locked #setup { width: min(520px, 100%); margin: 0 auto; }
       body.locked .brand { align-items: flex-start; }
-      body.locked aside { justify-content: center; }
+      body.locked .shell > aside { justify-content: center; }
       .grid-kpi { display: grid; grid-template-columns: repeat(6, minmax(130px, 1fr)); gap: 12px; margin-bottom: 12px; }
       .metric { padding: 16px; }
       .metric span { display: block; color: var(--muted); font-weight: 800; font-size: 13px; }
@@ -93,8 +93,9 @@
       .projection-row.bad { color: var(--danger); }
       .projection-date { font-weight: 900; }
       .payline { display: grid; grid-template-columns: minmax(0, 1fr) 130px auto; gap: 8px; align-items: end; margin-top: 10px; }
-      .portfolio-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, .45fr); gap: 12px; }
-      .asset-table { min-width: 960px; }
+      .portfolio-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 360px); gap: 12px; align-items: start; }
+      .asset-table { min-width: 820px; }
+      .portfolio-side { display: grid; gap: 14px; align-content: start; }
       .asset-logo { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; background: var(--soft); font-weight: 900; }
       .asset-cell { display: flex; align-items: center; gap: 10px; }
       .dividend-list { display: grid; gap: 8px; }
@@ -125,14 +126,14 @@
       .file input { display: none; }
       @media (max-width: 980px) {
         .shell { grid-template-columns: 1fr; }
-        aside { min-height: auto; }
+        .shell > aside { min-height: auto; }
         nav { grid-template-columns: repeat(3, 1fr); }
         .layout, .split, .portfolio-grid { grid-template-columns: 1fr; }
         .grid-kpi { grid-template-columns: repeat(2, 1fr); }
         .goal-strip, .goal-summary { grid-template-columns: 1fr; }
       }
       @media (max-width: 620px) {
-        main, aside { padding: 16px; }
+        main, .shell > aside { padding: 16px; }
         header, .notice { flex-direction: column; align-items: stretch; }
         nav, .grid-kpi { grid-template-columns: 1fr 1fr; }
         .quickbar { grid-template-columns: 1fr 1fr; }
@@ -337,12 +338,16 @@
               <div class="panel-head"><h2>Carteira</h2><span id="quoteStatus" class="pill good">Manual</span></div>
               <div class="portfolio-grid">
                 <div class="tablewrap"><table class="asset-table"><thead><tr><th>Ativo</th><th>Classe</th><th>Qtd</th><th>Preco medio</th><th>Cotacao</th><th>Patrimonio</th><th>Lucro</th><th>DY est.</th><th></th></tr></thead><tbody id="invRows"></tbody></table></div>
-                <aside class="panel">
-                  <div class="panel-head"><h2>Agenda de dividendos</h2></div>
-                  <div id="dividendRows" class="dividend-list"></div>
-                  <div class="panel-head" style="margin-top:14px"><h2>Metas da carteira</h2></div>
-                  <div id="goalRows" class="list"></div>
-                </aside>
+                <div class="portfolio-side">
+                  <section class="panel">
+                    <div class="panel-head"><h2>Agenda de dividendos</h2></div>
+                    <div id="dividendRows" class="dividend-list"><p>Sem agenda carregada. Atualize cotacoes ou preencha renda manual.</p></div>
+                  </section>
+                  <section class="panel">
+                    <div class="panel-head"><h2>Metas da carteira</h2></div>
+                    <div id="goalRows" class="list"><p>Defina suas metas em Configuracoes.</p></div>
+                  </section>
+                </div>
               </div>
             </section>
           </div>
@@ -730,7 +735,7 @@
           return `<tr><td><div class="asset-cell"><span class="asset-logo">${symbol.slice(0,2)}</span><div><strong>${symbol}</strong><small>${q.name || ""}</small></div></div></td><td>${x.segment || "-"}</td><td>${n(x.shares)}</td><td>${brl.format(avg)}</td><td>${brl.format(price)}${q.change != null ? `<br><small class="${n(q.change) < 0 ? "bad-text" : "good-text"}">${n(q.change).toFixed(2)}%</small>` : ""}</td><td>${brl.format(value)}</td><td class="${assetProfit < 0 ? "bad-text" : "good-text"}">${brl.format(assetProfit)}</td><td>${dy.toFixed(1)}%</td><td><button class="danger" data-inv-del="${x.id}">Excluir</button></td></tr>`;
         }).join("") : '<tr><td colspan="9">Nenhum ativo cadastrado.</td></tr>';
         const dividendsList = rows.flatMap(x => {
-          const symbol = String(x.asset || "").toUpperCase(), q = quote(x);
+          const symbol = String(x.asset || "").toUpperCase(), q = quoteForAsset(x);
           return (q.dividends || []).map(d => ({ ...d, symbol, total: n(d.amount) * n(x.shares) }));
         }).filter(d => d.date >= new Date().toISOString().slice(0, 10)).sort((a,b) => a.date.localeCompare(b.date)).slice(0, 12);
         $("#dividendRows").innerHTML = dividendsList.length ? dividendsList.map(d => `<article class="item"><div class="row"><strong>${d.symbol}</strong><span>${brl.format(d.total)}</span></div><small>${d.date} - ${brl.format(n(d.amount))} por cota</small></article>`).join("") : "<p>Sem agenda carregada. Atualize cotacoes ou preencha renda manual.</p>";
