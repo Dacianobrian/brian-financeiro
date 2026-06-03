@@ -1127,6 +1127,7 @@
         setDates();
         bind();
         const demoMode = new URLSearchParams(location.search).get("demo") === "1";
+        state.demoMode = demoMode;
         if (demoMode) {
           localStorage.setItem("brian_demo_mode", "1");
           useDemoData();
@@ -1144,6 +1145,12 @@
             if (wasLocked) setView(state.view || "dashboard");
             await load().catch(alertErr);
           } else {
+            if (state.demoMode) {
+              setView(state.view || "dashboard");
+              useDemoData();
+              render();
+              return;
+            }
             state.tx = [];
             state.rec = [];
             state.budgets = [];
