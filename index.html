@@ -1126,7 +1126,12 @@
         $("#month").value = monthNow();
         setDates();
         bind();
-        if (new URLSearchParams(location.search).get("demo") === "1") localStorage.setItem("brian_demo_mode", "1");
+        const demoMode = new URLSearchParams(location.search).get("demo") === "1";
+        if (demoMode) {
+          localStorage.setItem("brian_demo_mode", "1");
+          useDemoData();
+          render();
+        }
         if (!cfgOk()) { showAuth(); render(); return; }
         const c = window.BRIAN_FINANCE_CONFIG;
         state.sb = createClient(c.supabaseUrl, c.supabaseAnonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
@@ -1155,6 +1160,10 @@
         if (state.session) {
           setView(state.view || "dashboard");
           await load();
+        } else if (demoMode) {
+          setView(state.view || "dashboard");
+          useDemoData();
+          render();
         }
       }
       init().catch(alertErr);
