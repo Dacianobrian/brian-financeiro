@@ -34,17 +34,18 @@
       .tab { min-height: 42px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); text-align: left; padding: 0 12px; font-weight: 700; }
       .tab.active { background: var(--soft); color: var(--ink); }
       main { padding: 28px; min-width: 0; }
-      header { display: flex; justify-content: space-between; gap: 16px; align-items: center; margin-bottom: 16px; }
+      header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 18px; }
       h1, h2, p { margin: 0; }
       h1 { font-size: 28px; line-height: 1.15; }
       h2 { font-size: 17px; }
-      .actions { display: flex; gap: 10px; align-items: center; }
+      .actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
       input, select { width: 100%; min-height: 40px; border: 1px solid var(--line); border-radius: 7px; background: white; color: var(--ink); padding: 8px 10px; }
       label { display: grid; gap: 6px; font-size: 13px; font-weight: 800; color: #3f484e; }
       .button, .primary, .secondary, .danger { min-height: 40px; border: 1px solid transparent; border-radius: 8px; padding: 0 14px; font-weight: 900; }
       .primary { background: var(--brand); color: white; }
       .secondary { background: white; color: var(--ink); border-color: var(--line); }
       .danger { background: #fff0f0; color: var(--danger); border-color: #efb7b7; }
+      form > button { align-self: start; width: 100%; min-height: 44px; }
       .view { display: none; }
       .view.active { display: block; }
       .panel, .metric, .notice { background: var(--card); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 18px 45px rgba(25, 32, 29, .08); }
@@ -60,27 +61,32 @@
       body.locked #setup { width: min(520px, 100%); margin: 0 auto; }
       body.locked .brand { align-items: flex-start; }
       body.locked .shell > aside { justify-content: center; }
-      .grid-kpi { display: grid; grid-template-columns: repeat(6, minmax(130px, 1fr)); gap: 12px; margin-bottom: 12px; }
-      .metric { padding: 16px; }
+      .grid-kpi { display: grid; grid-template-columns: repeat(auto-fit, minmax(188px, 1fr)); gap: 12px; margin-bottom: 14px; }
+      .metric { padding: 16px; min-width: 0; overflow: hidden; }
       .metric span { display: block; color: var(--muted); font-weight: 800; font-size: 13px; }
-      .metric strong { display: block; margin-top: 10px; font-size: clamp(19px, 2vw, 27px); }
-      .metric.feature { min-height: 132px; display: grid; align-content: center; border-color: #cfd9d1; }
+      .metric strong { display: block; margin-top: 8px; font-size: clamp(20px, 1.45vw, 25px); line-height: 1.05; white-space: nowrap; letter-spacing: 0; }
+      .metric.feature { min-height: 112px; display: grid; align-content: center; border-color: #cfd9d1; }
       .metric.feature.warn { border-color: #d6ae4d; background: #fff9e8; }
       .metric.feature.bad { border-color: #d86b6b; background: #fff0f0; }
       .metric.feature.good { border-color: #8bc9a6; background: #f0fff6; }
       .chartgrid { display: grid; gap: 10px; }
       .mini-chart { display: grid; gap: 6px; }
       .mini-chart .row { font-size: 13px; font-weight: 800; }
-      .health-note { margin-top: 10px; font-weight: 800; }
-      .goal-strip { display: grid; grid-template-columns: repeat(3, minmax(180px, 1fr)); gap: 12px; margin: 12px 0; }
-      .goal-card { display: grid; gap: 12px; min-height: 168px; border-color: #d6ae4d; }
+      .health-note { display: none; }
+      .ratio-card { border: 1px solid var(--line); border-radius: 8px; padding: 10px; display: grid; gap: 6px; background: #fbfcfa; }
+      .ratio-card.over { border-color: #d86b6b; background: #fff6f6; }
+      .ratio-card.good { border-color: #8bc9a6; background: #f2fff7; }
+      .ratio-meta { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 12px; font-weight: 800; }
+      .goal-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin: 12px 0; }
+      .goal-card { display: grid; gap: 10px; min-height: 168px; border-color: #d6ae4d; }
       .goal-card .goal-top { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
-      .goal-card strong.value { font-size: clamp(24px, 2.4vw, 34px); color: #b47a05; }
+      .goal-card strong.value { font-size: clamp(24px, 2vw, 32px); line-height: 1.08; color: #b47a05; overflow-wrap: anywhere; }
       .goal-card .bar span { background: #dca92e; }
       .goal-card.done { border-color: #8bc9a6; background: #f0fff6; }
       .goal-card.done .bar span { background: var(--good); }
       .goal-card.empty { border-color: var(--line); background: var(--card); }
       .goal-summary { display: grid; grid-template-columns: repeat(3, minmax(160px, 1fr)); gap: 12px; margin-bottom: 12px; }
+      .goal-summary .metric strong { white-space: normal; }
       .goal-section { margin: 12px 0; }
       .quickbar { display: grid; grid-template-columns: repeat(4, minmax(140px, 1fr)); gap: 10px; margin-bottom: 12px; }
       .quickbar button { min-height: 48px; }
@@ -88,31 +94,49 @@
       .item.good { border-color: #8bc9a6; background: #f0fff6; }
       .sim-risk { border-color: #d86b6b; background: #fff0f0; }
       .sim-ok { border-color: #8bc9a6; background: #f0fff6; }
-      .projection-list { display: grid; gap: 8px; }
-      .projection-row { display: grid; grid-template-columns: 74px minmax(0, 1fr) auto; gap: 12px; align-items: center; border-top: 1px solid var(--line); padding: 10px 0; }
+      .projection-list { display: grid; gap: 0; }
+      .projection-row { display: grid; grid-template-columns: 68px minmax(0, 1fr) minmax(120px, auto) minmax(170px, auto); gap: 12px; align-items: center; border-top: 1px solid var(--line); padding: 12px 0; }
       .projection-row.bad { color: var(--danger); }
       .projection-date { font-weight: 900; }
-      .payline { display: grid; grid-template-columns: minmax(0, 1fr) 130px auto; gap: 8px; align-items: end; margin-top: 10px; }
+      .projection-actions { display: flex; gap: 8px; align-items: center; justify-content: flex-end; }
+      .projection-actions input { width: 112px; min-height: 36px; }
+      .quick-projection { display: grid; grid-template-columns: minmax(180px, 1fr) 130px 150px auto auto; gap: 8px; align-items: end; border-top: 1px solid var(--line); padding-top: 12px; margin-top: 10px; }
+      .payline { display: grid; grid-template-columns: 116px 100px; gap: 8px; align-items: end; margin-top: 10px; }
       .investment-panels { display: grid; grid-template-columns: repeat(2, minmax(260px, 1fr)); gap: 12px; align-items: start; margin-top: 12px; }
       .asset-table { min-width: 820px; }
       .asset-logo { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; background: var(--soft); font-weight: 900; }
       .asset-cell { display: flex; align-items: center; gap: 10px; }
       .dividend-list { display: grid; gap: 8px; }
-      .layout { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(320px, .75fr); gap: 12px; }
+      .layout { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(320px, .75fr); gap: 12px; align-items: start; }
       .split { display: grid; grid-template-columns: minmax(270px, 360px) minmax(0, 1fr); gap: 12px; }
       .panel { padding: 16px; min-width: 0; }
       .panel-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; }
       form { display: grid; gap: 13px; }
-      .cashgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
-      .day { min-height: 86px; border: 1px solid var(--line); border-radius: 8px; background: #fbfcfa; padding: 8px; }
+      .cashgrid { display: grid; gap: 0; }
+      .day { display: grid; grid-template-columns: 58px minmax(0, 1fr) auto; gap: 10px; align-items: center; min-height: 62px; border-top: 1px solid var(--line); background: transparent; padding: 10px 0; }
       .day.negative { border-color: #d86b6b; background: #fff0f0; }
       .day.today { border-color: #2f6fac; }
+      .day strong, .day small, .day div { min-width: 0; }
+      .day .day-money { text-align: right; font-weight: 900; white-space: nowrap; }
+      .day .day-balance { color: var(--muted); font-size: 12px; font-weight: 800; }
       .pill { border-radius: 999px; padding: 5px 9px; font-size: 12px; font-weight: 900; }
       .pill.good { background: #e7f7ee; color: var(--good); }
       .pill.bad { background: #ffe7e7; color: var(--danger); }
       .list { display: grid; gap: 10px; }
-      .item { border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
-      .row { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+      .item { border: 1px solid var(--line); border-radius: 8px; padding: 10px; min-width: 0; }
+      .row { display: flex; justify-content: space-between; gap: 10px; align-items: center; min-width: 0; }
+      .row strong, .row span { min-width: 0; }
+      .row span { text-align: right; white-space: nowrap; }
+      .accounts-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; align-items: start; }
+      .account-card { display: grid; gap: 8px; }
+      .account-title { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: start; }
+      .account-title strong { line-height: 1.15; }
+      .account-title span { white-space: nowrap; font-size: 18px; font-weight: 900; }
+      .installment-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; margin-top: 10px; }
+      .installment-title { grid-column: 1 / -1; margin-top: 2px; }
+      .installment-card { border: 1px solid var(--line); border-radius: 8px; padding: 12px; background: #fbfcfa; display: grid; gap: 8px; }
+      .installment-card strong { line-height: 1.1; }
+      .installment-card .row span { color: var(--danger); font-weight: 900; }
       .bar { height: 8px; border-radius: 999px; background: var(--soft); overflow: hidden; margin-top: 8px; }
       .bar span { display: block; height: 100%; background: var(--brand); }
       .bar.over span { background: var(--danger); }
@@ -127,16 +151,20 @@
         .shell { grid-template-columns: 1fr; }
         .shell > aside { min-height: auto; }
         nav { grid-template-columns: repeat(3, 1fr); }
-        .layout, .split, .investment-panels { grid-template-columns: 1fr; }
-        .grid-kpi { grid-template-columns: repeat(2, 1fr); }
+        .layout, .split, .investment-panels, .accounts-board { grid-template-columns: 1fr; }
+        .grid-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .goal-strip, .goal-summary { grid-template-columns: 1fr; }
+        .projection-row, .quick-projection { grid-template-columns: 1fr; }
+        .projection-actions { justify-content: stretch; }
       }
       @media (max-width: 620px) {
         main, .shell > aside { padding: 16px; }
         header, .notice { flex-direction: column; align-items: stretch; }
-        nav, .grid-kpi { grid-template-columns: 1fr 1fr; }
+        nav, .grid-kpi { grid-template-columns: 1fr; }
         .quickbar { grid-template-columns: 1fr 1fr; }
         .goal-strip, .goal-summary { grid-template-columns: 1fr; }
+        .metric strong { font-size: 23px; }
+        .payline { grid-template-columns: 1fr; }
       }
     </style>
   </head>
@@ -150,7 +178,7 @@
         <nav>
           <button class="tab active" data-view="dashboard">Dashboard</button>
           <button class="tab" data-view="transactions">Lancamentos</button>
-          <button class="tab" data-view="simulator">Simulador</button>
+          <button class="tab" data-view="simulator">Simular compra</button>
           <button class="tab" data-view="recurring">Contas</button>
           <button class="tab" data-view="investments">Investimentos</button>
           <button class="tab" data-view="settings">Configuracoes</button>
@@ -203,23 +231,24 @@
           </section>
           <div class="layout">
             <section class="panel">
-              <div class="panel-head"><h2>Fluxo diario</h2><span id="risk" class="pill good">OK</span></div>
+              <div class="panel-head"><h2>Saldo dia a dia</h2><span id="risk" class="pill good">OK</span></div>
               <div id="cash" class="cashgrid"></div>
             </section>
             <section class="panel">
-              <div class="panel-head"><h2>Medidores</h2></div>
+              <div class="panel-head"><h2>Modelo 50-30-20</h2></div>
               <div id="healthCharts" class="chartgrid"></div>
               <p id="healthNote" class="health-note"></p>
             </section>
           </div>
           <div class="layout" style="margin-top:12px">
             <section class="panel">
-              <div class="panel-head"><h2>Orcamentos</h2></div>
+              <div class="panel-head"><h2>Orcamentos por categoria</h2><button class="secondary" data-view-shortcut="settings">Definir metas</button></div>
               <div id="budgets" class="list"></div>
             </section>
             <section class="panel">
-              <div class="panel-head"><h2>Cartao de credito</h2></div>
+              <div class="panel-head"><h2>Cartao de credito</h2><button class="secondary" data-preset-shortcut="card">Nova compra</button></div>
               <div id="cardRows" class="list"></div>
+              <div id="installmentRows" class="installment-grid"></div>
             </section>
           </div>
           <section class="panel" style="margin-top:12px">
@@ -233,6 +262,13 @@
             </div>
             <div id="projectionSummary" class="row"></div>
             <div id="projectionRows" class="projection-list"></div>
+            <form id="quickProjectionForm" class="quick-projection">
+              <input name="description" placeholder="Descricao..." required />
+              <input name="amount" type="number" min="0.01" step="0.01" placeholder="R$ 0,00" required />
+              <input name="tx_date" type="date" required />
+              <button class="primary" name="type" value="entrada">+ Receita</button>
+              <button class="danger" name="type" value="saida">+ Despesa</button>
+            </form>
           </section>
         </section>
 
@@ -285,7 +321,7 @@
         <section id="recurring" class="view">
           <div class="split">
             <form id="recForm" class="panel">
-              <h2>Nova conta</h2>
+              <h2>Nova conta mensal</h2>
               <label>Aba<select name="account_kind"><option value="fixa">Conta fixa</option><option value="variavel">Conta variavel</option></select></label>
               <label>Nome<input name="name" required /></label>
               <label>Dia<input name="day_of_month" type="number" min="1" max="31" required /></label>
@@ -296,7 +332,7 @@
               <button class="primary">Salvar</button>
             </form>
             <section class="panel">
-              <div class="layout">
+              <div class="accounts-board">
                 <section>
                   <div class="panel-head"><h2>Contas fixas</h2><span id="fixedTotal" class="pill good">R$ 0,00</span></div>
                   <div id="fixedRows" class="list"></div>
@@ -353,7 +389,7 @@
         <section id="settings" class="view">
           <div class="split">
             <form id="setForm" class="panel">
-              <h2>Configuracoes</h2>
+              <h2>Metas principais</h2>
               <label>Saldo inicial<input name="initial_balance" type="number" step="0.01" /></label>
               <label>Vencimento do cartao<input name="credit_card_due_day" type="number" min="1" max="31" /></label>
               <label>Meta minima de receita<input name="variable_income_target" type="number" min="0" step="0.01" /></label>
@@ -366,7 +402,7 @@
               <button class="primary">Salvar</button>
             </form>
             <form id="budgetForm" class="panel">
-              <h2>Orcamento mensal</h2>
+              <h2>Orcamento por categoria</h2>
               <label>Mes<input name="month" type="month" required /></label>
               <label>Categoria<input name="category" list="cats" required /></label>
               <label>Limite<input name="limit_amount" type="number" min="0" step="0.01" required /></label>
@@ -410,19 +446,22 @@
             ["2026-06-18","entrada","Comissao","DEMO Comissao venda imovel",14500,"previsto","conta_corrente",""],
             ["2026-06-04","saida","Moradia","DEMO Conta fixa paga - aluguel parcial",3600,"pago","conta_corrente",""],
             ["2026-06-06","diario","Alimentacao","DEMO Mercado e restaurantes",1180.45,"previsto","cartao_credito","2026-06"],
-            ["2026-06-09","diario","Shopping","DEMO Compra shopping parcelada 1/3",780,"previsto","cartao_credito","2026-06"],
-            ["2026-07-09","diario","Shopping","DEMO Compra shopping parcelada 2/3",780,"previsto","cartao_credito","2026-07"],
-            ["2026-08-09","diario","Shopping","DEMO Compra shopping parcelada 3/3",780,"previsto","cartao_credito","2026-08"],
+            ["2026-06-09","diario","Shopping","DEMO Compra shopping (1/3)",780,"previsto","cartao_credito","2026-06"],
+            ["2026-07-09","diario","Shopping","DEMO Compra shopping (2/3)",780,"previsto","cartao_credito","2026-07"],
+            ["2026-08-09","diario","Shopping","DEMO Compra shopping (3/3)",780,"previsto","cartao_credito","2026-08"],
             ["2026-06-11","diario","Lazer","DEMO Viagem/fim de semana",1350,"previsto","cartao_credito","2026-06"],
             ["2026-06-14","saida","Carro","DEMO Oficina e seguro auto",2100,"previsto","conta_corrente",""],
             ["2026-06-21","investimento","Investimento","DEMO Aporte mensal em renda fixa/FII",4979.03,"previsto","conta_corrente",""],
             ["2026-07-05","entrada","Pro-labore","DEMO Pro-labore julho",8000,"previsto","conta_corrente",""],
             ["2026-07-16","entrada","Comissao","DEMO Comissao menor julho",6000,"previsto","conta_corrente",""],
-            ["2026-07-20","diario","Carro","DEMO Entrada carro em 12x - parcela 1",3200,"previsto","cartao_credito","2026-07"],
-            ["2026-08-20","diario","Carro","DEMO Entrada carro em 12x - parcela 2",3200,"previsto","cartao_credito","2026-08"],
+            ["2026-07-20","diario","Carro","DEMO Entrada carro (1/12)",3200,"previsto","cartao_credito","2026-07"],
+            ["2026-08-20","diario","Carro","DEMO Entrada carro (2/12)",3200,"previsto","cartao_credito","2026-08"],
             ["2026-08-05","entrada","Pro-labore","DEMO Pro-labore agosto",8000,"previsto","conta_corrente",""],
             ["2026-08-18","entrada","Comissao","DEMO Comissao forte agosto",22000,"previsto","conta_corrente",""]
-          ].map(([tx_date, type, category, description, amount, status, payment, bill], i) => ({ id: `demo-tx-${i}`, tx_date, type, category, description, amount, status, source: `demo_seed|${payment}|${bill}` })),
+          ].map(([tx_date, type, category, description, amount, status, payment, bill], i) => {
+            const origin = /\(\d+\/\d+\)|parcelada|12x/i.test(description) ? "parcela" : "demo_seed";
+            return { id: `demo-tx-${i}`, tx_date, type, category, description, amount, status, source: `${origin}|${payment}|${bill}` };
+          }),
           inv: [
             { id: "demo-inv-1", asset: "CDB DEMO LIQUIDEZ", segment: "Renda fixa", shares: 1, price: 18500, dividend_per_share: 175 },
             { id: "demo-inv-2", asset: "TESOURO SELIC DEMO", segment: "Renda fixa", shares: 1, price: 12027.10, dividend_per_share: 115 },
@@ -490,7 +529,7 @@
         $("#logout").classList.toggle("hidden", !state.session);
       }
       function showAuth() {
-        const locked = !state.session;
+        const locked = !state.session && !state.demoMode;
         document.body.classList.toggle("locked", locked);
         $("#auth").classList.toggle("hidden", !cfgOk() || !locked);
         $("#setup").classList.toggle("hidden", cfgOk());
@@ -499,7 +538,7 @@
         $("#refresh").disabled = locked;
       }
       function setView(name) {
-        if (!state.session) return;
+        if (!state.session && !state.demoMode) return;
         state.view = name;
         document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === name));
         document.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b.dataset.view === name));
@@ -509,7 +548,7 @@
           simulator: ["Simulador", "Teste uma compra antes de comprometer seu caixa."],
           recurring: ["Contas", "Contas fixas e variaveis do mes."],
           investments: ["Investimentos", "Renda fixa, renda variavel e renda mensal."],
-          settings: ["Configuracoes", "Saldo inicial e orcamentos."]
+          settings: ["Configuracoes", "Metas, orcamento e integracoes."]
         }[name];
         $("#title").textContent = copy[0];
         $("#subtitle").textContent = copy[1];
@@ -609,6 +648,29 @@
       function bar(label, value, max, danger = false) {
         const pct = max ? Math.min(140, Math.max(0, value / max * 100)) : 0;
         return `<div class="mini-chart"><div class="row"><span>${label}</span><strong>${Math.round(value)}%</strong></div><div class="bar ${danger ? "over" : ""}"><span style="width:${pct}%"></span></div></div>`;
+      }
+      function ratioCard(label, value, income, target) {
+        const pct = income ? value / income * 100 : 0;
+        const over = pct > target + 5;
+        const good = pct <= target;
+        return `<article class="ratio-card ${over ? "over" : good ? "good" : ""}"><div class="row"><strong>${label}</strong><span>${Math.round(pct)}%</span></div><div class="bar ${over ? "over" : ""}"><span style="width:${Math.min(100, pct)}%"></span></div><div class="ratio-meta"><span>${brl.format(value)}</span><span>meta ${target}%</span></div></article>`;
+      }
+      function installmentGroups() {
+        const groups = new Map();
+        const m = currentMonth();
+        state.tx.filter(x => method(x) === "cartao_credito" && sourceMeta(x).origin === "parcela").forEach(x => {
+          const match = String(x.description || "").match(/\((\d+)\/(\d+)\)\s*$/);
+          if (!match) return;
+          const current = Number(match[1]), total = Number(match[2]);
+          const name = String(x.description || "").replace(/\s*\(\d+\/\d+\)\s*$/, "");
+          const key = `${name}|${n(x.amount)}`;
+          const g = groups.get(key) || { name, amount: n(x.amount), total, paid: 0, months: [] };
+          g.total = Math.max(g.total, total);
+          if (billMonth(x) <= m) g.paid = Math.max(g.paid, current);
+          g.months.push(billMonth(x));
+          groups.set(key, g);
+        });
+        return [...groups.values()].filter(g => g.paid < g.total).sort((a,b) => b.amount - a.amount);
       }
       function quoteForAsset(x) { return state.market[String(x.asset || "").toUpperCase()] || {}; }
       function assetCurrentPrice(x) { return n(quoteForAsset(x).price) || n(x.price); }
@@ -714,16 +776,23 @@
         const investTarget = n(state.settings.monthly_invest_target);
         const incomeTargetPct = incomeTarget ? c.income / incomeTarget * 100 : 0;
         const investTargetPct = investTarget ? c.invest / investTarget * 100 : c.investRate;
+        const essentialCats = new Set(["Moradia", "Alimentacao", "Saude", "Contas", "MEI", "Financiamento", "Carro"]);
+        const essentials = c.items.filter(x => (x.type === "saida" || x.type === "diario") && essentialCats.has(x.category)).reduce((s,x) => s + n(x.amount), 0);
+        const wants = Math.max(0, c.expense - essentials);
         $("#healthCharts").innerHTML = [
-          bar("Sobra da receita", Math.max(0, c.savingsRate), 40, c.perf < 0),
-          bar("Cartao sobre receita", c.cardRate, 55, c.cardRate > 55),
-          bar("Investimento", investTarget ? investTargetPct : c.investRate, 100, false),
-          bar("Meta de receita", incomeTarget ? incomeTargetPct : 0, 100, false)
+          ratioCard("50% essenciais", essentials, c.income, 50),
+          ratioCard("30% estilo de vida", wants, c.income, 30),
+          ratioCard("20% investimentos", c.invest, c.income, 20),
+          ratioCard("Receita x meta", c.income, incomeTarget || c.income || 1, 100)
         ].join("");
-        $("#healthNote").textContent = h.note;
+        $("#healthNote").textContent = "";
         safeRenderDashboardGoals(m, c, stats);
         const today = new Date(), tm = monthNow();
-        $("#cash").innerHTML = c.flow.map(x => `<article class="day ${x.balance < 0 ? "negative" : ""} ${m === tm && x.day === today.getDate() ? "today" : ""}"><strong>Dia ${x.day}</strong><small>${brl.format(x.movement)}</small><div>${brl.format(x.balance)}</div><small>${x.items.length} item(ns)</small></article>`).join("");
+        const flowRows = c.flow.filter(x => x.items.length || (m === tm && x.day === today.getDate()) || x.balance < 0);
+        $("#cash").innerHTML = flowRows.length ? flowRows.map(x => {
+          const title = x.items.length ? x.items.slice(0, 2).map(i => i.description || i.category).join(" + ") : "Sem movimento";
+          return `<article class="day ${x.balance < 0 ? "negative" : ""} ${m === tm && x.day === today.getDate() ? "today" : ""}"><strong>Dia ${x.day}</strong><div><strong>${title}</strong><small>${x.items.length} item(ns)</small></div><div class="day-money ${x.movement < 0 ? "bad-text" : "good-text"}">${brl.format(x.movement)}<div class="day-balance">saldo ${brl.format(x.balance)}</div></div></article>`;
+        }).join("") : "<p>Sem movimentos de caixa neste mes.</p>";
         const budgets = state.budgets.filter(b => iso(b.month).startsWith(m));
         $("#budgets").innerHTML = budgets.length ? budgets.map(b => {
           const used = c.items.filter(x => x.category === b.category && (x.type === "saida" || x.type === "diario")).reduce((s,x) => s + n(x.amount), 0);
@@ -731,6 +800,12 @@
           return `<article class="item"><div class="row"><strong>${b.category}</strong><span class="${over ? "bad-text" : ""}">${brl.format(used)} / ${brl.format(limit)}</span></div><div class="bar ${over ? "over" : ""}"><span style="width:${pct}%"></span></div><small>${over ? "Fora do orcamento" : "Dentro do orcamento"}</small></article>`;
         }).join("") : "<p>Nenhum orcamento neste mes.</p>";
         $("#cardRows").innerHTML = c.card.length ? c.card.map(x => `<article class="item"><div class="row"><strong>${x.description || x.category}</strong><span>${brl.format(n(x.amount))}</span></div><small>${iso(x.tx_date)} - ${x.category}</small></article>`).join("") : "<p>Nenhuma compra no cartao nesta fatura.</p>";
+        const installments = installmentGroups();
+        $("#installmentRows").innerHTML = installments.length ? `<div class="panel-head installment-title"><h2>Parcelamentos ativos</h2><span class="pill bad">${brl.format(installments.reduce((s,g) => s + g.amount, 0))}/mes</span></div>` + installments.slice(0, 8).map(g => {
+          const remaining = Math.max(0, g.total - g.paid);
+          const pct = g.total ? g.paid / g.total * 100 : 0;
+          return `<article class="installment-card"><div class="row"><strong>${g.name}</strong><span>${brl.format(g.amount)}/mes</span></div><small>${g.paid}/${g.total} parcelas</small><div class="bar"><span style="width:${pct}%"></span></div><div class="ratio-meta"><span>${Math.round(pct)}% pago</span><span>faltam ${remaining}x - ${brl.format(remaining * g.amount)}</span></div></article>`;
+        }).join("") : "";
         const alerts = monthlyAlerts(m, c);
         const badAlerts = alerts.filter(x => x.level === "bad").length;
         $("#alertCount").textContent = String(badAlerts);
@@ -738,7 +813,7 @@
         $("#alerts").innerHTML = alerts.map(x => `<article class="item ${x.level}"><div class="row"><strong>${x.title}</strong><span>${x.level === "bad" ? "Alerta" : "OK"}</span></div><small>${x.body}</small></article>`).join("");
         $("#txRows").innerHTML = state.tx.filter(x => iso(x.tx_date).startsWith(m)).map(x => `<tr><td>${iso(x.tx_date)}</td><td>${x.type}</td><td>${method(x) === "cartao_credito" ? "Cartao" : "Conta"}</td><td>${method(x) === "cartao_credito" ? billMonth(x) : "-"}</td><td>${x.category}</td><td>${x.description || "-"}</td><td>${brl.format(n(x.amount))}</td><td><button class="danger" data-del="${x.id}">Excluir</button></td></tr>`).join("") || '<tr><td colspan="8">Sem lancamentos.</td></tr>';
         const paid = paidRecurringIds(m);
-        const accountCard = x => `<article class="item ${paid.has(x.id) ? "good" : ""}"><div class="row"><strong>${cleanAccountName(x)}</strong><span>${brl.format(n(x.amount))}</span></div><small>Todo dia ${x.day_of_month} - ${x.category} - ${method(x) === "cartao_credito" ? "cartao" : "conta corrente"}${paid.has(x.id) ? " - pago no mes" : ""}</small><div class="payline"><label>Valor pago<input data-pay-amount="${x.id}" type="number" min="0.01" step="0.01" value="${n(x.amount)}" ${paid.has(x.id) ? "disabled" : ""} /></label><button class="secondary" data-pay-rec="${x.id}" ${paid.has(x.id) ? "disabled" : ""}>Pago</button></div></article>`;
+        const accountCard = x => `<article class="item account-card ${paid.has(x.id) ? "good" : ""}"><div class="account-title"><strong>${cleanAccountName(x)}</strong><span>${brl.format(n(x.amount))}</span></div><small>Dia ${x.day_of_month} - ${x.category} - ${method(x) === "cartao_credito" ? "cartao" : "conta corrente"}${paid.has(x.id) ? " - pago" : ""}</small><div class="payline"><label>Valor pago<input data-pay-amount="${x.id}" type="number" min="0.01" step="0.01" value="${n(x.amount)}" ${paid.has(x.id) ? "disabled" : ""} /></label><button class="secondary" data-pay-rec="${x.id}" ${paid.has(x.id) ? "disabled" : ""}>Pago</button></div></article>`;
         const fixed = state.rec.filter(x => accountKind(x) === "fixa");
         const variable = state.rec.filter(x => accountKind(x) === "variavel");
         $("#fixedTotal").textContent = brl.format(fixed.reduce((s,x) => s + n(x.amount), 0));
@@ -761,7 +836,17 @@
       function renderProjection() {
         const p = projection();
         $("#projectionSummary").innerHTML = `<span class="good-text">Entradas ${brl.format(p.entries)}</span><span class="bad-text">Saidas ${brl.format(p.exits)}</span><strong class="${p.final < 0 ? "bad-text" : "good-text"}">Saldo ${brl.format(p.final)}</strong>`;
-        $("#projectionRows").innerHTML = p.rows.length ? p.rows.slice(0, 24).map(x => `<article class="projection-row ${x.balance < 0 ? "bad" : ""}"><div class="projection-date">${iso(x.tx_date).slice(8,10)}<br><small>${iso(x.tx_date).slice(5,7)}</small></div><div><strong>${x.description || x.category}</strong><small>${x.category} - ${method(x) === "cartao_credito" ? "cartao" : "conta"}</small></div><div><strong>${brl.format(x.movement)}</strong><small>saldo ${brl.format(x.balance)}</small></div></article>`).join("") : "<p>Sem eventos previstos no periodo.</p>";
+        $("#projectionRows").innerHTML = p.rows.length ? p.rows.slice(0, 24).map(x => {
+          const meta = sourceMeta(x);
+          const canPayRec = meta.origin === "recurring_preview";
+          const canPayCard = meta.origin === "card_bill_preview";
+          const action = canPayRec
+            ? `<div class="projection-actions"><input data-proj-amount="${meta.payment}" type="number" min="0.01" step="0.01" value="${n(x.amount)}" /><button class="secondary" data-proj-pay-rec="${meta.payment}">Pago</button></div>`
+            : canPayCard
+              ? `<div class="projection-actions"><button class="secondary" data-proj-pay-card="${meta.bill}">Pagar fatura</button></div>`
+              : `<div class="projection-actions"><span class="pill ${x.virtual ? "bad" : "good"}">${x.virtual ? "Previsto" : "Lancado"}</span></div>`;
+          return `<article class="projection-row ${x.balance < 0 ? "bad" : ""}"><div class="projection-date">${iso(x.tx_date).slice(8,10)}<br><small>${iso(x.tx_date).slice(5,7)}</small></div><div><strong>${x.description || x.category}</strong><small>${x.category} - ${method(x) === "cartao_credito" ? "cartao" : "conta"}</small></div><div><strong>${brl.format(x.movement)}</strong><small>saldo ${brl.format(x.balance)}</small></div>${action}</article>`;
+        }).join("") : "<p>Sem eventos previstos no periodo.</p>";
       }
       function renderInvestments() {
         const { rows, total, cost, fiis, dividends, profit } = investmentStats();
@@ -852,6 +937,26 @@
         const price = n(row.price);
         const dividend = n(row.dividend_per_share);
         const current = state.inv.find(x => String(x.asset || "").toUpperCase() === asset && (x.segment || "") === segment);
+        if (!state.session || state.demoMode) {
+          if (row.operation === "buy") {
+            if (current) {
+              const oldQty = n(current.shares), oldAvg = n(current.price), newQty = oldQty + qty;
+              current.shares = newQty;
+              current.price = newQty ? ((oldQty * oldAvg) + (qty * price)) / newQty : price;
+              current.dividend_per_share = dividend || n(current.dividend_per_share);
+            } else {
+              state.inv = [...state.inv, { id: `local-inv-${Date.now()}`, asset, segment, shares: qty, price, dividend_per_share: dividend }];
+            }
+          } else if (row.operation === "sell" && current) {
+            current.shares = Math.max(0, n(current.shares) - qty);
+            if (!current.shares) state.inv = state.inv.filter(x => x !== current);
+          } else if (row.operation === "set") {
+            if (current) Object.assign(current, { shares: qty, price, dividend_per_share: dividend });
+            else state.inv = [...state.inv, { id: `local-inv-${Date.now()}`, asset, segment, shares: qty, price, dividend_per_share: dividend }];
+          }
+          render();
+          return;
+        }
         if (row.operation === "buy") {
           if (current) {
             const oldQty = n(current.shares), oldAvg = n(current.price), newQty = oldQty + qty;
@@ -907,6 +1012,14 @@
         render();
       }
       async function insert(table, row) {
+        if (!state.session || state.demoMode) {
+          const localRow = { ...row, id: `local-${table}-${Date.now()}-${Math.random().toString(16).slice(2)}` };
+          if (table === "transactions") state.tx = [localRow, ...state.tx];
+          if (table === "recurring_items") state.rec = [...state.rec, localRow];
+          if (table === "investments") state.inv = [...state.inv, localRow];
+          render();
+          return;
+        }
         let { error } = await state.sb.from(table).insert(row);
         const missingNewCols = error && /payment_method|card_bill_month|account_kind/i.test(error.message || "");
         if (missingNewCols && table === "transactions") {
@@ -922,6 +1035,12 @@
       }
       async function insertRows(table, rows) {
         if (!rows.length) return;
+        if (!state.session || state.demoMode) {
+          const localRows = rows.map((row, i) => ({ ...row, id: `local-${table}-${Date.now()}-${i}` }));
+          if (table === "transactions") state.tx = [...localRows, ...state.tx];
+          render();
+          return;
+        }
         let { error } = await state.sb.from(table).insert(rows);
         if (error && /payment_method|card_bill_month/i.test(error.message || "") && table === "transactions") {
           const legacy = rows.map(({ payment_method, card_bill_month, ...row }) => row);
@@ -990,8 +1109,8 @@
           source: `recurring_paid|${item.id}|${m}`
         });
       }
-      async function payCardBill() {
-        const m = currentMonth(), c = calc(m);
+      async function payCardBill(month = currentMonth()) {
+        const m = month || currentMonth(), c = calc(m);
         if (!c.cardBill) return alert("Nao existe fatura calculada para este mes.");
         if (hasPaidCardBill(m)) return alert("Fatura deste mes ja registrada como paga.");
         await insert("transactions", {
@@ -1005,6 +1124,25 @@
           status: "pago",
           source: `card_bill_paid||${m}`
         });
+      }
+      async function saveQuickProjection(row, type) {
+        const tx = {
+          tx_date: row.tx_date,
+          type,
+          category: type === "entrada" ? "Receita" : "Avulso",
+          description: row.description,
+          amount: n(row.amount),
+          payment_method: "conta_corrente",
+          card_bill_month: null,
+          status: "previsto",
+          source: `projecao_rapida|conta_corrente|`
+        };
+        if (!state.session || state.demoMode) {
+          state.tx = [{ ...tx, id: `demo-quick-${Date.now()}` }, ...state.tx];
+          render();
+          return;
+        }
+        await insert("transactions", tx);
       }
       function sim(row) {
         const fakeRows = installmentRows({ ...row, type: "saida", payment_method: "cartao_credito", card_bill_month: row.card_bill_month || iso(row.tx_date).slice(0,7), source: "simulador" });
@@ -1066,6 +1204,8 @@
       }
       function bind() {
         document.querySelectorAll(".tab").forEach(b => b.onclick = () => setView(b.dataset.view));
+        document.querySelectorAll("[data-view-shortcut]").forEach(b => b.onclick = () => setView(b.dataset.viewShortcut));
+        document.querySelector("[data-preset-shortcut='card']").onclick = () => fillTx({ type: "diario", payment_method: "cartao_credito", category: "Alimentacao", description: "Compra no cartao" });
         document.querySelector("[data-preset='fixed']").onclick = () => fillTx({ type: "saida", payment_method: "conta_corrente", category: "Contas", description: "Conta fixa paga" });
         document.querySelector("[data-preset='card']").onclick = () => fillTx({ type: "diario", payment_method: "cartao_credito", category: "Alimentacao", description: "Compra no cartao" });
         document.querySelector("[data-preset='car']").onclick = () => fillSim({ category: "Carro", description: "Compra de carro" });
@@ -1096,22 +1236,42 @@
         $("#txForm").onsubmit = async e => { e.preventDefault(); await insertRows("transactions", installmentRows(formData(e.currentTarget))).catch(alertErr); e.currentTarget.reset(); setDates(); };
         $("#recForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await insert("recurring_items", { name: r.name, account_kind: r.account_kind || "fixa", day_of_month: n(r.day_of_month), type: r.type, payment_method: r.payment_method || "conta_corrente", category: r.category, amount: n(r.amount), active: true }).catch(alertErr); e.currentTarget.reset(); };
         $("#simForm").onsubmit = e => { e.preventDefault(); sim(formData(e.currentTarget)); };
+        $("#quickProjectionForm").onsubmit = async e => { e.preventDefault(); await saveQuickProjection(formData(e.currentTarget), e.submitter.value).catch(alertErr); e.currentTarget.reset(); setDates(); };
+        $("#projectionRows").onclick = e => {
+          const rec = e.target.closest("[data-proj-pay-rec]");
+          const card = e.target.closest("[data-proj-pay-card]");
+          if (rec) payRecurring(rec.dataset.projPayRec, document.querySelector(`[data-proj-amount="${rec.dataset.projPayRec}"]`)?.value).catch(alertErr);
+          if (card) payCardBill(card.dataset.projPayCard).catch(alertErr);
+        };
         $("#invForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await saveInvestmentOperation(r).catch(alertErr); e.currentTarget.reset(); };
         $("#setForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await upsertSettings({ initial_balance: n(r.initial_balance), credit_card_due_day: n(r.credit_card_due_day) || 10, variable_income_target: n(r.variable_income_target), monthly_invest_target: n(r.monthly_invest_target), emergency_goal: n(r.emergency_goal), portfolio_goal: n(r.portfolio_goal), fii_goal: n(r.fii_goal), dividend_goal: n(r.dividend_goal), brapi_token: String(r.brapi_token || "").trim() }).catch(alertErr); };
         $("#budgetForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await upsertBudget(r).catch(alertErr); };
-        $("#txRows").onclick = async e => { const b = e.target.closest("[data-del]"); if (b && confirm("Excluir lancamento?")) { const { error } = await state.sb.from("transactions").delete().eq("id", b.dataset.del); if (error) alertErr(error); else await load(); } };
-        $("#invRows").onclick = async e => { const b = e.target.closest("[data-inv-del]"); if (b && confirm("Excluir ativo?")) { const { error } = await state.sb.from("investments").delete().eq("id", b.dataset.invDel); if (error) alertErr(error); else await load(); } };
+        $("#txRows").onclick = async e => { const b = e.target.closest("[data-del]"); if (b && confirm("Excluir lancamento?")) { if (!state.session || state.demoMode) { state.tx = state.tx.filter(x => x.id !== b.dataset.del); render(); return; } const { error } = await state.sb.from("transactions").delete().eq("id", b.dataset.del); if (error) alertErr(error); else await load(); } };
+        $("#invRows").onclick = async e => { const b = e.target.closest("[data-inv-del]"); if (b && confirm("Excluir ativo?")) { if (!state.session || state.demoMode) { state.inv = state.inv.filter(x => x.id !== b.dataset.invDel); render(); return; } const { error } = await state.sb.from("investments").delete().eq("id", b.dataset.invDel); if (error) alertErr(error); else await load(); } };
         $("#fixedRows").onclick = e => { const b = e.target.closest("[data-pay-rec]"); if (b) payRecurring(b.dataset.payRec, document.querySelector(`[data-pay-amount="${b.dataset.payRec}"]`)?.value).catch(alertErr); };
         $("#variableRows").onclick = e => { const b = e.target.closest("[data-pay-rec]"); if (b) payRecurring(b.dataset.payRec, document.querySelector(`[data-pay-amount="${b.dataset.payRec}"]`)?.value).catch(alertErr); };
         $("#xlsx").onchange = async e => { const f = e.target.files[0]; if (f) await importXlsx(f).catch(alertErr); e.target.value = ""; };
       }
       async function upsertSettings(obj) {
+        if (!state.session || state.demoMode) {
+          state.settings = { ...state.settings, ...obj };
+          render();
+          return;
+        }
         const rows = Object.entries(obj).map(([key, value]) => ({ user_id: state.session.user.id, key, value }));
         const { error } = await state.sb.from("app_settings").upsert(rows, { onConflict: "user_id,key" });
         if (error) throw error;
         await load();
       }
       async function upsertBudget(r) {
+        if (!state.session || state.demoMode) {
+          const month = `${r.month}-01`;
+          const existing = state.budgets.find(x => iso(x.month) === month && x.category === r.category);
+          if (existing) existing.limit_amount = n(r.limit_amount);
+          else state.budgets = [{ id: `local-budget-${Date.now()}`, month, category: r.category, limit_amount: n(r.limit_amount) }, ...state.budgets];
+          render();
+          return;
+        }
         const { error } = await state.sb.from("budgets").upsert({ user_id: state.session.user.id, month: `${r.month}-01`, category: r.category, limit_amount: n(r.limit_amount) }, { onConflict: "user_id,month,category" });
         if (error) throw error;
         await load();
