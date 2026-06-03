@@ -68,6 +68,12 @@
       .mini-chart { display: grid; gap: 6px; }
       .mini-chart .row { font-size: 13px; font-weight: 800; }
       .health-note { margin-top: 10px; font-weight: 800; }
+      .quickbar { display: grid; grid-template-columns: repeat(4, minmax(140px, 1fr)); gap: 10px; margin-bottom: 12px; }
+      .quickbar button { min-height: 48px; }
+      .item.bad { border-color: #d86b6b; background: #fff0f0; }
+      .item.good { border-color: #8bc9a6; background: #f0fff6; }
+      .sim-risk { border-color: #d86b6b; background: #fff0f0; }
+      .sim-ok { border-color: #8bc9a6; background: #f0fff6; }
       .layout { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(320px, .75fr); gap: 12px; }
       .split { display: grid; grid-template-columns: minmax(270px, 360px) minmax(0, 1fr); gap: 12px; }
       .panel { padding: 16px; min-width: 0; }
@@ -104,6 +110,7 @@
         main, aside { padding: 16px; }
         header, .notice { flex-direction: column; align-items: stretch; }
         nav, .grid-kpi { grid-template-columns: 1fr 1fr; }
+        .quickbar { grid-template-columns: 1fr 1fr; }
       }
     </style>
   </head>
@@ -176,9 +183,19 @@
               <div id="cardRows" class="list"></div>
             </section>
           </div>
+          <section class="panel" style="margin-top:12px">
+            <div class="panel-head"><h2>Alertas do mes</h2><span id="alertCount" class="pill good">0</span></div>
+            <div id="alerts" class="list"></div>
+          </section>
         </section>
 
         <section id="transactions" class="view">
+          <div class="quickbar">
+            <button class="secondary" data-preset="fixed">Pagar conta fixa</button>
+            <button class="secondary" data-pay-card>Registrar fatura</button>
+            <button class="secondary" data-preset="card">Compra no cartao</button>
+            <button class="secondary" data-preset="car">Simular carro</button>
+          </div>
           <div class="split">
             <form id="txForm" class="panel">
               <h2>Novo lancamento</h2>
@@ -318,6 +335,12 @@
       function signed(x) { return x.type === "entrada" ? n(x.amount) : -n(x.amount); }
       function cashSigned(x) { return x.type === "entrada" ? n(x.amount) : -n(x.amount); }
       function currentMonth() { return $("#month").value || monthNow(); }
+      function paidRecurringIds(m) {
+        return new Set(state.tx.filter(x => sourceMeta(x).origin === "recurring_paid" && sourceMeta(x).bill === m).map(x => sourceMeta(x).payment));
+      }
+      function hasPaidCardBill(m) {
+        return state.tx.some(x => sourceMeta(x).origin === "card_bill_paid" && sourceMeta(x).bill === m);
+      }
       function setSessionLabel() {
         $("#sessionLabel").textContent = state.session?.user?.email || "Desconectado";
         $("#logout").classList.toggle("hidden", !state.session);
@@ -349,9 +372,10 @@
       }
       function recurringFor(m) {
         const max = daysIn(m);
-        return state.rec.filter(x => x.active !== false).map(x => {
+        const paid = paidRecurringIds(m);
+        return state.rec.filter(x => x.active !== false && !paid.has(x.id)).map(x => {
           const d = Math.min(n(x.day_of_month), max);
-          return { tx_date: `${m}-${String(d).padStart(2,"0")}`, type: x.type, category: x.category, description: x.name, amount: n(x.amount), payment_method: method(x), virtual: true };
+          return { tx_date: `${m}-${String(d).padStart(2,"0")}`, type: x.type, category: x.category, description: x.name, amount: n(x.amount), payment_method: method(x), source: `recurring_preview|${x.id}|${m}`, virtual: true };
         });
       }
       function monthItems(m, extra = []) {
@@ -368,7 +392,7 @@
       function cashItems(m, extra = []) {
         const accountItems = monthItems(m, extra).filter(x => method(x) !== "cartao_credito");
         const billAmount = cardBillItems(m, extra).reduce((s, x) => s + n(x.amount), 0);
-        const bill = billAmount ? [{ tx_date: cardBillDueDate(m), type: "saida", category: "Cartao de credito", description: "Fatura do cartao", amount: billAmount, payment_method: "conta_corrente", virtual: true }] : [];
+        const bill = billAmount && !hasPaidCardBill(m) ? [{ tx_date: cardBillDueDate(m), type: "saida", category: "Cartao de credito", description: "Fatura do cartao prevista", amount: billAmount, payment_method: "conta_corrente", source: `card_bill_preview||${m}`, virtual: true }] : [];
         return [...accountItems, ...bill].sort((a,b) => iso(a.tx_date).localeCompare(iso(b.tx_date)));
       }
       function opening(m) {
@@ -417,6 +441,19 @@
         if (c.savingsRate >= 20 && c.investRate >= 10) return { label: "Forte", bad: false, note: "Mes saudavel: sobra e investimento em bom nivel." };
         return { label: "OK", bad: false, note: "Mes controlado, mas ainda da para fortalecer sobra e investimento." };
       }
+      function monthlyAlerts(m, c) {
+        const alerts = [];
+        const badDay = c.flow.find(x => x.balance < 0);
+        if (badDay) alerts.push({ level: "bad", title: `Caixa negativo no dia ${badDay.day}`, body: `Saldo previsto: ${brl.format(badDay.balance)}.` });
+        if (c.perf < 0) alerts.push({ level: "bad", title: "Mes fechando no vermelho", body: `Performance prevista: ${brl.format(c.perf)}.` });
+        if (c.cardRate > 55) alerts.push({ level: "bad", title: "Cartao pesado", body: `A fatura esta em ${Math.round(c.cardRate)}% da receita do mes.` });
+        state.budgets.filter(b => iso(b.month).startsWith(m)).forEach(b => {
+          const used = c.items.filter(x => x.category === b.category && (x.type === "saida" || x.type === "diario")).reduce((s,x) => s + n(x.amount), 0);
+          if (used > n(b.limit_amount)) alerts.push({ level: "bad", title: `${b.category} fora do orcamento`, body: `${brl.format(used)} usado de ${brl.format(n(b.limit_amount))}.` });
+        });
+        if (!alerts.length) alerts.push({ level: "good", title: "Tudo dentro do plano", body: "Nenhum alerta critico para o mes selecionado." });
+        return alerts;
+      }
       function render() {
         const m = currentMonth(), c = calc(m);
         $("#mIncome").textContent = brl.format(c.income);
@@ -451,8 +488,14 @@
           return `<article class="item"><div class="row"><strong>${b.category}</strong><span class="${over ? "bad-text" : ""}">${brl.format(used)} / ${brl.format(limit)}</span></div><div class="bar ${over ? "over" : ""}"><span style="width:${pct}%"></span></div><small>${over ? "Fora do orcamento" : "Dentro do orcamento"}</small></article>`;
         }).join("") : "<p>Nenhum orcamento neste mes.</p>";
         $("#cardRows").innerHTML = c.card.length ? c.card.map(x => `<article class="item"><div class="row"><strong>${x.description || x.category}</strong><span>${brl.format(n(x.amount))}</span></div><small>${iso(x.tx_date)} - ${x.category}</small></article>`).join("") : "<p>Nenhuma compra no cartao nesta fatura.</p>";
+        const alerts = monthlyAlerts(m, c);
+        const badAlerts = alerts.filter(x => x.level === "bad").length;
+        $("#alertCount").textContent = String(badAlerts);
+        $("#alertCount").className = `pill ${badAlerts ? "bad" : "good"}`;
+        $("#alerts").innerHTML = alerts.map(x => `<article class="item ${x.level}"><div class="row"><strong>${x.title}</strong><span>${x.level === "bad" ? "Alerta" : "OK"}</span></div><small>${x.body}</small></article>`).join("");
         $("#txRows").innerHTML = state.tx.filter(x => iso(x.tx_date).startsWith(m)).map(x => `<tr><td>${iso(x.tx_date)}</td><td>${x.type}</td><td>${method(x) === "cartao_credito" ? "Cartao" : "Conta"}</td><td>${method(x) === "cartao_credito" ? billMonth(x) : "-"}</td><td>${x.category}</td><td>${x.description || "-"}</td><td>${brl.format(n(x.amount))}</td><td><button class="danger" data-del="${x.id}">Excluir</button></td></tr>`).join("") || '<tr><td colspan="8">Sem lancamentos.</td></tr>';
-        $("#recRows").innerHTML = state.rec.map(x => `<article class="item"><div class="row"><strong>${x.name}</strong><span>${brl.format(n(x.amount))}</span></div><small>Todo dia ${x.day_of_month} - ${x.category} - ${method(x) === "cartao_credito" ? "cartao" : "conta corrente"}</small></article>`).join("") || "<p>Sem contas fixas.</p>";
+        const paid = paidRecurringIds(m);
+        $("#recRows").innerHTML = state.rec.map(x => `<article class="item ${paid.has(x.id) ? "good" : ""}"><div class="row"><strong>${x.name}</strong><span>${brl.format(n(x.amount))}</span></div><small>Todo dia ${x.day_of_month} - ${x.category} - ${method(x) === "cartao_credito" ? "cartao" : "conta corrente"}${paid.has(x.id) ? " - pago no mes" : ""}</small><div class="actions"><button class="secondary" data-pay-rec="${x.id}" ${paid.has(x.id) ? "disabled" : ""}>Pagar</button></div></article>`).join("") || "<p>Sem contas fixas.</p>";
         $("#setForm").elements.initial_balance.value = state.settings.initial_balance || "";
         $("#setForm").elements.credit_card_due_day.value = state.settings.credit_card_due_day || 10;
         $("#setForm").elements.variable_income_target.value = state.settings.variable_income_target || "";
@@ -520,6 +563,58 @@
         const bill = payment === "cartao_credito" ? `${row.card_bill_month || iso(row.tx_date).slice(0,7)}-01` : null;
         return { tx_date: row.tx_date, type: row.type, category: row.category, description: row.description || null, amount: n(row.amount), payment_method: payment, card_bill_month: bill, status: "previsto", source: `${row.source || "manual"}|${payment}|${bill ? bill.slice(0,7) : ""}` };
       }
+      function fillTx(row) {
+        setView("transactions");
+        const f = $("#txForm").elements;
+        f.tx_date.value = row.tx_date || new Date().toISOString().slice(0, 10);
+        f.type.value = row.type || "saida";
+        f.payment_method.value = row.payment_method || "conta_corrente";
+        f.card_bill_month.value = row.card_bill_month || currentMonth();
+        f.category.value = row.category || "";
+        f.description.value = row.description || "";
+        f.amount.value = row.amount || "";
+      }
+      function fillSim(row) {
+        setView("simulator");
+        const f = $("#simForm").elements;
+        f.tx_date.value = row.tx_date || new Date().toISOString().slice(0, 10);
+        f.card_bill_month.value = row.card_bill_month || currentMonth();
+        f.category.value = row.category || "Carro";
+        f.description.value = row.description || "";
+        f.amount.value = row.amount || "";
+      }
+      async function payRecurring(id) {
+        const item = state.rec.find(x => x.id === id);
+        if (!item) return;
+        const m = currentMonth();
+        await insert("transactions", {
+          tx_date: new Date().toISOString().slice(0, 10),
+          type: item.type,
+          category: item.category,
+          description: item.name,
+          amount: n(item.amount),
+          payment_method: method(item),
+          card_bill_month: method(item) === "cartao_credito" ? `${m}-01` : null,
+          status: "pago",
+          source: `recurring_paid|${item.id}|${m}`
+        });
+      }
+      async function payCardBill() {
+        const m = currentMonth(), c = calc(m);
+        if (!c.cardBill) return alert("Nao existe fatura calculada para este mes.");
+        if (hasPaidCardBill(m)) return alert("Fatura deste mes ja registrada como paga.");
+        await insert("transactions", {
+          tx_date: new Date().toISOString().slice(0, 10),
+          type: "saida",
+          category: "Cartao de credito",
+          description: `Fatura do cartao ${m}`,
+          amount: c.cardBill,
+          payment_method: "conta_corrente",
+          card_bill_month: null,
+          status: "pago",
+          source: `card_bill_paid||${m}`
+        });
+      }
       function sim(row) {
         const fake = txFrom({ ...row, type: "saida", payment_method: "cartao_credito", card_bill_month: row.card_bill_month || iso(row.tx_date).slice(0,7), source: "simulador" });
         const m = iso(fake.tx_date).slice(0,7), c = calc(m, [fake]);
@@ -530,8 +625,10 @@
           const used = c.items.filter(x => x.category === fake.category && (x.type === "saida" || x.type === "diario")).reduce((s,x) => s + n(x.amount), 0);
           if (used > n(b.limit_amount)) risks.push(`Categoria ${fake.category} passa para ${brl.format(used)} de ${brl.format(n(b.limit_amount))}.`);
         }
+        if (fake.category === "Carro" && !b && n(fake.amount) > Math.max(c.income * 0.15, 3000)) risks.push(`Compra de carro sem orcamento definido e alta para sua receita do mes.`);
         if (c.perf < 0) risks.push(`Performance fica negativa: ${brl.format(c.perf)}.`);
         if (badDay) risks.push(`Saldo fica negativo no dia ${badDay.day}: ${brl.format(badDay.balance)}.`);
+        $("#simResult").className = `panel ${risks.length ? "sim-risk" : "sim-ok"}`;
         $("#simResult").innerHTML = `<h2 class="${risks.length ? "bad-text" : "good-text"}">${risks.length ? "Compra fora do plano" : "Compra cabe no plano"}</h2><p>Fatura analisada: <strong>${billMonth(fake)}</strong></p><p>Saldo final da conta: <strong>${brl.format(c.final)}</strong></p><p>Performance: <strong>${brl.format(c.perf)}</strong></p>${risks.length ? `<ul>${risks.map(x => `<li>${x}</li>`).join("")}</ul>` : "<p>Nenhum alerta critico encontrado.</p>"}`;
       }
       function excelDate(year, mi, day) {
@@ -575,6 +672,10 @@
       }
       function bind() {
         document.querySelectorAll(".tab").forEach(b => b.onclick = () => setView(b.dataset.view));
+        document.querySelector("[data-preset='fixed']").onclick = () => fillTx({ type: "saida", payment_method: "conta_corrente", category: "Contas", description: "Conta fixa paga" });
+        document.querySelector("[data-preset='card']").onclick = () => fillTx({ type: "diario", payment_method: "cartao_credito", category: "Alimentacao", description: "Compra no cartao" });
+        document.querySelector("[data-preset='car']").onclick = () => fillSim({ category: "Carro", description: "Compra de carro" });
+        document.querySelector("[data-pay-card]").onclick = () => payCardBill().catch(alertErr);
         $("#month").onchange = render;
         $("#refresh").onclick = () => load().catch(alertErr);
         $("#logout").onclick = () => state.sb.auth.signOut();
@@ -603,6 +704,7 @@
         $("#budgetForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await upsertBudget(r).catch(alertErr); };
         $("#txRows").onclick = async e => { const b = e.target.closest("[data-del]"); if (b && confirm("Excluir lancamento?")) { const { error } = await state.sb.from("transactions").delete().eq("id", b.dataset.del); if (error) alertErr(error); else await load(); } };
         $("#invRows").onclick = async e => { const b = e.target.closest("[data-inv-del]"); if (b && confirm("Excluir ativo?")) { const { error } = await state.sb.from("investments").delete().eq("id", b.dataset.invDel); if (error) alertErr(error); else await load(); } };
+        $("#recRows").onclick = e => { const b = e.target.closest("[data-pay-rec]"); if (b) payRecurring(b.dataset.payRec).catch(alertErr); };
         $("#xlsx").onchange = async e => { const f = e.target.files[0]; if (f) await importXlsx(f).catch(alertErr); e.target.value = ""; };
       }
       async function upsertSettings(obj) {
