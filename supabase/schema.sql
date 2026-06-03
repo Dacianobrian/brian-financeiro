@@ -18,6 +18,8 @@ create table if not exists public.transactions (
   category text not null,
   description text,
   amount numeric(14,2) not null check (amount >= 0),
+  payment_method text not null default 'conta_corrente' check (payment_method in ('conta_corrente', 'cartao_credito')),
+  card_bill_month date,
   status text not null default 'previsto' check (status in ('previsto', 'confirmado', 'pago')),
   source text not null default 'manual',
   created_at timestamptz not null default now(),
@@ -32,6 +34,7 @@ create table if not exists public.recurring_items (
   type text not null check (type in ('entrada', 'saida', 'investimento', 'diario')),
   category text not null,
   amount numeric(14,2) not null check (amount >= 0),
+  payment_method text not null default 'conta_corrente' check (payment_method in ('conta_corrente', 'cartao_credito')),
   active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -82,6 +85,33 @@ create table if not exists public.mei_invoices (
 
 create index if not exists transactions_user_date_idx on public.transactions (user_id, tx_date desc);
 create index if not exists recurring_items_user_day_idx on public.recurring_items (user_id, day_of_month);
+
+alter table public.transactions
+  add column if not exists payment_method text not null default 'conta_corrente',
+  add column if not exists card_bill_month date;
+
+alter table public.recurring_items
+  add column if not exists payment_method text not null default 'conta_corrente';
+
+create index if not exists transactions_user_card_bill_idx on public.transactions (user_id, card_bill_month);
+
+do $$
+begin
+  alter table public.transactions
+    add constraint transactions_payment_method_check
+    check (payment_method in ('conta_corrente', 'cartao_credito'));
+exception when duplicate_object then null;
+end;
+$$;
+
+do $$
+begin
+  alter table public.recurring_items
+    add constraint recurring_items_payment_method_check
+    check (payment_method in ('conta_corrente', 'cartao_credito'));
+exception when duplicate_object then null;
+end;
+$$;
 
 do $$
 declare

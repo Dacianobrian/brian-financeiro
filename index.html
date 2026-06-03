@@ -60,10 +60,14 @@
       body.locked #setup { width: min(520px, 100%); margin: 0 auto; }
       body.locked .brand { align-items: flex-start; }
       body.locked aside { justify-content: center; }
-      .grid-kpi { display: grid; grid-template-columns: repeat(5, minmax(140px, 1fr)); gap: 12px; margin-bottom: 12px; }
+      .grid-kpi { display: grid; grid-template-columns: repeat(6, minmax(130px, 1fr)); gap: 12px; margin-bottom: 12px; }
       .metric { padding: 16px; }
       .metric span { display: block; color: var(--muted); font-weight: 800; font-size: 13px; }
       .metric strong { display: block; margin-top: 10px; font-size: clamp(19px, 2vw, 27px); }
+      .chartgrid { display: grid; gap: 10px; }
+      .mini-chart { display: grid; gap: 6px; }
+      .mini-chart .row { font-size: 13px; font-weight: 800; }
+      .health-note { margin-top: 10px; font-weight: 800; }
       .layout { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(320px, .75fr); gap: 12px; }
       .split { display: grid; grid-template-columns: minmax(270px, 360px) minmax(0, 1fr); gap: 12px; }
       .panel { padding: 16px; min-width: 0; }
@@ -115,6 +119,7 @@
           <button class="tab" data-view="transactions">Lancamentos</button>
           <button class="tab" data-view="simulator">Simulador</button>
           <button class="tab" data-view="recurring">Contas fixas</button>
+          <button class="tab" data-view="investments">Investimentos</button>
           <button class="tab" data-view="settings">Configuracoes</button>
         </nav>
         <button id="logout" class="secondary hidden">Sair</button>
@@ -143,10 +148,11 @@
 
         <section id="dashboard" class="view active">
           <div class="grid-kpi">
-            <article class="metric"><span>Entradas</span><strong id="mIncome">R$ 0,00</strong></article>
-            <article class="metric"><span>Saidas</span><strong id="mExpense">R$ 0,00</strong></article>
-            <article class="metric"><span>Investido</span><strong id="mInvest">R$ 0,00</strong></article>
-            <article class="metric"><span>Performance</span><strong id="mPerf">R$ 0,00</strong></article>
+            <article class="metric"><span>Receita do mes</span><strong id="mIncome">R$ 0,00</strong></article>
+            <article class="metric"><span>Conta corrente</span><strong id="mChecking">R$ 0,00</strong></article>
+            <article class="metric"><span>Fatura cartao</span><strong id="mCardBill">R$ 0,00</strong></article>
+            <article class="metric"><span>Investido no mes</span><strong id="mInvest">R$ 0,00</strong></article>
+            <article class="metric"><span>Saude</span><strong id="mHealth">OK</strong></article>
             <article class="metric"><span>Saldo final</span><strong id="mBalance">R$ 0,00</strong></article>
           </div>
           <div class="layout">
@@ -155,8 +161,19 @@
               <div id="cash" class="cashgrid"></div>
             </section>
             <section class="panel">
+              <div class="panel-head"><h2>Medidores</h2></div>
+              <div id="healthCharts" class="chartgrid"></div>
+              <p id="healthNote" class="health-note"></p>
+            </section>
+          </div>
+          <div class="layout" style="margin-top:12px">
+            <section class="panel">
               <div class="panel-head"><h2>Orcamentos</h2></div>
               <div id="budgets" class="list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><h2>Cartao de credito</h2></div>
+              <div id="cardRows" class="list"></div>
             </section>
           </div>
         </section>
@@ -166,7 +183,9 @@
             <form id="txForm" class="panel">
               <h2>Novo lancamento</h2>
               <label>Data<input name="tx_date" type="date" required /></label>
-              <label>Tipo<select name="type"><option value="entrada">Entrada</option><option value="saida">Saida</option><option value="investimento">Investimento</option><option value="diario">Diario</option></select></label>
+              <label>Tipo<select name="type"><option value="entrada">Entrada</option><option value="saida">Saida</option><option value="investimento">Investimento</option><option value="diario">Diario/cartao</option></select></label>
+              <label>Meio<select name="payment_method"><option value="conta_corrente">Conta corrente</option><option value="cartao_credito">Cartao de credito</option></select></label>
+              <label>Fatura do cartao<input name="card_bill_month" type="month" /></label>
               <label>Categoria<input name="category" list="cats" required /></label>
               <label>Descricao<input name="description" /></label>
               <label>Valor<input name="amount" type="number" min="0.01" step="0.01" required /></label>
@@ -177,7 +196,7 @@
                 <h2>Lancamentos</h2>
                 <label class="secondary file">Importar planilha<input id="xlsx" type="file" accept=".xlsx,.xls" /></label>
               </div>
-              <div class="tablewrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Descricao</th><th>Valor</th><th></th></tr></thead><tbody id="txRows"></tbody></table></div>
+              <div class="tablewrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Meio</th><th>Fatura</th><th>Categoria</th><th>Descricao</th><th>Valor</th><th></th></tr></thead><tbody id="txRows"></tbody></table></div>
             </section>
           </div>
         </section>
@@ -187,6 +206,7 @@
             <form id="simForm" class="panel">
               <h2>Simular compra</h2>
               <label>Data<input name="tx_date" type="date" required /></label>
+              <label>Fatura do cartao<input name="card_bill_month" type="month" /></label>
               <label>Categoria<input name="category" list="cats" required /></label>
               <label>Descricao<input name="description" /></label>
               <label>Valor<input name="amount" type="number" min="0.01" step="0.01" required /></label>
@@ -203,6 +223,7 @@
               <label>Nome<input name="name" required /></label>
               <label>Dia<input name="day_of_month" type="number" min="1" max="31" required /></label>
               <label>Tipo<select name="type"><option value="saida">Saida</option><option value="entrada">Entrada</option><option value="investimento">Investimento</option></select></label>
+              <label>Meio<select name="payment_method"><option value="conta_corrente">Conta corrente</option><option value="cartao_credito">Cartao de credito</option></select></label>
               <label>Categoria<input name="category" list="cats" required /></label>
               <label>Valor<input name="amount" type="number" min="0.01" step="0.01" required /></label>
               <button class="primary">Salvar</button>
@@ -211,11 +232,40 @@
           </div>
         </section>
 
+        <section id="investments" class="view">
+          <div class="grid-kpi">
+            <article class="metric"><span>Patrimonio investido</span><strong id="iTotal">R$ 0,00</strong></article>
+            <article class="metric"><span>Renda fixa</span><strong id="iFixed">R$ 0,00</strong></article>
+            <article class="metric"><span>Renda variavel</span><strong id="iVariable">R$ 0,00</strong></article>
+            <article class="metric"><span>FIIs</span><strong id="iFiis">R$ 0,00</strong></article>
+            <article class="metric"><span>Renda mensal est.</span><strong id="iDividends">R$ 0,00</strong></article>
+            <article class="metric"><span>Ativos</span><strong id="iCount">0</strong></article>
+          </div>
+          <div class="split">
+            <form id="invForm" class="panel">
+              <h2>Novo ativo</h2>
+              <label>Ativo<input name="asset" placeholder="CDB, Tesouro, MXRF11..." required /></label>
+              <label>Classe<select name="segment"><option value="Renda fixa">Renda fixa</option><option value="FII">FII</option><option value="Acao">Acao</option><option value="ETF">ETF</option><option value="Caixa">Caixa</option></select></label>
+              <label>Quantidade<input name="shares" type="number" min="0" step="0.0001" required /></label>
+              <label>Preco atual<input name="price" type="number" min="0" step="0.0001" required /></label>
+              <label>Renda mensal por unidade<input name="dividend_per_share" type="number" min="0" step="0.0001" /></label>
+              <button class="primary">Salvar ativo</button>
+            </form>
+            <section class="panel">
+              <div class="panel-head"><h2>Carteira</h2></div>
+              <div id="invRows" class="list"></div>
+            </section>
+          </div>
+        </section>
+
         <section id="settings" class="view">
           <div class="split">
             <form id="setForm" class="panel">
               <h2>Configuracoes</h2>
               <label>Saldo inicial<input name="initial_balance" type="number" step="0.01" /></label>
+              <label>Vencimento do cartao<input name="credit_card_due_day" type="number" min="1" max="31" /></label>
+              <label>Meta minima de receita<input name="variable_income_target" type="number" min="0" step="0.01" /></label>
+              <label>Meta mensal de investimento<input name="monthly_invest_target" type="number" min="0" step="0.01" /></label>
               <button class="primary">Salvar</button>
             </form>
             <form id="budgetForm" class="panel">
@@ -231,7 +281,7 @@
     </div>
 
     <datalist id="cats">
-      <option value="Alimentacao"></option><option value="Carro"></option><option value="Moradia"></option><option value="Saude"></option><option value="Contas"></option><option value="Financiamento"></option><option value="Investimento"></option><option value="MEI"></option><option value="Diario"></option><option value="Outros"></option>
+      <option value="Comissao"></option><option value="Pro-labore"></option><option value="Alimentacao"></option><option value="Shopping"></option><option value="Lazer"></option><option value="Carro"></option><option value="Moradia"></option><option value="Saude"></option><option value="Contas"></option><option value="Financiamento"></option><option value="Investimento"></option><option value="MEI"></option><option value="Diario"></option><option value="Outros"></option>
     </datalist>
 
     <script type="module">
@@ -239,7 +289,7 @@
 
       const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
       const $ = (q) => document.querySelector(q);
-      const state = { sb: null, session: null, view: "dashboard", tx: [], rec: [], budgets: [], settings: {} };
+      const state = { sb: null, session: null, view: "dashboard", tx: [], rec: [], budgets: [], inv: [], settings: {} };
       const sheets = ["2025", "2026", "2027", "2028"];
       const starts = [0,7,14,21,28,35,42,49,56,63,70,77];
       const labels = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
@@ -259,7 +309,14 @@
         return new Date(y, mo, 0).getDate();
       }
       function formData(form) { return Object.fromEntries(new FormData(form).entries()); }
+      function sourceMeta(x) {
+        const parts = String(x.source || "").split("|");
+        return { origin: parts[0] || "manual", payment: parts[1] || "", bill: parts[2] || "" };
+      }
+      function method(x) { return x.payment_method || sourceMeta(x).payment || (x.type === "diario" ? "cartao_credito" : "conta_corrente"); }
+      function billMonth(x) { return x.card_bill_month ? iso(x.card_bill_month).slice(0, 7) : sourceMeta(x).bill || iso(x.tx_date).slice(0, 7); }
       function signed(x) { return x.type === "entrada" ? n(x.amount) : -n(x.amount); }
+      function cashSigned(x) { return x.type === "entrada" ? n(x.amount) : -n(x.amount); }
       function currentMonth() { return $("#month").value || monthNow(); }
       function setSessionLabel() {
         $("#sessionLabel").textContent = state.session?.user?.email || "Desconectado";
@@ -284,6 +341,7 @@
           transactions: ["Lancamentos", "Cadastre e importe movimentos financeiros."],
           simulator: ["Simulador", "Teste uma compra antes de comprometer seu caixa."],
           recurring: ["Contas fixas", "Recorrencias que alimentam o futuro."],
+          investments: ["Investimentos", "Renda fixa, renda variavel e renda mensal."],
           settings: ["Configuracoes", "Saldo inicial e orcamentos."]
         }[name];
         $("#title").textContent = copy[0];
@@ -293,19 +351,35 @@
         const max = daysIn(m);
         return state.rec.filter(x => x.active !== false).map(x => {
           const d = Math.min(n(x.day_of_month), max);
-          return { tx_date: `${m}-${String(d).padStart(2,"0")}`, type: x.type, category: x.category, description: x.name, amount: n(x.amount), virtual: true };
+          return { tx_date: `${m}-${String(d).padStart(2,"0")}`, type: x.type, category: x.category, description: x.name, amount: n(x.amount), payment_method: method(x), virtual: true };
         });
       }
       function monthItems(m, extra = []) {
         return [...state.tx.filter(x => iso(x.tx_date).startsWith(m)), ...recurringFor(m), ...extra].sort((a,b) => iso(a.tx_date).localeCompare(iso(b.tx_date)));
       }
+      function cardBillItems(m, extra = []) {
+        return [...state.tx, ...extra].filter(x => method(x) === "cartao_credito" && billMonth(x) === m && x.type !== "entrada");
+      }
+      function cardBillDueDate(m) {
+        const max = daysIn(m);
+        const day = Math.min(Math.max(n(state.settings.credit_card_due_day) || 10, 1), max);
+        return `${m}-${String(day).padStart(2, "0")}`;
+      }
+      function cashItems(m, extra = []) {
+        const accountItems = monthItems(m, extra).filter(x => method(x) !== "cartao_credito");
+        const billAmount = cardBillItems(m, extra).reduce((s, x) => s + n(x.amount), 0);
+        const bill = billAmount ? [{ tx_date: cardBillDueDate(m), type: "saida", category: "Cartao de credito", description: "Fatura do cartao", amount: billAmount, payment_method: "conta_corrente", virtual: true }] : [];
+        return [...accountItems, ...bill].sort((a,b) => iso(a.tx_date).localeCompare(iso(b.tx_date)));
+      }
       function opening(m) {
         const start = `${m}-01`;
-        return state.tx.filter(x => iso(x.tx_date) < start).reduce((s,x) => s + signed(x), n(state.settings.initial_balance));
+        const accountPast = state.tx.filter(x => method(x) !== "cartao_credito" && iso(x.tx_date) < start).reduce((s,x) => s + cashSigned(x), 0);
+        const paidCardBills = state.tx.filter(x => method(x) === "cartao_credito" && billMonth(x) < m && x.type !== "entrada").reduce((s,x) => s - n(x.amount), 0);
+        return n(state.settings.initial_balance) + accountPast + paidCardBills;
       }
       function cashflow(m, extra = []) {
         const map = new Map();
-        monthItems(m, extra).forEach(x => {
+        cashItems(m, extra).forEach(x => {
           const d = Number(iso(x.tx_date).slice(8,10));
           map.set(d, [...(map.get(d) || []), x]);
         });
@@ -319,24 +393,55 @@
       }
       function calc(m, extra = []) {
         const items = monthItems(m, extra);
+        const cash = cashItems(m, extra);
+        const card = cardBillItems(m, extra);
         const income = items.filter(x => x.type === "entrada").reduce((s,x) => s + n(x.amount), 0);
         const expense = items.filter(x => x.type === "saida" || x.type === "diario").reduce((s,x) => s + n(x.amount), 0);
         const invest = items.filter(x => x.type === "investimento").reduce((s,x) => s + n(x.amount), 0);
+        const checkingExpense = cash.filter(x => x.type !== "entrada").reduce((s,x) => s + n(x.amount), 0);
+        const cardBill = card.reduce((s,x) => s + n(x.amount), 0);
         const flow = cashflow(m, extra);
-        return { items, income, expense, invest, perf: income - expense - invest, flow, final: flow.at(-1)?.balance || opening(m) };
+        const perf = income - expense - invest;
+        const savingsRate = income ? perf / income * 100 : 0;
+        const investRate = income ? invest / income * 100 : 0;
+        const cardRate = income ? cardBill / income * 100 : 0;
+        return { items, cash, card, income, expense, invest, checkingExpense, cardBill, perf, savingsRate, investRate, cardRate, flow, final: flow.at(-1)?.balance || opening(m) };
+      }
+      function bar(label, value, max, danger = false) {
+        const pct = max ? Math.min(140, Math.max(0, value / max * 100)) : 0;
+        return `<div class="mini-chart"><div class="row"><span>${label}</span><strong>${Math.round(value)}%</strong></div><div class="bar ${danger ? "over" : ""}"><span style="width:${pct}%"></span></div></div>`;
+      }
+      function health(c) {
+        const neg = c.flow.some(x => x.balance < 0);
+        if (neg || c.perf < 0 || c.cardRate > 55) return { label: "Atencao", bad: true, note: "Caixa ou cartao precisam de revisao neste mes." };
+        if (c.savingsRate >= 20 && c.investRate >= 10) return { label: "Forte", bad: false, note: "Mes saudavel: sobra e investimento em bom nivel." };
+        return { label: "OK", bad: false, note: "Mes controlado, mas ainda da para fortalecer sobra e investimento." };
       }
       function render() {
         const m = currentMonth(), c = calc(m);
         $("#mIncome").textContent = brl.format(c.income);
-        $("#mExpense").textContent = brl.format(c.expense);
+        $("#mChecking").textContent = brl.format(c.checkingExpense);
+        $("#mCardBill").textContent = brl.format(c.cardBill);
         $("#mInvest").textContent = brl.format(c.invest);
-        $("#mPerf").textContent = brl.format(c.perf);
-        $("#mPerf").className = c.perf < 0 ? "bad-text" : "good-text";
+        const h = health(c);
+        $("#mHealth").textContent = h.label;
+        $("#mHealth").className = h.bad ? "bad-text" : "good-text";
         $("#mBalance").textContent = brl.format(c.final);
         $("#mBalance").className = c.final < 0 ? "bad-text" : "";
         const neg = c.flow.some(x => x.balance < 0);
         $("#risk").textContent = neg ? "Risco" : "OK";
         $("#risk").className = `pill ${neg ? "bad" : "good"}`;
+        const incomeTarget = n(state.settings.variable_income_target);
+        const investTarget = n(state.settings.monthly_invest_target);
+        const incomeTargetPct = incomeTarget ? c.income / incomeTarget * 100 : 0;
+        const investTargetPct = investTarget ? c.invest / investTarget * 100 : c.investRate;
+        $("#healthCharts").innerHTML = [
+          bar("Sobra da receita", Math.max(0, c.savingsRate), 40, c.perf < 0),
+          bar("Cartao sobre receita", c.cardRate, 55, c.cardRate > 55),
+          bar("Investimento", investTarget ? investTargetPct : c.investRate, 100, false),
+          bar("Meta de receita", incomeTarget ? incomeTargetPct : 0, 100, false)
+        ].join("");
+        $("#healthNote").textContent = h.note;
         const today = new Date(), tm = monthNow();
         $("#cash").innerHTML = c.flow.map(x => `<article class="day ${x.balance < 0 ? "negative" : ""} ${m === tm && x.day === today.getDate() ? "today" : ""}"><strong>Dia ${x.day}</strong><small>${brl.format(x.movement)}</small><div>${brl.format(x.balance)}</div><small>${x.items.length} item(ns)</small></article>`).join("");
         const budgets = state.budgets.filter(b => iso(b.month).startsWith(m));
@@ -345,28 +450,61 @@
           const limit = n(b.limit_amount), over = used > limit, pct = limit ? Math.min(140, used / limit * 100) : 0;
           return `<article class="item"><div class="row"><strong>${b.category}</strong><span class="${over ? "bad-text" : ""}">${brl.format(used)} / ${brl.format(limit)}</span></div><div class="bar ${over ? "over" : ""}"><span style="width:${pct}%"></span></div><small>${over ? "Fora do orcamento" : "Dentro do orcamento"}</small></article>`;
         }).join("") : "<p>Nenhum orcamento neste mes.</p>";
-        $("#txRows").innerHTML = state.tx.filter(x => iso(x.tx_date).startsWith(m)).map(x => `<tr><td>${iso(x.tx_date)}</td><td>${x.type}</td><td>${x.category}</td><td>${x.description || "-"}</td><td>${brl.format(n(x.amount))}</td><td><button class="danger" data-del="${x.id}">Excluir</button></td></tr>`).join("") || '<tr><td colspan="6">Sem lancamentos.</td></tr>';
-        $("#recRows").innerHTML = state.rec.map(x => `<article class="item"><div class="row"><strong>${x.name}</strong><span>${brl.format(n(x.amount))}</span></div><small>Todo dia ${x.day_of_month} - ${x.category}</small></article>`).join("") || "<p>Sem contas fixas.</p>";
+        $("#cardRows").innerHTML = c.card.length ? c.card.map(x => `<article class="item"><div class="row"><strong>${x.description || x.category}</strong><span>${brl.format(n(x.amount))}</span></div><small>${iso(x.tx_date)} - ${x.category}</small></article>`).join("") : "<p>Nenhuma compra no cartao nesta fatura.</p>";
+        $("#txRows").innerHTML = state.tx.filter(x => iso(x.tx_date).startsWith(m)).map(x => `<tr><td>${iso(x.tx_date)}</td><td>${x.type}</td><td>${method(x) === "cartao_credito" ? "Cartao" : "Conta"}</td><td>${method(x) === "cartao_credito" ? billMonth(x) : "-"}</td><td>${x.category}</td><td>${x.description || "-"}</td><td>${brl.format(n(x.amount))}</td><td><button class="danger" data-del="${x.id}">Excluir</button></td></tr>`).join("") || '<tr><td colspan="8">Sem lancamentos.</td></tr>';
+        $("#recRows").innerHTML = state.rec.map(x => `<article class="item"><div class="row"><strong>${x.name}</strong><span>${brl.format(n(x.amount))}</span></div><small>Todo dia ${x.day_of_month} - ${x.category} - ${method(x) === "cartao_credito" ? "cartao" : "conta corrente"}</small></article>`).join("") || "<p>Sem contas fixas.</p>";
         $("#setForm").elements.initial_balance.value = state.settings.initial_balance || "";
+        $("#setForm").elements.credit_card_due_day.value = state.settings.credit_card_due_day || 10;
+        $("#setForm").elements.variable_income_target.value = state.settings.variable_income_target || "";
+        $("#setForm").elements.monthly_invest_target.value = state.settings.monthly_invest_target || "";
         $("#budgetForm").elements.month.value = m;
+        renderInvestments();
+      }
+      function renderInvestments() {
+        const rows = state.inv || [];
+        const total = rows.reduce((s,x) => s + n(x.shares) * n(x.price), 0);
+        const fixed = rows.filter(x => x.segment === "Renda fixa" || x.segment === "Caixa").reduce((s,x) => s + n(x.shares) * n(x.price), 0);
+        const fiis = rows.filter(x => x.segment === "FII").reduce((s,x) => s + n(x.shares) * n(x.price), 0);
+        const variable = rows.filter(x => x.segment !== "Renda fixa" && x.segment !== "Caixa").reduce((s,x) => s + n(x.shares) * n(x.price), 0);
+        const dividends = rows.reduce((s,x) => s + n(x.shares) * n(x.dividend_per_share), 0);
+        $("#iTotal").textContent = brl.format(total);
+        $("#iFixed").textContent = brl.format(fixed);
+        $("#iVariable").textContent = brl.format(variable);
+        $("#iFiis").textContent = brl.format(fiis);
+        $("#iDividends").textContent = brl.format(dividends);
+        $("#iCount").textContent = String(rows.length);
+        $("#invRows").innerHTML = rows.length ? rows.map(x => {
+          const value = n(x.shares) * n(x.price), pct = total ? value / total * 100 : 0;
+          return `<article class="item"><div class="row"><strong>${x.asset}</strong><span>${brl.format(value)}</span></div><small>${x.segment || "-"} - ${n(x.shares)} x ${brl.format(n(x.price))}</small><div class="bar"><span style="width:${Math.min(100, pct)}%"></span></div><small>${Math.round(pct)}% da carteira</small><div class="actions"><button class="danger" data-inv-del="${x.id}">Excluir</button></div></article>`;
+        }).join("") : "<p>Nenhum ativo cadastrado.</p>";
       }
       async function load() {
         if (!state.sb || !state.session) return;
-        const [tx, rec, budgets, settings] = await Promise.all([
+        const [tx, rec, budgets, settings, inv] = await Promise.all([
           state.sb.from("transactions").select("*").order("tx_date", { ascending: false }),
           state.sb.from("recurring_items").select("*").order("day_of_month"),
           state.sb.from("budgets").select("*").order("month", { ascending: false }),
-          state.sb.from("app_settings").select("*")
+          state.sb.from("app_settings").select("*"),
+          state.sb.from("investments").select("*").order("asset")
         ]);
-        for (const r of [tx, rec, budgets, settings]) if (r.error) throw r.error;
+        for (const r of [tx, rec, budgets, settings, inv]) if (r.error) throw r.error;
         state.tx = tx.data || [];
         state.rec = rec.data || [];
         state.budgets = budgets.data || [];
+        state.inv = inv.data || [];
         state.settings = Object.fromEntries((settings.data || []).map(x => [x.key, x.value]));
         render();
       }
       async function insert(table, row) {
-        const { error } = await state.sb.from(table).insert(row);
+        let { error } = await state.sb.from(table).insert(row);
+        const missingNewCols = error && /payment_method|card_bill_month/i.test(error.message || "");
+        if (missingNewCols && table === "transactions") {
+          const { payment_method, card_bill_month, ...legacyRow } = row;
+          ({ error } = await state.sb.from(table).insert(legacyRow));
+        } else if (missingNewCols && table === "recurring_items") {
+          const { payment_method, ...legacyRow } = row;
+          ({ error } = await state.sb.from(table).insert(legacyRow));
+        }
         if (error) throw error;
         await load();
       }
@@ -378,10 +516,12 @@
         await load();
       }
       function txFrom(row) {
-        return { tx_date: row.tx_date, type: row.type, category: row.category, description: row.description || null, amount: n(row.amount), status: "previsto", source: row.source || "manual" };
+        const payment = row.payment_method || (row.type === "diario" ? "cartao_credito" : "conta_corrente");
+        const bill = payment === "cartao_credito" ? `${row.card_bill_month || iso(row.tx_date).slice(0,7)}-01` : null;
+        return { tx_date: row.tx_date, type: row.type, category: row.category, description: row.description || null, amount: n(row.amount), payment_method: payment, card_bill_month: bill, status: "previsto", source: `${row.source || "manual"}|${payment}|${bill ? bill.slice(0,7) : ""}` };
       }
       function sim(row) {
-        const fake = txFrom({ ...row, type: "saida", source: "simulador" });
+        const fake = txFrom({ ...row, type: "saida", payment_method: "cartao_credito", card_bill_month: row.card_bill_month || iso(row.tx_date).slice(0,7), source: "simulador" });
         const m = iso(fake.tx_date).slice(0,7), c = calc(m, [fake]);
         const badDay = c.flow.find(x => x.balance < 0);
         const b = state.budgets.find(x => iso(x.month).startsWith(m) && x.category === fake.category);
@@ -392,7 +532,7 @@
         }
         if (c.perf < 0) risks.push(`Performance fica negativa: ${brl.format(c.perf)}.`);
         if (badDay) risks.push(`Saldo fica negativo no dia ${badDay.day}: ${brl.format(badDay.balance)}.`);
-        $("#simResult").innerHTML = `<h2 class="${risks.length ? "bad-text" : "good-text"}">${risks.length ? "Compra fora do plano" : "Compra cabe no plano"}</h2><p>Saldo final: <strong>${brl.format(c.final)}</strong></p><p>Performance: <strong>${brl.format(c.perf)}</strong></p>${risks.length ? `<ul>${risks.map(x => `<li>${x}</li>`).join("")}</ul>` : "<p>Nenhum alerta critico encontrado.</p>"}`;
+        $("#simResult").innerHTML = `<h2 class="${risks.length ? "bad-text" : "good-text"}">${risks.length ? "Compra fora do plano" : "Compra cabe no plano"}</h2><p>Fatura analisada: <strong>${billMonth(fake)}</strong></p><p>Saldo final da conta: <strong>${brl.format(c.final)}</strong></p><p>Performance: <strong>${brl.format(c.perf)}</strong></p>${risks.length ? `<ul>${risks.map(x => `<li>${x}</li>`).join("")}</ul>` : "<p>Nenhum alerta critico encontrado.</p>"}`;
       }
       function excelDate(year, mi, day) {
         const d = Number(day);
@@ -412,14 +552,23 @@
               if (!date) continue;
               [["entrada", st+1, "Receita"], ["saida", st+2, "Saidas"], ["investimento", st+3, "Investimento"], ["diario", st+4, "Diario"]].forEach(([type, col, cat]) => {
                 const amount = Math.abs(n(row[col]));
-                if (amount) rows.push({ tx_date: date, type, category: cat, description: `Importado ${y} ${labels[mi]}`, amount, status: "previsto", source: "planilha" });
+                if (amount) {
+                  const payment = type === "diario" ? "cartao_credito" : "conta_corrente";
+                  const bill = type === "diario" ? `${y}-${String(mi+1).padStart(2,"0")}` : "";
+                  rows.push({ tx_date: date, type, category: cat, description: `Importado ${y} ${labels[mi]}`, amount, payment_method: payment, card_bill_month: bill ? `${bill}-01` : null, status: "previsto", source: `planilha|${payment}|${bill}` });
+                }
               });
             }
           });
         });
         if (!rows.length || !confirm(`Importar ${rows.length} lancamentos?`)) return;
         for (let i = 0; i < rows.length; i += 500) {
-          const { error } = await state.sb.from("transactions").insert(rows.slice(i, i + 500));
+          const batch = rows.slice(i, i + 500);
+          let { error } = await state.sb.from("transactions").insert(batch);
+          if (error && /payment_method|card_bill_month/i.test(error.message || "")) {
+            const legacy = batch.map(({ payment_method, card_bill_month, ...row }) => row);
+            ({ error } = await state.sb.from("transactions").insert(legacy));
+          }
           if (error) throw error;
         }
         await load();
@@ -443,12 +592,17 @@
             $("#authMsg").textContent = "Conta criada. Confirme seu email e depois clique em Entrar.";
           }
         };
+        $("#txForm").elements.type.onchange = e => {
+          if (e.target.value === "diario") $("#txForm").elements.payment_method.value = "cartao_credito";
+        };
         $("#txForm").onsubmit = async e => { e.preventDefault(); await insert("transactions", txFrom(formData(e.currentTarget))).catch(alertErr); e.currentTarget.reset(); setDates(); };
-        $("#recForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await insert("recurring_items", { name: r.name, day_of_month: n(r.day_of_month), type: r.type, category: r.category, amount: n(r.amount), active: true }).catch(alertErr); e.currentTarget.reset(); };
+        $("#recForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await insert("recurring_items", { name: r.name, day_of_month: n(r.day_of_month), type: r.type, payment_method: r.payment_method || "conta_corrente", category: r.category, amount: n(r.amount), active: true }).catch(alertErr); e.currentTarget.reset(); };
         $("#simForm").onsubmit = e => { e.preventDefault(); sim(formData(e.currentTarget)); };
-        $("#setForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await upsertSettings({ initial_balance: n(r.initial_balance) }).catch(alertErr); };
+        $("#invForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await insert("investments", { asset: r.asset, segment: r.segment, shares: n(r.shares), price: n(r.price), dividend_per_share: n(r.dividend_per_share) }).catch(alertErr); e.currentTarget.reset(); };
+        $("#setForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await upsertSettings({ initial_balance: n(r.initial_balance), credit_card_due_day: n(r.credit_card_due_day) || 10, variable_income_target: n(r.variable_income_target), monthly_invest_target: n(r.monthly_invest_target) }).catch(alertErr); };
         $("#budgetForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await upsertBudget(r).catch(alertErr); };
         $("#txRows").onclick = async e => { const b = e.target.closest("[data-del]"); if (b && confirm("Excluir lancamento?")) { const { error } = await state.sb.from("transactions").delete().eq("id", b.dataset.del); if (error) alertErr(error); else await load(); } };
+        $("#invRows").onclick = async e => { const b = e.target.closest("[data-inv-del]"); if (b && confirm("Excluir ativo?")) { const { error } = await state.sb.from("investments").delete().eq("id", b.dataset.invDel); if (error) alertErr(error); else await load(); } };
         $("#xlsx").onchange = async e => { const f = e.target.files[0]; if (f) await importXlsx(f).catch(alertErr); e.target.value = ""; };
       }
       async function upsertSettings(obj) {
@@ -466,6 +620,7 @@
       function setDates() {
         const d = new Date().toISOString().slice(0, 10);
         document.querySelectorAll('input[type="date"]').forEach(x => { if (!x.value) x.value = d; });
+        document.querySelectorAll('input[name="card_bill_month"]').forEach(x => { if (!x.value) x.value = currentMonth(); });
       }
       async function init() {
         $("#month").value = monthNow();
@@ -486,6 +641,7 @@
             state.tx = [];
             state.rec = [];
             state.budgets = [];
+            state.inv = [];
             state.settings = {};
             state.view = "dashboard";
           }
