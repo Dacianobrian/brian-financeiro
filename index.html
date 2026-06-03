@@ -782,11 +782,25 @@
           const dy = value ? (n(q.monthlyDividend) || n(x.dividend_per_share)) * 12 * n(x.shares) / value * 100 : 0;
           return `<tr><td><div class="asset-cell"><span class="asset-logo">${symbol.slice(0,2)}</span><div><strong>${symbol}</strong><small>${q.name || ""}</small></div></div></td><td>${x.segment || "-"}</td><td>${n(x.shares)}</td><td>${brl.format(avg)}</td><td>${brl.format(price)}${q.change != null ? `<br><small class="${n(q.change) < 0 ? "bad-text" : "good-text"}">${n(q.change).toFixed(2)}%</small>` : ""}</td><td>${brl.format(value)}</td><td class="${assetProfit < 0 ? "bad-text" : "good-text"}">${brl.format(assetProfit)}</td><td>${dy.toFixed(1)}%</td><td><button class="danger" data-inv-del="${x.id}">Excluir</button></td></tr>`;
         }).join("") : '<tr><td colspan="9">Nenhum ativo cadastrado.</td></tr>';
-        const dividendsList = rows.flatMap(x => {
+        let dividendsList = rows.flatMap(x => {
           const symbol = String(x.asset || "").toUpperCase(), q = quoteForAsset(x);
           return (q.dividends || []).map(d => ({ ...d, symbol, total: n(d.amount) * n(x.shares) }));
         }).filter(d => d.date >= new Date().toISOString().slice(0, 10)).sort((a,b) => a.date.localeCompare(b.date)).slice(0, 12);
-        $("#dividendRows").innerHTML = dividendsList.length ? dividendsList.map(d => `<article class="item"><div class="row"><strong>${d.symbol}</strong><span>${brl.format(d.total)}</span></div><small>${d.date} - ${brl.format(n(d.amount))} por cota</small></article>`).join("") : "<p>Sem agenda carregada. Atualize cotacoes ou preencha renda manual.</p>";
+        if (!dividendsList.length) {
+          const base = new Date(`${currentMonth()}-15T12:00:00`);
+          dividendsList = rows
+            .map((x, i) => {
+              const amount = n(quoteForAsset(x).monthlyDividend) || n(x.dividend_per_share);
+              if (!amount) return null;
+              const date = new Date(base);
+              date.setDate(Math.min(26, 10 + i * 3));
+              return { symbol: String(x.asset || "").toUpperCase(), date: date.toISOString().slice(0, 10), amount, total: amount * n(x.shares), estimated: true };
+            })
+            .filter(Boolean)
+            .sort((a,b) => a.date.localeCompare(b.date))
+            .slice(0, 12);
+        }
+        $("#dividendRows").innerHTML = dividendsList.length ? dividendsList.map(d => `<article class="item"><div class="row"><strong>${d.symbol}</strong><span>${brl.format(d.total)}</span></div><small>${d.date} - ${brl.format(n(d.amount))} por cota${d.estimated ? " - estimado manual" : ""}</small></article>`).join("") : "<p>Sem agenda carregada. Atualize cotacoes ou preencha renda manual.</p>";
         const goal = (label, current, target) => {
           const pct = target ? Math.min(140, current / target * 100) : 0;
           return `<article class="item"><div class="row"><strong>${label}</strong><span>${brl.format(current)} / ${brl.format(target)}</span></div><div class="bar"><span style="width:${pct}%"></span></div><small>${target ? `${Math.round(Math.min(100, pct))}% atingido` : "Defina uma meta em Configuracoes"}</small></article>`;
@@ -1112,6 +1126,7 @@
         $("#month").value = monthNow();
         setDates();
         bind();
+        if (new URLSearchParams(location.search).get("demo") === "1") localStorage.setItem("brian_demo_mode", "1");
         if (!cfgOk()) { showAuth(); render(); return; }
         const c = window.BRIAN_FINANCE_CONFIG;
         state.sb = createClient(c.supabaseUrl, c.supabaseAnonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
