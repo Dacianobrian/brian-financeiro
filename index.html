@@ -83,6 +83,11 @@
       .projection-row.bad { color: var(--danger); }
       .projection-date { font-weight: 900; }
       .payline { display: grid; grid-template-columns: minmax(0, 1fr) 130px auto; gap: 8px; align-items: end; margin-top: 10px; }
+      .portfolio-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, .45fr); gap: 12px; }
+      .asset-table { min-width: 960px; }
+      .asset-logo { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; background: var(--soft); font-weight: 900; }
+      .asset-cell { display: flex; align-items: center; gap: 10px; }
+      .dividend-list { display: grid; gap: 8px; }
       .layout { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(320px, .75fr); gap: 12px; }
       .split { display: grid; grid-template-columns: minmax(270px, 360px) minmax(0, 1fr); gap: 12px; }
       .panel { padding: 16px; min-width: 0; }
@@ -112,7 +117,7 @@
         .shell { grid-template-columns: 1fr; }
         aside { min-height: auto; }
         nav { grid-template-columns: repeat(3, 1fr); }
-        .layout, .split { grid-template-columns: 1fr; }
+        .layout, .split, .portfolio-grid { grid-template-columns: 1fr; }
         .grid-kpi { grid-template-columns: repeat(2, 1fr); }
       }
       @media (max-width: 620px) {
@@ -283,11 +288,14 @@
         <section id="investments" class="view">
           <div class="grid-kpi">
             <article class="metric"><span>Patrimonio investido</span><strong id="iTotal">R$ 0,00</strong></article>
-            <article class="metric"><span>Renda fixa</span><strong id="iFixed">R$ 0,00</strong></article>
-            <article class="metric"><span>Renda variavel</span><strong id="iVariable">R$ 0,00</strong></article>
+            <article class="metric"><span>Total investido</span><strong id="iCost">R$ 0,00</strong></article>
+            <article class="metric"><span>Rentabilidade</span><strong id="iReturn">0%</strong></article>
             <article class="metric"><span>FIIs</span><strong id="iFiis">R$ 0,00</strong></article>
-            <article class="metric"><span>Renda mensal est.</span><strong id="iDividends">R$ 0,00</strong></article>
+            <article class="metric"><span>Dividendos mes</span><strong id="iDividends">R$ 0,00</strong></article>
             <article class="metric"><span>Ativos</span><strong id="iCount">0</strong></article>
+          </div>
+          <div class="quickbar">
+            <button class="secondary" data-refresh-quotes>Atualizar cotacoes</button>
           </div>
           <div class="split">
             <form id="invForm" class="panel">
@@ -295,13 +303,19 @@
               <label>Ativo<input name="asset" placeholder="CDB, Tesouro, MXRF11..." required /></label>
               <label>Classe<select name="segment"><option value="Renda fixa">Renda fixa</option><option value="FII">FII</option><option value="Acao">Acao</option><option value="ETF">ETF</option><option value="Caixa">Caixa</option></select></label>
               <label>Quantidade<input name="shares" type="number" min="0" step="0.0001" required /></label>
-              <label>Preco atual<input name="price" type="number" min="0" step="0.0001" required /></label>
-              <label>Renda mensal por unidade<input name="dividend_per_share" type="number" min="0" step="0.0001" /></label>
+              <label>Preco medio / custo<input name="price" type="number" min="0" step="0.0001" required /></label>
+              <label>Renda mensal manual por unidade<input name="dividend_per_share" type="number" min="0" step="0.0001" /></label>
               <button class="primary">Salvar ativo</button>
             </form>
-            <section class="panel">
-              <div class="panel-head"><h2>Carteira</h2></div>
-              <div id="invRows" class="list"></div>
+            <section class="panel" id="portfolioPanel">
+              <div class="panel-head"><h2>Carteira</h2><span id="quoteStatus" class="pill good">Manual</span></div>
+              <div class="portfolio-grid">
+                <div class="tablewrap"><table class="asset-table"><thead><tr><th>Ativo</th><th>Classe</th><th>Qtd</th><th>Preco medio</th><th>Cotacao</th><th>Patrimonio</th><th>Lucro</th><th>DY est.</th><th></th></tr></thead><tbody id="invRows"></tbody></table></div>
+                <aside class="panel">
+                  <div class="panel-head"><h2>Agenda de dividendos</h2></div>
+                  <div id="dividendRows" class="dividend-list"></div>
+                </aside>
+              </div>
             </section>
           </div>
         </section>
@@ -314,6 +328,7 @@
               <label>Vencimento do cartao<input name="credit_card_due_day" type="number" min="1" max="31" /></label>
               <label>Meta minima de receita<input name="variable_income_target" type="number" min="0" step="0.01" /></label>
               <label>Meta mensal de investimento<input name="monthly_invest_target" type="number" min="0" step="0.01" /></label>
+              <label>Token brapi gratuito<input name="brapi_token" type="password" placeholder="Opcional para cotacoes/dividendos" /></label>
               <button class="primary">Salvar</button>
             </form>
             <form id="budgetForm" class="panel">
@@ -337,7 +352,7 @@
 
       const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
       const $ = (q) => document.querySelector(q);
-      const state = { sb: null, session: null, view: "dashboard", projectionDays: 30, tx: [], rec: [], budgets: [], inv: [], settings: {} };
+      const state = { sb: null, session: null, view: "dashboard", projectionDays: 30, tx: [], rec: [], budgets: [], inv: [], market: {}, settings: {} };
       const sheets = ["2025", "2026", "2027", "2028"];
       const starts = [0,7,14,21,28,35,42,49,56,63,70,77];
       const labels = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
@@ -585,6 +600,7 @@
         $("#setForm").elements.credit_card_due_day.value = state.settings.credit_card_due_day || 10;
         $("#setForm").elements.variable_income_target.value = state.settings.variable_income_target || "";
         $("#setForm").elements.monthly_invest_target.value = state.settings.monthly_invest_target || "";
+        $("#setForm").elements.brapi_token.value = state.settings.brapi_token || "";
         $("#budgetForm").elements.month.value = m;
         renderInvestments();
         renderProjection();
@@ -596,21 +612,62 @@
       }
       function renderInvestments() {
         const rows = state.inv || [];
-        const total = rows.reduce((s,x) => s + n(x.shares) * n(x.price), 0);
-        const fixed = rows.filter(x => x.segment === "Renda fixa" || x.segment === "Caixa").reduce((s,x) => s + n(x.shares) * n(x.price), 0);
-        const fiis = rows.filter(x => x.segment === "FII").reduce((s,x) => s + n(x.shares) * n(x.price), 0);
-        const variable = rows.filter(x => x.segment !== "Renda fixa" && x.segment !== "Caixa").reduce((s,x) => s + n(x.shares) * n(x.price), 0);
-        const dividends = rows.reduce((s,x) => s + n(x.shares) * n(x.dividend_per_share), 0);
+        const quote = x => state.market[String(x.asset || "").toUpperCase()] || {};
+        const currentPrice = x => n(quote(x).price) || n(x.price);
+        const cost = rows.reduce((s,x) => s + n(x.shares) * n(x.price), 0);
+        const total = rows.reduce((s,x) => s + n(x.shares) * currentPrice(x), 0);
+        const fiis = rows.filter(x => x.segment === "FII").reduce((s,x) => s + n(x.shares) * currentPrice(x), 0);
+        const dividends = rows.reduce((s,x) => s + n(x.shares) * (n(quote(x).monthlyDividend) || n(x.dividend_per_share)), 0);
+        const profit = total - cost;
+        const returnPct = cost ? profit / cost * 100 : 0;
         $("#iTotal").textContent = brl.format(total);
-        $("#iFixed").textContent = brl.format(fixed);
-        $("#iVariable").textContent = brl.format(variable);
+        $("#iCost").textContent = brl.format(cost);
+        $("#iReturn").textContent = `${returnPct.toFixed(1)}%`;
+        $("#iReturn").className = profit < 0 ? "bad-text" : "good-text";
         $("#iFiis").textContent = brl.format(fiis);
         $("#iDividends").textContent = brl.format(dividends);
         $("#iCount").textContent = String(rows.length);
+        const liveCount = Object.keys(state.market).length;
+        $("#quoteStatus").textContent = liveCount ? `${liveCount} cotado(s)` : "Manual";
+        $("#quoteStatus").className = `pill ${liveCount ? "good" : "bad"}`;
         $("#invRows").innerHTML = rows.length ? rows.map(x => {
-          const value = n(x.shares) * n(x.price), pct = total ? value / total * 100 : 0;
-          return `<article class="item"><div class="row"><strong>${x.asset}</strong><span>${brl.format(value)}</span></div><small>${x.segment || "-"} - ${n(x.shares)} x ${brl.format(n(x.price))}</small><div class="bar"><span style="width:${Math.min(100, pct)}%"></span></div><small>${Math.round(pct)}% da carteira</small><div class="actions"><button class="danger" data-inv-del="${x.id}">Excluir</button></div></article>`;
-        }).join("") : "<p>Nenhum ativo cadastrado.</p>";
+          const symbol = String(x.asset || "").toUpperCase(), q = quote(x);
+          const avg = n(x.price), price = currentPrice(x), value = n(x.shares) * price, assetCost = n(x.shares) * avg, assetProfit = value - assetCost;
+          const dy = value ? (n(q.monthlyDividend) || n(x.dividend_per_share)) * 12 * n(x.shares) / value * 100 : 0;
+          return `<tr><td><div class="asset-cell"><span class="asset-logo">${symbol.slice(0,2)}</span><div><strong>${symbol}</strong><small>${q.name || ""}</small></div></div></td><td>${x.segment || "-"}</td><td>${n(x.shares)}</td><td>${brl.format(avg)}</td><td>${brl.format(price)}${q.change != null ? `<br><small class="${n(q.change) < 0 ? "bad-text" : "good-text"}">${n(q.change).toFixed(2)}%</small>` : ""}</td><td>${brl.format(value)}</td><td class="${assetProfit < 0 ? "bad-text" : "good-text"}">${brl.format(assetProfit)}</td><td>${dy.toFixed(1)}%</td><td><button class="danger" data-inv-del="${x.id}">Excluir</button></td></tr>`;
+        }).join("") : '<tr><td colspan="9">Nenhum ativo cadastrado.</td></tr>';
+        const dividendsList = rows.flatMap(x => {
+          const symbol = String(x.asset || "").toUpperCase(), q = quote(x);
+          return (q.dividends || []).map(d => ({ ...d, symbol, total: n(d.amount) * n(x.shares) }));
+        }).filter(d => d.date >= new Date().toISOString().slice(0, 10)).sort((a,b) => a.date.localeCompare(b.date)).slice(0, 12);
+        $("#dividendRows").innerHTML = dividendsList.length ? dividendsList.map(d => `<article class="item"><div class="row"><strong>${d.symbol}</strong><span>${brl.format(d.total)}</span></div><small>${d.date} - ${brl.format(n(d.amount))} por cota</small></article>`).join("") : "<p>Sem agenda carregada. Atualize cotacoes ou preencha renda manual.</p>";
+      }
+      function normalizeDividend(d) {
+        const date = iso(d.paymentDate || d.date || d.approvedOn || d.lastDatePrior || "");
+        const amount = n(d.rate ?? d.amount ?? d.value ?? d.cashDividends);
+        return date && amount ? { date, amount } : null;
+      }
+      async function refreshQuotes() {
+        const token = String(state.settings.brapi_token || "").trim();
+        if (!token) return alert("Coloque seu token gratuito da brapi em Configuracoes para atualizar cotacoes.");
+        const symbols = [...new Set((state.inv || []).map(x => String(x.asset || "").toUpperCase()).filter(Boolean))];
+        if (!symbols.length) return alert("Cadastre pelo menos um ativo.");
+        $("#quoteStatus").textContent = "Atualizando...";
+        const url = `https://brapi.dev/api/quote/${symbols.join(",")}?range=1mo&interval=1d&fundamental=true&dividends=true&token=${encodeURIComponent(token)}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`Brapi retornou ${res.status}. Confira o token/plano.`);
+        const data = await res.json();
+        const market = {};
+        (data.results || []).forEach(r => {
+          const symbol = String(r.symbol || r.stock || "").toUpperCase();
+          const rawDividends = r.dividendsData?.cashDividends || r.dividendsData?.stockDividends || r.dividends || [];
+          const dividends = rawDividends.map(normalizeDividend).filter(Boolean);
+          const recent = dividends.filter(d => d.date >= addMonths(new Date().toISOString().slice(0, 10), -12));
+          const monthlyDividend = recent.length ? recent.reduce((s,d) => s + n(d.amount), 0) / 12 : 0;
+          if (symbol) market[symbol] = { price: n(r.regularMarketPrice), change: r.regularMarketChangePercent, name: r.longName || r.shortName || "", dividends, monthlyDividend };
+        });
+        state.market = market;
+        renderInvestments();
       }
       async function load() {
         if (!state.sb || !state.session) return;
@@ -794,6 +851,7 @@
         document.querySelector("[data-preset='car']").onclick = () => fillSim({ category: "Carro", description: "Compra de carro" });
         document.querySelector("[data-pay-card]").onclick = () => payCardBill().catch(alertErr);
         document.querySelectorAll("[data-projection]").forEach(b => b.onclick = () => { state.projectionDays = n(b.dataset.projection) || 30; renderProjection(); });
+        document.querySelector("[data-refresh-quotes]").onclick = () => refreshQuotes().catch(alertErr);
         $("#month").onchange = render;
         $("#refresh").onclick = () => load().catch(alertErr);
         $("#logout").onclick = () => state.sb.auth.signOut();
@@ -818,7 +876,7 @@
         $("#recForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await insert("recurring_items", { name: r.name, account_kind: r.account_kind || "fixa", day_of_month: n(r.day_of_month), type: r.type, payment_method: r.payment_method || "conta_corrente", category: r.category, amount: n(r.amount), active: true }).catch(alertErr); e.currentTarget.reset(); };
         $("#simForm").onsubmit = e => { e.preventDefault(); sim(formData(e.currentTarget)); };
         $("#invForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await insert("investments", { asset: r.asset, segment: r.segment, shares: n(r.shares), price: n(r.price), dividend_per_share: n(r.dividend_per_share) }).catch(alertErr); e.currentTarget.reset(); };
-        $("#setForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await upsertSettings({ initial_balance: n(r.initial_balance), credit_card_due_day: n(r.credit_card_due_day) || 10, variable_income_target: n(r.variable_income_target), monthly_invest_target: n(r.monthly_invest_target) }).catch(alertErr); };
+        $("#setForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await upsertSettings({ initial_balance: n(r.initial_balance), credit_card_due_day: n(r.credit_card_due_day) || 10, variable_income_target: n(r.variable_income_target), monthly_invest_target: n(r.monthly_invest_target), brapi_token: String(r.brapi_token || "").trim() }).catch(alertErr); };
         $("#budgetForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await upsertBudget(r).catch(alertErr); };
         $("#txRows").onclick = async e => { const b = e.target.closest("[data-del]"); if (b && confirm("Excluir lancamento?")) { const { error } = await state.sb.from("transactions").delete().eq("id", b.dataset.del); if (error) alertErr(error); else await load(); } };
         $("#invRows").onclick = async e => { const b = e.target.closest("[data-inv-del]"); if (b && confirm("Excluir ativo?")) { const { error } = await state.sb.from("investments").delete().eq("id", b.dataset.invDel); if (error) alertErr(error); else await load(); } };
