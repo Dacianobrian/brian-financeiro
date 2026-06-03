@@ -299,13 +299,14 @@
           </div>
           <div class="split">
             <form id="invForm" class="panel">
-              <h2>Novo ativo</h2>
+              <h2>Operacao de ativo</h2>
+              <label>Operacao<select name="operation"><option value="buy">Compra</option><option value="sell">Venda</option><option value="set">Ajustar posicao</option></select></label>
               <label>Ativo<input name="asset" placeholder="CDB, Tesouro, MXRF11..." required /></label>
               <label>Classe<select name="segment"><option value="Renda fixa">Renda fixa</option><option value="FII">FII</option><option value="Acao">Acao</option><option value="ETF">ETF</option><option value="Caixa">Caixa</option></select></label>
               <label>Quantidade<input name="shares" type="number" min="0" step="0.0001" required /></label>
-              <label>Preco medio / custo<input name="price" type="number" min="0" step="0.0001" required /></label>
+              <label>Preco da operacao<input name="price" type="number" min="0" step="0.0001" required /></label>
               <label>Renda mensal manual por unidade<input name="dividend_per_share" type="number" min="0" step="0.0001" /></label>
-              <button class="primary">Salvar ativo</button>
+              <button class="primary">Registrar operacao</button>
             </form>
             <section class="panel" id="portfolioPanel">
               <div class="panel-head"><h2>Carteira</h2><span id="quoteStatus" class="pill good">Manual</span></div>
@@ -314,6 +315,8 @@
                 <aside class="panel">
                   <div class="panel-head"><h2>Agenda de dividendos</h2></div>
                   <div id="dividendRows" class="dividend-list"></div>
+                  <div class="panel-head" style="margin-top:14px"><h2>Metas da carteira</h2></div>
+                  <div id="goalRows" class="list"></div>
                 </aside>
               </div>
             </section>
@@ -328,6 +331,9 @@
               <label>Vencimento do cartao<input name="credit_card_due_day" type="number" min="1" max="31" /></label>
               <label>Meta minima de receita<input name="variable_income_target" type="number" min="0" step="0.01" /></label>
               <label>Meta mensal de investimento<input name="monthly_invest_target" type="number" min="0" step="0.01" /></label>
+              <label>Meta patrimonio investido<input name="portfolio_goal" type="number" min="0" step="0.01" /></label>
+              <label>Meta FIIs<input name="fii_goal" type="number" min="0" step="0.01" /></label>
+              <label>Meta dividendos mensais<input name="dividend_goal" type="number" min="0" step="0.01" /></label>
               <label>Token brapi gratuito<input name="brapi_token" type="password" placeholder="Opcional para cotacoes/dividendos" /></label>
               <button class="primary">Salvar</button>
             </form>
@@ -600,6 +606,9 @@
         $("#setForm").elements.credit_card_due_day.value = state.settings.credit_card_due_day || 10;
         $("#setForm").elements.variable_income_target.value = state.settings.variable_income_target || "";
         $("#setForm").elements.monthly_invest_target.value = state.settings.monthly_invest_target || "";
+        $("#setForm").elements.portfolio_goal.value = state.settings.portfolio_goal || "";
+        $("#setForm").elements.fii_goal.value = state.settings.fii_goal || "";
+        $("#setForm").elements.dividend_goal.value = state.settings.dividend_goal || "";
         $("#setForm").elements.brapi_token.value = state.settings.brapi_token || "";
         $("#budgetForm").elements.month.value = m;
         renderInvestments();
@@ -641,6 +650,15 @@
           return (q.dividends || []).map(d => ({ ...d, symbol, total: n(d.amount) * n(x.shares) }));
         }).filter(d => d.date >= new Date().toISOString().slice(0, 10)).sort((a,b) => a.date.localeCompare(b.date)).slice(0, 12);
         $("#dividendRows").innerHTML = dividendsList.length ? dividendsList.map(d => `<article class="item"><div class="row"><strong>${d.symbol}</strong><span>${brl.format(d.total)}</span></div><small>${d.date} - ${brl.format(n(d.amount))} por cota</small></article>`).join("") : "<p>Sem agenda carregada. Atualize cotacoes ou preencha renda manual.</p>";
+        const goal = (label, current, target) => {
+          const pct = target ? Math.min(140, current / target * 100) : 0;
+          return `<article class="item"><div class="row"><strong>${label}</strong><span>${brl.format(current)} / ${brl.format(target)}</span></div><div class="bar"><span style="width:${pct}%"></span></div><small>${target ? `${Math.round(Math.min(100, pct))}% atingido` : "Defina uma meta em Configuracoes"}</small></article>`;
+        };
+        $("#goalRows").innerHTML = [
+          goal("Patrimonio", total, n(state.settings.portfolio_goal)),
+          goal("FIIs", fiis, n(state.settings.fii_goal)),
+          goal("Dividendos mensais", dividends, n(state.settings.dividend_goal))
+        ].join("");
       }
       function normalizeDividend(d) {
         const date = iso(d.paymentDate || d.date || d.approvedOn || d.lastDatePrior || "");
@@ -668,6 +686,45 @@
         });
         state.market = market;
         renderInvestments();
+      }
+      async function saveInvestmentOperation(row) {
+        const asset = String(row.asset || "").trim().toUpperCase();
+        if (!asset) throw new Error("Informe o ativo.");
+        const segment = row.segment || "FII";
+        const qty = n(row.shares);
+        const price = n(row.price);
+        const dividend = n(row.dividend_per_share);
+        const current = state.inv.find(x => String(x.asset || "").toUpperCase() === asset && (x.segment || "") === segment);
+        if (row.operation === "buy") {
+          if (current) {
+            const oldQty = n(current.shares), oldAvg = n(current.price), newQty = oldQty + qty;
+            const newAvg = newQty ? ((oldQty * oldAvg) + (qty * price)) / newQty : price;
+            const { error } = await state.sb.from("investments").update({ shares: newQty, price: newAvg, dividend_per_share: dividend || n(current.dividend_per_share) }).eq("id", current.id);
+            if (error) throw error;
+          } else {
+            await insert("investments", { asset, segment, shares: qty, price, dividend_per_share: dividend });
+            return;
+          }
+        } else if (row.operation === "sell") {
+          if (!current) throw new Error("Ativo nao encontrado para venda.");
+          const newQty = Math.max(0, n(current.shares) - qty);
+          if (newQty <= 0) {
+            const { error } = await state.sb.from("investments").delete().eq("id", current.id);
+            if (error) throw error;
+          } else {
+            const { error } = await state.sb.from("investments").update({ shares: newQty, dividend_per_share: dividend || n(current.dividend_per_share) }).eq("id", current.id);
+            if (error) throw error;
+          }
+        } else {
+          if (current) {
+            const { error } = await state.sb.from("investments").update({ shares: qty, price, dividend_per_share: dividend }).eq("id", current.id);
+            if (error) throw error;
+          } else {
+            await insert("investments", { asset, segment, shares: qty, price, dividend_per_share: dividend });
+            return;
+          }
+        }
+        await load();
       }
       async function load() {
         if (!state.sb || !state.session) return;
@@ -875,8 +932,8 @@
         $("#txForm").onsubmit = async e => { e.preventDefault(); await insertRows("transactions", installmentRows(formData(e.currentTarget))).catch(alertErr); e.currentTarget.reset(); setDates(); };
         $("#recForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await insert("recurring_items", { name: r.name, account_kind: r.account_kind || "fixa", day_of_month: n(r.day_of_month), type: r.type, payment_method: r.payment_method || "conta_corrente", category: r.category, amount: n(r.amount), active: true }).catch(alertErr); e.currentTarget.reset(); };
         $("#simForm").onsubmit = e => { e.preventDefault(); sim(formData(e.currentTarget)); };
-        $("#invForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await insert("investments", { asset: r.asset, segment: r.segment, shares: n(r.shares), price: n(r.price), dividend_per_share: n(r.dividend_per_share) }).catch(alertErr); e.currentTarget.reset(); };
-        $("#setForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await upsertSettings({ initial_balance: n(r.initial_balance), credit_card_due_day: n(r.credit_card_due_day) || 10, variable_income_target: n(r.variable_income_target), monthly_invest_target: n(r.monthly_invest_target), brapi_token: String(r.brapi_token || "").trim() }).catch(alertErr); };
+        $("#invForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await saveInvestmentOperation(r).catch(alertErr); e.currentTarget.reset(); };
+        $("#setForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await upsertSettings({ initial_balance: n(r.initial_balance), credit_card_due_day: n(r.credit_card_due_day) || 10, variable_income_target: n(r.variable_income_target), monthly_invest_target: n(r.monthly_invest_target), portfolio_goal: n(r.portfolio_goal), fii_goal: n(r.fii_goal), dividend_goal: n(r.dividend_goal), brapi_token: String(r.brapi_token || "").trim() }).catch(alertErr); };
         $("#budgetForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await upsertBudget(r).catch(alertErr); };
         $("#txRows").onclick = async e => { const b = e.target.closest("[data-del]"); if (b && confirm("Excluir lancamento?")) { const { error } = await state.sb.from("transactions").delete().eq("id", b.dataset.del); if (error) alertErr(error); else await load(); } };
         $("#invRows").onclick = async e => { const b = e.target.closest("[data-inv-del]"); if (b && confirm("Excluir ativo?")) { const { error } = await state.sb.from("investments").delete().eq("id", b.dataset.invDel); if (error) alertErr(error); else await load(); } };
