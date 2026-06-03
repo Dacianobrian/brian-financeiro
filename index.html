@@ -93,8 +93,7 @@
       .projection-row.bad { color: var(--danger); }
       .projection-date { font-weight: 900; }
       .payline { display: grid; grid-template-columns: minmax(0, 1fr) 130px auto; gap: 8px; align-items: end; margin-top: 10px; }
-      .investment-stack { display: grid; gap: 12px; min-width: 0; }
-      .investment-panels { display: grid; grid-template-columns: repeat(2, minmax(240px, 1fr)); gap: 12px; align-items: start; }
+      .investment-panels { display: grid; grid-template-columns: repeat(2, minmax(260px, 1fr)); gap: 12px; align-items: start; margin-top: 12px; }
       .asset-table { min-width: 820px; }
       .asset-logo { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; background: var(--soft); font-weight: 900; }
       .asset-cell { display: flex; align-items: center; gap: 10px; }
@@ -334,22 +333,20 @@
               <label>Renda mensal manual por unidade<input name="dividend_per_share" type="number" min="0" step="0.0001" /></label>
               <button class="primary">Registrar operacao</button>
             </form>
-            <div class="investment-stack">
-              <section class="panel" id="portfolioPanel">
-                <div class="panel-head"><h2>Carteira</h2><span id="quoteStatus" class="pill good">Manual</span></div>
-                <div class="tablewrap"><table class="asset-table"><thead><tr><th>Ativo</th><th>Classe</th><th>Qtd</th><th>Preco medio</th><th>Cotacao</th><th>Patrimonio</th><th>Lucro</th><th>DY est.</th><th></th></tr></thead><tbody id="invRows"></tbody></table></div>
-              </section>
-              <div class="investment-panels">
-                <section class="panel">
-                  <div class="panel-head"><h2>Agenda de dividendos</h2></div>
-                  <div id="dividendRows" class="dividend-list"><p>Sem agenda carregada. Atualize cotacoes ou preencha renda manual.</p></div>
-                </section>
-                <section class="panel">
-                  <div class="panel-head"><h2>Metas da carteira</h2></div>
-                  <div id="goalRows" class="list"><p>Defina suas metas em Configuracoes.</p></div>
-                </section>
-              </div>
-            </div>
+            <section class="panel" id="portfolioPanel">
+              <div class="panel-head"><h2>Carteira</h2><span id="quoteStatus" class="pill good">Manual</span></div>
+              <div class="tablewrap"><table class="asset-table"><thead><tr><th>Ativo</th><th>Classe</th><th>Qtd</th><th>Preco medio</th><th>Cotacao</th><th>Patrimonio</th><th>Lucro</th><th>DY est.</th><th></th></tr></thead><tbody id="invRows"></tbody></table></div>
+            </section>
+          </div>
+          <div class="investment-panels">
+            <section class="panel">
+              <div class="panel-head"><h2>Agenda de dividendos</h2></div>
+              <div id="dividendRows" class="dividend-list"><p>Sem agenda carregada. Atualize cotacoes ou preencha renda manual.</p></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><h2>Metas da carteira</h2></div>
+              <div id="goalRows" class="list"><p>Defina suas metas em Configuracoes.</p></div>
+            </section>
           </div>
         </section>
 
