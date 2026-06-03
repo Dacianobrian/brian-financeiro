@@ -64,6 +64,10 @@
       .metric { padding: 16px; }
       .metric span { display: block; color: var(--muted); font-weight: 800; font-size: 13px; }
       .metric strong { display: block; margin-top: 10px; font-size: clamp(19px, 2vw, 27px); }
+      .metric.feature { min-height: 132px; display: grid; align-content: center; border-color: #cfd9d1; }
+      .metric.feature.warn { border-color: #d6ae4d; background: #fff9e8; }
+      .metric.feature.bad { border-color: #d86b6b; background: #fff0f0; }
+      .metric.feature.good { border-color: #8bc9a6; background: #f0fff6; }
       .chartgrid { display: grid; gap: 10px; }
       .mini-chart { display: grid; gap: 6px; }
       .mini-chart .row { font-size: 13px; font-weight: 800; }
@@ -74,6 +78,11 @@
       .item.good { border-color: #8bc9a6; background: #f0fff6; }
       .sim-risk { border-color: #d86b6b; background: #fff0f0; }
       .sim-ok { border-color: #8bc9a6; background: #f0fff6; }
+      .projection-list { display: grid; gap: 8px; }
+      .projection-row { display: grid; grid-template-columns: 74px minmax(0, 1fr) auto; gap: 12px; align-items: center; border-top: 1px solid var(--line); padding: 10px 0; }
+      .projection-row.bad { color: var(--danger); }
+      .projection-date { font-weight: 900; }
+      .payline { display: grid; grid-template-columns: minmax(0, 1fr) 130px auto; gap: 8px; align-items: end; margin-top: 10px; }
       .layout { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(320px, .75fr); gap: 12px; }
       .split { display: grid; grid-template-columns: minmax(270px, 360px) minmax(0, 1fr); gap: 12px; }
       .panel { padding: 16px; min-width: 0; }
@@ -155,12 +164,12 @@
 
         <section id="dashboard" class="view active">
           <div class="grid-kpi">
-            <article class="metric"><span>Receita do mes</span><strong id="mIncome">R$ 0,00</strong></article>
-            <article class="metric"><span>Conta corrente</span><strong id="mChecking">R$ 0,00</strong></article>
-            <article class="metric"><span>Fatura cartao</span><strong id="mCardBill">R$ 0,00</strong></article>
-            <article class="metric"><span>Investido no mes</span><strong id="mInvest">R$ 0,00</strong></article>
-            <article class="metric"><span>Saude</span><strong id="mHealth">OK</strong></article>
-            <article class="metric"><span>Saldo final</span><strong id="mBalance">R$ 0,00</strong></article>
+            <article class="metric feature good"><span>Receita do mes</span><strong id="mIncome">R$ 0,00</strong></article>
+            <article class="metric feature"><span>Conta corrente</span><strong id="mChecking">R$ 0,00</strong></article>
+            <article class="metric feature warn"><span>Fatura cartao</span><strong id="mCardBill">R$ 0,00</strong></article>
+            <article class="metric feature"><span>Investido no mes</span><strong id="mInvest">R$ 0,00</strong></article>
+            <article class="metric feature"><span>Saude</span><strong id="mHealth">OK</strong></article>
+            <article class="metric feature"><span>Saldo final</span><strong id="mBalance">R$ 0,00</strong></article>
           </div>
           <div class="layout">
             <section class="panel">
@@ -187,6 +196,14 @@
             <div class="panel-head"><h2>Alertas do mes</h2><span id="alertCount" class="pill good">0</span></div>
             <div id="alerts" class="list"></div>
           </section>
+          <section class="panel" style="margin-top:12px">
+            <div class="panel-head">
+              <h2>Projecao de caixa</h2>
+              <div class="actions"><button class="secondary" data-projection="30">30d</button><button class="secondary" data-projection="60">60d</button><button class="secondary" data-projection="90">90d</button></div>
+            </div>
+            <div id="projectionSummary" class="row"></div>
+            <div id="projectionRows" class="projection-list"></div>
+          </section>
         </section>
 
         <section id="transactions" class="view">
@@ -206,6 +223,7 @@
               <label>Categoria<input name="category" list="cats" required /></label>
               <label>Descricao<input name="description" /></label>
               <label>Valor<input name="amount" type="number" min="0.01" step="0.01" required /></label>
+              <label>Parcelas<input name="installments" type="number" min="1" max="120" value="1" /></label>
               <button class="primary">Salvar</button>
             </form>
             <section class="panel">
@@ -227,6 +245,7 @@
               <label>Categoria<input name="category" list="cats" required /></label>
               <label>Descricao<input name="description" /></label>
               <label>Valor<input name="amount" type="number" min="0.01" step="0.01" required /></label>
+              <label>Parcelas<input name="installments" type="number" min="1" max="120" value="1" /></label>
               <button class="primary">Analisar</button>
             </form>
             <section id="simResult" class="panel"><h2>Resultado</h2><p>Preencha a compra para analisar impacto no caixa e orcamento.</p></section>
@@ -318,7 +337,7 @@
 
       const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
       const $ = (q) => document.querySelector(q);
-      const state = { sb: null, session: null, view: "dashboard", tx: [], rec: [], budgets: [], inv: [], settings: {} };
+      const state = { sb: null, session: null, view: "dashboard", projectionDays: 30, tx: [], rec: [], budgets: [], inv: [], settings: {} };
       const sheets = ["2025", "2026", "2027", "2028"];
       const starts = [0,7,14,21,28,35,42,49,56,63,70,77];
       const labels = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
@@ -329,6 +348,13 @@
       }
       function n(v) { const x = Number(v || 0); return Number.isFinite(x) ? x : 0; }
       function iso(v) { return String(v || "").slice(0, 10); }
+      function addMonths(date, months) {
+        const [y, m, d] = iso(date).split("-").map(Number);
+        const target = new Date(Date.UTC(y, m - 1 + months, 1));
+        const max = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate();
+        target.setUTCDate(Math.min(d || 1, max));
+        return `${target.getUTCFullYear()}-${String(target.getUTCMonth()+1).padStart(2,"0")}-${String(target.getUTCDate()).padStart(2,"0")}`;
+      }
       function monthNow() {
         const d = new Date();
         return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
@@ -449,6 +475,37 @@
         const cardRate = income ? cardBill / income * 100 : 0;
         return { items, cash, card, income, expense, invest, checkingExpense, cardBill, perf, savingsRate, investRate, cardRate, flow, final: flow.at(-1)?.balance || opening(m) };
       }
+      function projection(days = state.projectionDays) {
+        const today = new Date().toISOString().slice(0, 10);
+        const endDate = new Date(`${today}T00:00:00`);
+        endDate.setDate(endDate.getDate() + days - 1);
+        const end = `${endDate.getFullYear()}-${String(endDate.getMonth()+1).padStart(2,"0")}-${String(endDate.getDate()).padStart(2,"0")}`;
+        const startMonth = today.slice(0, 7);
+        let balance = opening(startMonth);
+        const startDay = Number(today.slice(8, 10));
+        cashItems(startMonth).filter(x => Number(iso(x.tx_date).slice(8,10)) < startDay).forEach(x => { balance += signed(x); });
+        const monthSet = new Set();
+        const base = new Date(`${today}T00:00:00`);
+        for (let i = 0; i < days; i++) {
+          const d = new Date(base);
+          d.setDate(base.getDate() + i);
+          monthSet.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`);
+        }
+        const events = [];
+        monthSet.forEach(m => cashItems(m).forEach(x => {
+          const date = iso(x.tx_date);
+          if (date >= today && date <= end) events.push({ ...x, tx_date: date });
+        }));
+        events.sort((a,b) => iso(a.tx_date).localeCompare(iso(b.tx_date)));
+        let entries = 0, exits = 0;
+        const rows = events.map(x => {
+          const mov = signed(x);
+          if (mov > 0) entries += mov; else exits += Math.abs(mov);
+          balance += mov;
+          return { ...x, movement: mov, balance };
+        });
+        return { rows, entries, exits, final: balance, negative: rows.find(x => x.balance < 0) };
+      }
       function bar(label, value, max, danger = false) {
         const pct = max ? Math.min(140, Math.max(0, value / max * 100)) : 0;
         return `<div class="mini-chart"><div class="row"><span>${label}</span><strong>${Math.round(value)}%</strong></div><div class="bar ${danger ? "over" : ""}"><span style="width:${pct}%"></span></div></div>`;
@@ -483,6 +540,10 @@
         $("#mHealth").className = h.bad ? "bad-text" : "good-text";
         $("#mBalance").textContent = brl.format(c.final);
         $("#mBalance").className = c.final < 0 ? "bad-text" : "";
+        $("#mBalance").closest(".metric").classList.toggle("bad", c.final < 0);
+        $("#mCardBill").closest(".metric").classList.toggle("bad", c.cardRate > 55);
+        $("#mHealth").closest(".metric").classList.toggle("bad", h.bad);
+        $("#mHealth").closest(".metric").classList.toggle("good", !h.bad);
         const neg = c.flow.some(x => x.balance < 0);
         $("#risk").textContent = neg ? "Risco" : "OK";
         $("#risk").className = `pill ${neg ? "bad" : "good"}`;
@@ -513,7 +574,7 @@
         $("#alerts").innerHTML = alerts.map(x => `<article class="item ${x.level}"><div class="row"><strong>${x.title}</strong><span>${x.level === "bad" ? "Alerta" : "OK"}</span></div><small>${x.body}</small></article>`).join("");
         $("#txRows").innerHTML = state.tx.filter(x => iso(x.tx_date).startsWith(m)).map(x => `<tr><td>${iso(x.tx_date)}</td><td>${x.type}</td><td>${method(x) === "cartao_credito" ? "Cartao" : "Conta"}</td><td>${method(x) === "cartao_credito" ? billMonth(x) : "-"}</td><td>${x.category}</td><td>${x.description || "-"}</td><td>${brl.format(n(x.amount))}</td><td><button class="danger" data-del="${x.id}">Excluir</button></td></tr>`).join("") || '<tr><td colspan="8">Sem lancamentos.</td></tr>';
         const paid = paidRecurringIds(m);
-        const accountCard = x => `<article class="item ${paid.has(x.id) ? "good" : ""}"><div class="row"><strong>${cleanAccountName(x)}</strong><span>${brl.format(n(x.amount))}</span></div><small>Todo dia ${x.day_of_month} - ${x.category} - ${method(x) === "cartao_credito" ? "cartao" : "conta corrente"}${paid.has(x.id) ? " - pago no mes" : ""}</small><div class="actions"><button class="secondary" data-pay-rec="${x.id}" ${paid.has(x.id) ? "disabled" : ""}>Pagar</button></div></article>`;
+        const accountCard = x => `<article class="item ${paid.has(x.id) ? "good" : ""}"><div class="row"><strong>${cleanAccountName(x)}</strong><span>${brl.format(n(x.amount))}</span></div><small>Todo dia ${x.day_of_month} - ${x.category} - ${method(x) === "cartao_credito" ? "cartao" : "conta corrente"}${paid.has(x.id) ? " - pago no mes" : ""}</small><div class="payline"><label>Valor pago<input data-pay-amount="${x.id}" type="number" min="0.01" step="0.01" value="${n(x.amount)}" ${paid.has(x.id) ? "disabled" : ""} /></label><button class="secondary" data-pay-rec="${x.id}" ${paid.has(x.id) ? "disabled" : ""}>Pago</button></div></article>`;
         const fixed = state.rec.filter(x => accountKind(x) === "fixa");
         const variable = state.rec.filter(x => accountKind(x) === "variavel");
         $("#fixedTotal").textContent = brl.format(fixed.reduce((s,x) => s + n(x.amount), 0));
@@ -526,6 +587,12 @@
         $("#setForm").elements.monthly_invest_target.value = state.settings.monthly_invest_target || "";
         $("#budgetForm").elements.month.value = m;
         renderInvestments();
+        renderProjection();
+      }
+      function renderProjection() {
+        const p = projection();
+        $("#projectionSummary").innerHTML = `<span class="good-text">Entradas ${brl.format(p.entries)}</span><span class="bad-text">Saidas ${brl.format(p.exits)}</span><strong class="${p.final < 0 ? "bad-text" : "good-text"}">Saldo ${brl.format(p.final)}</strong>`;
+        $("#projectionRows").innerHTML = p.rows.length ? p.rows.slice(0, 24).map(x => `<article class="projection-row ${x.balance < 0 ? "bad" : ""}"><div class="projection-date">${iso(x.tx_date).slice(8,10)}<br><small>${iso(x.tx_date).slice(5,7)}</small></div><div><strong>${x.description || x.category}</strong><small>${x.category} - ${method(x) === "cartao_credito" ? "cartao" : "conta"}</small></div><div><strong>${brl.format(x.movement)}</strong><small>saldo ${brl.format(x.balance)}</small></div></article>`).join("") : "<p>Sem eventos previstos no periodo.</p>";
       }
       function renderInvestments() {
         const rows = state.inv || [];
@@ -576,6 +643,16 @@
         if (error) throw error;
         await load();
       }
+      async function insertRows(table, rows) {
+        if (!rows.length) return;
+        let { error } = await state.sb.from(table).insert(rows);
+        if (error && /payment_method|card_bill_month/i.test(error.message || "") && table === "transactions") {
+          const legacy = rows.map(({ payment_method, card_bill_month, ...row }) => row);
+          ({ error } = await state.sb.from(table).insert(legacy));
+        }
+        if (error) throw error;
+        await load();
+      }
       async function unlock(session) {
         state.session = session;
         setSessionLabel();
@@ -588,6 +665,16 @@
         const bill = payment === "cartao_credito" ? `${row.card_bill_month || iso(row.tx_date).slice(0,7)}-01` : null;
         return { tx_date: row.tx_date, type: row.type, category: row.category, description: row.description || null, amount: n(row.amount), payment_method: payment, card_bill_month: bill, status: "previsto", source: `${row.source || "manual"}|${payment}|${bill ? bill.slice(0,7) : ""}` };
       }
+      function installmentRows(row) {
+        const count = Math.max(1, Math.min(120, Math.round(n(row.installments) || 1)));
+        return Array.from({ length: count }, (_, i) => {
+          const txDate = addMonths(row.tx_date, i);
+          const billBase = row.card_bill_month || iso(row.tx_date).slice(0, 7);
+          const billDate = addMonths(`${billBase}-01`, i).slice(0, 7);
+          const current = txFrom({ ...row, tx_date: txDate, card_bill_month: billDate, source: count > 1 ? "parcela" : row.source || "manual" });
+          return { ...current, description: count > 1 ? `${row.description || row.category} (${i + 1}/${count})` : current.description };
+        });
+      }
       function fillTx(row) {
         setView("transactions");
         const f = $("#txForm").elements;
@@ -598,6 +685,7 @@
         f.category.value = row.category || "";
         f.description.value = row.description || "";
         f.amount.value = row.amount || "";
+        f.installments.value = row.installments || 1;
       }
       function fillSim(row) {
         setView("simulator");
@@ -607,8 +695,9 @@
         f.category.value = row.category || "Carro";
         f.description.value = row.description || "";
         f.amount.value = row.amount || "";
+        f.installments.value = row.installments || 1;
       }
-      async function payRecurring(id) {
+      async function payRecurring(id, paidAmount) {
         const item = state.rec.find(x => x.id === id);
         if (!item) return;
         const m = currentMonth();
@@ -617,7 +706,7 @@
           type: item.type,
           category: item.category,
           description: cleanAccountName(item),
-          amount: n(item.amount),
+          amount: n(paidAmount) || n(item.amount),
           payment_method: method(item),
           card_bill_month: method(item) === "cartao_credito" ? `${m}-01` : null,
           status: "pago",
@@ -641,8 +730,9 @@
         });
       }
       function sim(row) {
-        const fake = txFrom({ ...row, type: "saida", payment_method: "cartao_credito", card_bill_month: row.card_bill_month || iso(row.tx_date).slice(0,7), source: "simulador" });
-        const m = iso(fake.tx_date).slice(0,7), c = calc(m, [fake]);
+        const fakeRows = installmentRows({ ...row, type: "saida", payment_method: "cartao_credito", card_bill_month: row.card_bill_month || iso(row.tx_date).slice(0,7), source: "simulador" });
+        const fake = fakeRows[0];
+        const m = iso(fake.tx_date).slice(0,7), c = calc(m, fakeRows.filter(x => iso(x.tx_date).startsWith(m)));
         const badDay = c.flow.find(x => x.balance < 0);
         const b = state.budgets.find(x => iso(x.month).startsWith(m) && x.category === fake.category);
         const risks = [];
@@ -653,8 +743,10 @@
         if (fake.category === "Carro" && !b && n(fake.amount) > Math.max(c.income * 0.15, 3000)) risks.push(`Compra de carro sem orcamento definido e alta para sua receita do mes.`);
         if (c.perf < 0) risks.push(`Performance fica negativa: ${brl.format(c.perf)}.`);
         if (badDay) risks.push(`Saldo fica negativo no dia ${badDay.day}: ${brl.format(badDay.balance)}.`);
+        const futureRisk = Array.from(new Set(fakeRows.map(x => iso(x.tx_date).slice(0,7)))).map(month => ({ month, c: calc(month, fakeRows.filter(x => iso(x.tx_date).startsWith(month))) })).find(x => x.c.flow.some(d => d.balance < 0) || x.c.perf < 0);
+        if (futureRisk && futureRisk.month !== m) risks.push(`Parcelas deixam ${futureRisk.month} em risco.`);
         $("#simResult").className = `panel ${risks.length ? "sim-risk" : "sim-ok"}`;
-        $("#simResult").innerHTML = `<h2 class="${risks.length ? "bad-text" : "good-text"}">${risks.length ? "Compra fora do plano" : "Compra cabe no plano"}</h2><p>Fatura analisada: <strong>${billMonth(fake)}</strong></p><p>Saldo final da conta: <strong>${brl.format(c.final)}</strong></p><p>Performance: <strong>${brl.format(c.perf)}</strong></p>${risks.length ? `<ul>${risks.map(x => `<li>${x}</li>`).join("")}</ul>` : "<p>Nenhum alerta critico encontrado.</p>"}`;
+        $("#simResult").innerHTML = `<h2 class="${risks.length ? "bad-text" : "good-text"}">${risks.length ? "Compra fora do plano" : "Compra cabe no plano"}</h2><p>Parcelas: <strong>${fakeRows.length}</strong></p><p>Fatura inicial: <strong>${billMonth(fake)}</strong></p><p>Saldo final da conta: <strong>${brl.format(c.final)}</strong></p><p>Performance: <strong>${brl.format(c.perf)}</strong></p>${risks.length ? `<ul>${risks.map(x => `<li>${x}</li>`).join("")}</ul>` : "<p>Nenhum alerta critico encontrado.</p>"}`;
       }
       function excelDate(year, mi, day) {
         const d = Number(day);
@@ -701,6 +793,7 @@
         document.querySelector("[data-preset='card']").onclick = () => fillTx({ type: "diario", payment_method: "cartao_credito", category: "Alimentacao", description: "Compra no cartao" });
         document.querySelector("[data-preset='car']").onclick = () => fillSim({ category: "Carro", description: "Compra de carro" });
         document.querySelector("[data-pay-card]").onclick = () => payCardBill().catch(alertErr);
+        document.querySelectorAll("[data-projection]").forEach(b => b.onclick = () => { state.projectionDays = n(b.dataset.projection) || 30; renderProjection(); });
         $("#month").onchange = render;
         $("#refresh").onclick = () => load().catch(alertErr);
         $("#logout").onclick = () => state.sb.auth.signOut();
@@ -721,7 +814,7 @@
         $("#txForm").elements.type.onchange = e => {
           if (e.target.value === "diario") $("#txForm").elements.payment_method.value = "cartao_credito";
         };
-        $("#txForm").onsubmit = async e => { e.preventDefault(); await insert("transactions", txFrom(formData(e.currentTarget))).catch(alertErr); e.currentTarget.reset(); setDates(); };
+        $("#txForm").onsubmit = async e => { e.preventDefault(); await insertRows("transactions", installmentRows(formData(e.currentTarget))).catch(alertErr); e.currentTarget.reset(); setDates(); };
         $("#recForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await insert("recurring_items", { name: r.name, account_kind: r.account_kind || "fixa", day_of_month: n(r.day_of_month), type: r.type, payment_method: r.payment_method || "conta_corrente", category: r.category, amount: n(r.amount), active: true }).catch(alertErr); e.currentTarget.reset(); };
         $("#simForm").onsubmit = e => { e.preventDefault(); sim(formData(e.currentTarget)); };
         $("#invForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await insert("investments", { asset: r.asset, segment: r.segment, shares: n(r.shares), price: n(r.price), dividend_per_share: n(r.dividend_per_share) }).catch(alertErr); e.currentTarget.reset(); };
@@ -729,8 +822,8 @@
         $("#budgetForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await upsertBudget(r).catch(alertErr); };
         $("#txRows").onclick = async e => { const b = e.target.closest("[data-del]"); if (b && confirm("Excluir lancamento?")) { const { error } = await state.sb.from("transactions").delete().eq("id", b.dataset.del); if (error) alertErr(error); else await load(); } };
         $("#invRows").onclick = async e => { const b = e.target.closest("[data-inv-del]"); if (b && confirm("Excluir ativo?")) { const { error } = await state.sb.from("investments").delete().eq("id", b.dataset.invDel); if (error) alertErr(error); else await load(); } };
-        $("#fixedRows").onclick = e => { const b = e.target.closest("[data-pay-rec]"); if (b) payRecurring(b.dataset.payRec).catch(alertErr); };
-        $("#variableRows").onclick = e => { const b = e.target.closest("[data-pay-rec]"); if (b) payRecurring(b.dataset.payRec).catch(alertErr); };
+        $("#fixedRows").onclick = e => { const b = e.target.closest("[data-pay-rec]"); if (b) payRecurring(b.dataset.payRec, document.querySelector(`[data-pay-amount="${b.dataset.payRec}"]`)?.value).catch(alertErr); };
+        $("#variableRows").onclick = e => { const b = e.target.closest("[data-pay-rec]"); if (b) payRecurring(b.dataset.payRec, document.querySelector(`[data-pay-amount="${b.dataset.payRec}"]`)?.value).catch(alertErr); };
         $("#xlsx").onchange = async e => { const f = e.target.files[0]; if (f) await importXlsx(f).catch(alertErr); e.target.value = ""; };
       }
       async function upsertSettings(obj) {
