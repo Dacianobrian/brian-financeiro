@@ -133,6 +133,9 @@
       .rank-row strong { overflow-wrap: anywhere; }
       .rank-value { display: block; margin-top: 2px; font-weight: 900; white-space: normal; }
       .rank-pos { color: #b47a05; font-weight: 900; }
+      .asset-logo.has-image { overflow: hidden; background: white; border: 1px solid var(--line); }
+      .asset-logo img { width: 100%; height: 100%; object-fit: contain; padding: 4px; display: block; }
+      .asset-logo.has-image span { display: none; }
       .asset-logo.acao { background: #eaf2ff; color: #2459a8; }
       .asset-logo.fii { background: #fff4db; color: #9a6500; }
       .asset-logo.renda-fixa { background: #e9f8f0; color: #147246; }
@@ -1127,11 +1130,69 @@
         if (s.includes("caixa")) return "caixa";
         return "";
       }
+      const logoDomains = {
+        BBAS3: "bb.com.br",
+        BBDC3: "bradesco.com.br",
+        BBDC4: "bradesco.com.br",
+        ITUB3: "itau.com.br",
+        ITUB4: "itau.com.br",
+        ITSA3: "itausa.com.br",
+        ITSA4: "itausa.com.br",
+        PETR3: "petrobras.com.br",
+        PETR4: "petrobras.com.br",
+        VALE3: "vale.com",
+        ABEV3: "ambev.com.br",
+        B3SA3: "b3.com.br",
+        WEGE3: "weg.net",
+        MGLU3: "magazineluiza.com.br",
+        RENT3: "localiza.com",
+        LREN3: "lojasrenner.com.br",
+        VIVT3: "vivo.com.br",
+        TIMS3: "tim.com.br",
+        ELET3: "eletrobras.com",
+        ELET6: "eletrobras.com",
+        SANB11: "santander.com.br",
+        BPAC11: "btgpactual.com",
+        NUBR33: "nubank.com.br",
+        CXSE3: "caixaseguridade.com.br",
+        MXRF11: "xpasset.com.br",
+        HGLG11: "patria.com",
+        KNRI11: "kinea.com.br",
+        KNCR11: "kinea.com.br",
+        XPLG11: "xpasset.com.br",
+        XPML11: "xpasset.com.br",
+        VISC11: "vinci.com.br",
+        HCTR11: "hectarecapital.com.br",
+        BCFF11: "btgpactual.com",
+        RBRF11: "rbrasset.com.br",
+        RBRR11: "rbrasset.com.br",
+        CAIXA: "caixa.gov.br",
+        "BANCO DO BRASIL": "bb.com.br",
+        BRADESCO: "bradesco.com.br",
+        ITAU: "itau.com.br",
+        ITAUSA: "itausa.com.br",
+        PETROBRAS: "petrobras.com.br",
+        VALE: "vale.com",
+        NUBANK: "nubank.com.br",
+        "CAIXINHA NUBANK": "nubank.com.br",
+        "CDB DEMO LIQUIDEZ": "bradesco.com.br",
+        "TESOURO SELIC DEMO": "tesourodireto.com.br"
+      };
+      function logoSourceFor(symbol) {
+        const clean = String(symbol || "").toUpperCase().trim();
+        const q = state.market[clean] || {};
+        const domain = logoDomains[clean];
+        const domainLogo = domain ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64` : "";
+        if (q.logo) return { primary: q.logo, fallback: domainLogo };
+        return { primary: domainLogo, fallback: "" };
+      }
       function assetBadge(symbol, segment) {
         const clean = String(symbol || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
         const letters = clean.match(/[A-Z]+/)?.[0] || clean || "AT";
         const short = letters.slice(0, 2);
-        return `<span class="asset-logo ${assetLogoClass(segment)}" title="${segment || "Ativo"}">${short}</span>`;
+        const logo = logoSourceFor(symbol);
+        const fallback = `<span>${short}</span>`;
+        return `<span class="asset-logo ${assetLogoClass(segment)} ${logo.primary ? "has-image" : ""}" title="${symbol || segment || "Ativo"}">${logo.primary ? `<img src="${logo.primary}" data-fallback="${logo.fallback}" alt="Logo ${symbol}" loading="lazy" referrerpolicy="no-referrer" onerror="if (this.dataset.fallback) { this.src = this.dataset.fallback; this.dataset.fallback = ''; } else { this.remove(); this.parentElement.classList.remove('has-image'); }" />` : ""}${fallback}</span>`;
       }
       function portfolioColors() {
         return ["#2e8f62", "#f1ae2b", "#4f73d9", "#c74848", "#7b55c7", "#12917e", "#a76500"];
@@ -1259,7 +1320,8 @@
           const dividends = rawDividends.map(normalizeDividend).filter(Boolean);
           const recent = dividends.filter(d => d.date >= addMonths(new Date().toISOString().slice(0, 10), -12));
           const monthlyDividend = recent.length ? recent.reduce((s,d) => s + n(d.amount), 0) / 12 : 0;
-          if (symbol) market[symbol] = { price: n(r.regularMarketPrice), change: r.regularMarketChangePercent, name: r.longName || r.shortName || "", dividends, monthlyDividend };
+          const logo = r.logourl || r.logoUrl || r.logo_url || r.logo || "";
+          if (symbol) market[symbol] = { price: n(r.regularMarketPrice), change: r.regularMarketChangePercent, name: r.longName || r.shortName || "", logo, dividends, monthlyDividend };
         });
         state.market = market;
         renderInvestments();
