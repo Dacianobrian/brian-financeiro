@@ -64,7 +64,7 @@
       .grid-kpi { display: grid; grid-template-columns: repeat(auto-fit, minmax(188px, 1fr)); gap: 12px; margin-bottom: 14px; }
       .metric { padding: 16px; min-width: 0; overflow: hidden; }
       .metric span { display: block; color: var(--muted); font-weight: 800; font-size: 13px; }
-      .metric strong { display: block; margin-top: 8px; font-size: clamp(20px, 1.45vw, 25px); line-height: 1.05; white-space: nowrap; letter-spacing: 0; }
+      .metric strong { display: block; margin-top: 8px; font-size: clamp(19px, 1.35vw, 25px); line-height: 1.08; overflow-wrap: anywhere; letter-spacing: 0; }
       .metric.feature { min-height: 112px; display: grid; align-content: center; border-color: #cfd9d1; }
       .metric.feature.warn { border-color: #d6ae4d; background: #fff9e8; }
       .metric.feature.bad { border-color: #d86b6b; background: #fff0f0; }
@@ -93,7 +93,7 @@
       .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-bottom: 12px; }
       .summary-card { border: 1px solid var(--line); border-radius: 8px; background: #fbfcfa; padding: 12px; display: grid; gap: 6px; }
       .summary-card span { color: var(--muted); font-size: 12px; font-weight: 900; }
-      .summary-card strong { font-size: 22px; line-height: 1.08; white-space: nowrap; }
+      .summary-card strong { font-size: clamp(18px, 1.25vw, 22px); line-height: 1.08; overflow-wrap: anywhere; }
       .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
       .form-grid .full { grid-column: 1 / -1; }
       .section-note { color: var(--muted); font-size: 13px; font-weight: 700; line-height: 1.4; }
@@ -102,6 +102,52 @@
       .result-card span { display: block; color: var(--muted); font-size: 12px; font-weight: 900; }
       .result-card strong { display: block; margin-top: 6px; font-size: 20px; }
       .allocation-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 12px; }
+      .period-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+      .period-tabs .secondary.active { border-color: #2d65c8; box-shadow: inset 0 0 0 2px #2d65c8; }
+      .chart-list { display: grid; gap: 10px; }
+      .chart-row { display: grid; grid-template-columns: minmax(118px, 170px) minmax(0, 1fr) minmax(92px, auto); gap: 10px; align-items: center; }
+      .chart-label { color: var(--muted); font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .chart-track { height: 16px; border-radius: 999px; background: var(--soft); overflow: hidden; }
+      .chart-fill { display: block; height: 100%; border-radius: inherit; background: var(--brand); }
+      .chart-value { text-align: right; font-weight: 900; white-space: nowrap; }
+      .monthly-chart { min-height: 260px; display: grid; grid-template-columns: repeat(12, minmax(54px, 1fr)); gap: 10px; align-items: end; overflow: auto; padding-top: 34px; }
+      .month-group { min-height: 220px; display: grid; grid-template-rows: 1fr auto; gap: 8px; justify-items: center; }
+      .month-bars { height: 180px; width: 100%; display: flex; gap: 5px; align-items: end; justify-content: center; border-bottom: 1px solid var(--line); }
+      .month-bar { width: 13px; min-height: 3px; border-radius: 6px 6px 0 0; }
+      .month-bar.income { background: #2e8f62; }
+      .month-bar.expense { background: #c74848; }
+      .month-bar.invest { background: #5d54c9; }
+      .month-label { color: var(--muted); font-size: 12px; font-weight: 900; }
+      .legend { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; color: var(--muted); font-size: 12px; font-weight: 900; }
+      .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; margin-right: 5px; }
+      .investment-overview, .health-grid { display: grid; grid-template-columns: minmax(280px, .85fr) minmax(0, 1.15fr); gap: 12px; align-items: start; margin: 12px 0; }
+      .donut-wrap { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 18px; align-items: center; }
+      .donut { width: 180px; aspect-ratio: 1; border-radius: 50%; position: relative; background: conic-gradient(var(--line) 0 100%); }
+      .donut::after { content: ""; position: absolute; inset: 42px; border-radius: 50%; background: var(--card); border: 1px solid var(--line); }
+      .ranking-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
+      .ranking-card { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #fbfcfa; }
+      .ranking-card h3 { margin: 0; padding: 12px; font-size: 14px; border-bottom: 1px solid var(--line); }
+      .rank-row { display: grid; grid-template-columns: 28px 34px minmax(0, 1fr); gap: 8px; align-items: center; min-height: 62px; padding: 8px 12px; border-top: 1px solid var(--line); }
+      .rank-row:first-of-type { border-top: 0; }
+      .rank-row small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .rank-row strong { overflow-wrap: anywhere; }
+      .rank-value { display: block; margin-top: 2px; font-weight: 900; white-space: normal; }
+      .rank-pos { color: #b47a05; font-weight: 900; }
+      .asset-logo.acao { background: #eaf2ff; color: #2459a8; }
+      .asset-logo.fii { background: #fff4db; color: #9a6500; }
+      .asset-logo.renda-fixa { background: #e9f8f0; color: #147246; }
+      .asset-logo.etf { background: #eeeaff; color: #5b47b3; }
+      .asset-logo.caixa { background: #edf1f5; color: #49535c; }
+      .health-score { display: grid; place-items: center; gap: 8px; min-height: 210px; text-align: center; }
+      .score-ring { width: 150px; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; position: relative; background: conic-gradient(var(--danger) 0deg, var(--danger) 90deg, var(--soft) 90deg); }
+      .score-ring::after { content: ""; position: absolute; inset: 18px; border-radius: 50%; background: var(--card); }
+      .score-ring strong { position: relative; z-index: 1; font-size: 38px; }
+      .score-ring small { position: relative; z-index: 1; display: block; font-weight: 900; }
+      .score-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+      .score-card { border: 1px solid var(--line); border-radius: 8px; padding: 12px; background: #fbfcfa; display: grid; gap: 8px; }
+      .score-card.bad { border-color: #d86b6b; background: #fff6f6; }
+      .score-card.warn { border-color: #d6ae4d; background: #fff9e8; }
+      .score-card.good { border-color: #8bc9a6; background: #f2fff7; }
       .item.bad { border-color: #d86b6b; background: #fff0f0; }
       .item.good { border-color: #8bc9a6; background: #f0fff6; }
       .sim-risk { border-color: #d86b6b; background: #fff0f0; }
@@ -163,7 +209,9 @@
         .shell { grid-template-columns: 1fr; }
         .shell > aside { min-height: auto; }
         nav { grid-template-columns: repeat(3, 1fr); }
-        .layout, .split, .investment-panels, .accounts-board { grid-template-columns: 1fr; }
+        .layout, .split, .investment-panels, .accounts-board, .investment-overview, .health-grid { grid-template-columns: 1fr; }
+        .ranking-grid { grid-template-columns: 1fr; }
+        .donut-wrap { grid-template-columns: 1fr; justify-items: center; }
         .grid-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .goal-strip, .goal-summary { grid-template-columns: 1fr; }
         .projection-row, .quick-projection { grid-template-columns: 1fr; }
@@ -190,6 +238,7 @@
         </div>
         <nav>
           <button class="tab active" data-view="dashboard">Dashboard</button>
+          <button class="tab" data-view="health">Saude</button>
           <button class="tab" data-view="transactions">Lancamentos</button>
           <button class="tab" data-view="simulator">Simular compra</button>
           <button class="tab" data-view="recurring">Contas</button>
@@ -221,6 +270,12 @@
         </section>
 
         <section id="dashboard" class="view active">
+          <div class="period-tabs" id="periodTabs">
+            <button class="secondary active" data-period="month">Mes</button>
+            <button class="secondary" data-period="semester">Semestre</button>
+            <button class="secondary" data-period="year">Ano</button>
+            <button class="secondary" data-period="all">Todo periodo</button>
+          </div>
           <div class="grid-kpi">
             <article class="metric feature good"><span>Receita do mes</span><strong id="mIncome">R$ 0,00</strong></article>
             <article class="metric feature"><span>Conta corrente</span><strong id="mChecking">R$ 0,00</strong></article>
@@ -228,6 +283,17 @@
             <article class="metric feature"><span>Investido no mes</span><strong id="mInvest">R$ 0,00</strong></article>
             <article class="metric feature"><span>Saude</span><strong id="mHealth">OK</strong></article>
             <article class="metric feature"><span>Saldo final</span><strong id="mBalance">R$ 0,00</strong></article>
+          </div>
+          <div class="layout" style="margin-bottom:12px">
+            <section class="panel">
+              <div class="panel-head"><h2>Despesas por categoria</h2><span id="categoryPeriod" class="pill good">Mes</span></div>
+              <div id="categoryChart" class="chart-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><h2>Fluxo mensal</h2><span id="flowPeriod" class="pill good">Mes</span></div>
+              <div class="legend"><span><i style="background:#2e8f62"></i>Entradas</span><span><i style="background:#c74848"></i>Saidas</span><span><i style="background:#5d54c9"></i>Investido</span></div>
+              <div id="monthlyFlowChart" class="monthly-chart"></div>
+            </section>
           </div>
           <section class="goal-section">
             <div class="panel-head"><h2>Metas financeiras</h2><span id="goalMonth" class="pill good">Atual</span></div>
@@ -282,6 +348,25 @@
               <button class="primary" name="type" value="entrada">+ Receita</button>
               <button class="danger" name="type" value="saida">+ Despesa</button>
             </form>
+          </section>
+        </section>
+
+        <section id="health" class="view">
+          <div class="health-grid">
+            <section class="panel health-score">
+              <h2>Score de saude financeira</h2>
+              <div id="healthScoreRing" class="score-ring"><strong>0</strong><small>/100</small></div>
+              <strong id="healthScoreLabel">Aguardando dados</strong>
+              <small id="healthScorePeriod">Mes atual</small>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><h2>Medidores principais</h2><span id="healthPeriod" class="pill good">Mes</span></div>
+              <div id="healthScoreCards" class="score-cards"></div>
+            </section>
+          </div>
+          <section class="panel">
+            <div class="panel-head"><h2>Insights do periodo</h2><span id="healthInsightCount" class="pill good">0</span></div>
+            <div id="healthInsights" class="list"></div>
           </section>
         </section>
 
@@ -378,6 +463,16 @@
           <div class="quickbar">
             <button class="secondary" data-refresh-quotes>Atualizar cotacoes</button>
           </div>
+          <div class="investment-overview">
+            <section class="panel">
+              <div class="panel-head"><h2>Grafico da carteira</h2><span id="portfolioMixLabel" class="pill good">Carteira</span></div>
+              <div id="portfolioDonut" class="donut-wrap"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><h2>Destaques da carteira</h2><span class="pill good">Top 5</span></div>
+              <div id="investmentHighlights" class="ranking-grid"></div>
+            </section>
+          </div>
           <div id="allocationRows" class="allocation-grid"></div>
           <div class="split">
             <form id="invForm" class="panel">
@@ -451,7 +546,7 @@
 
       const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
       const $ = (q) => document.querySelector(q);
-      const state = { sb: null, session: null, view: "dashboard", projectionDays: 30, tx: [], rec: [], budgets: [], inv: [], market: {}, settings: {}, simRows: [] };
+      const state = { sb: null, session: null, view: "dashboard", period: "month", projectionDays: 30, tx: [], rec: [], budgets: [], inv: [], market: {}, settings: {}, simRows: [] };
       const sheets = ["2025", "2026", "2027", "2028"];
       const starts = [0,7,14,21,28,35,42,49,56,63,70,77];
       const labels = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
@@ -573,6 +668,7 @@
         document.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b.dataset.view === name));
         const copy = {
           dashboard: ["Dashboard", "Fluxo do mes, orcamento e saldo futuro."],
+          health: ["Saude financeira", "Score, riscos e pontos de melhoria."],
           transactions: ["Lancamentos", "Receitas, despesas, compras no cartao e parcelas."],
           simulator: ["Simular compra", "Teste antes de comprar e salve quando decidir."],
           recurring: ["Contas", "Contas fixas e variaveis do mes."],
@@ -642,6 +738,86 @@
         const investRate = income ? invest / income * 100 : 0;
         const cardRate = income ? cardBill / income * 100 : 0;
         return { items, cash, card, income, expense, invest, checkingExpense, cardBill, perf, savingsRate, investRate, cardRate, flow, final: flow.at(-1)?.balance || opening(m) };
+      }
+      function monthIdFromDate(v) {
+        const s = iso(v);
+        return /^\d{4}-\d{2}/.test(s) ? s.slice(0, 7) : "";
+      }
+      function shiftMonth(m, amount) {
+        const [y, mo] = m.split("-").map(Number);
+        const d = new Date(Date.UTC(y, mo - 1 + amount, 1));
+        return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+      }
+      function allKnownMonths() {
+        const set = new Set([currentMonth()]);
+        state.tx.forEach(x => { const m = monthIdFromDate(x.tx_date); if (m) set.add(m); });
+        state.budgets.forEach(x => { const m = monthIdFromDate(x.month); if (m) set.add(m); });
+        if (!set.size) set.add(monthNow());
+        return [...set].sort();
+      }
+      function rangeMonths(period = state.period, selected = currentMonth()) {
+        const [year, month] = selected.split("-").map(Number);
+        if (period === "all") return allKnownMonths();
+        if (period === "year") return Array.from({ length: 12 }, (_, i) => `${year}-${String(i + 1).padStart(2, "0")}`);
+        if (period === "semester") {
+          const start = month <= 6 ? 1 : 7;
+          return Array.from({ length: 6 }, (_, i) => `${year}-${String(start + i).padStart(2, "0")}`);
+        }
+        return [selected];
+      }
+      function periodText(period = state.period) {
+        return { month: "Mes", semester: "Semestre", year: "Ano", all: "Todo periodo" }[period] || "Mes";
+      }
+      function periodCalc(months) {
+        const monthly = months.map(month => ({ month, ...calc(month) }));
+        const last = monthly.at(-1);
+        return {
+          months,
+          monthly,
+          items: monthly.flatMap(x => x.items),
+          income: monthly.reduce((s,x) => s + x.income, 0),
+          expense: monthly.reduce((s,x) => s + x.expense, 0),
+          invest: monthly.reduce((s,x) => s + x.invest, 0),
+          cardBill: monthly.reduce((s,x) => s + x.cardBill, 0),
+          checkingExpense: monthly.reduce((s,x) => s + x.checkingExpense, 0),
+          perf: monthly.reduce((s,x) => s + x.perf, 0),
+          final: last?.final || 0,
+          cardRate: monthly.reduce((s,x) => s + x.income, 0) ? monthly.reduce((s,x) => s + x.cardBill, 0) / monthly.reduce((s,x) => s + x.income, 0) * 100 : 0,
+          investRate: monthly.reduce((s,x) => s + x.income, 0) ? monthly.reduce((s,x) => s + x.invest, 0) / monthly.reduce((s,x) => s + x.income, 0) * 100 : 0,
+          savingsRate: monthly.reduce((s,x) => s + x.income, 0) ? monthly.reduce((s,x) => s + x.perf, 0) / monthly.reduce((s,x) => s + x.income, 0) * 100 : 0
+        };
+      }
+      function categoryTotals(items) {
+        const map = new Map();
+        items.filter(x => (x.type === "saida" || x.type === "diario") && x.category !== "Cartao de credito").forEach(x => {
+          const key = x.category || "Sem categoria";
+          map.set(key, (map.get(key) || 0) + n(x.amount));
+        });
+        return [...map.entries()].sort((a,b) => b[1] - a[1]);
+      }
+      function renderPeriodControls() {
+        document.querySelectorAll("[data-period]").forEach(b => b.classList.toggle("active", b.dataset.period === state.period));
+        $("#categoryPeriod").textContent = periodText();
+        $("#flowPeriod").textContent = periodText();
+        $("#healthPeriod").textContent = periodText();
+      }
+      function renderCategoryChart(periodData) {
+        const rows = categoryTotals(periodData.items).slice(0, 10);
+        const max = rows[0]?.[1] || 0;
+        const colors = ["#63758c", "#6e48b8", "#c73e72", "#cf3333", "#2b70d6", "#d98b22", "#2e8f62", "#8b62d9", "#12917e", "#a76500"];
+        $("#categoryChart").innerHTML = rows.length ? rows.map(([label, value], i) => {
+          const pct = max ? Math.max(3, value / max * 100) : 0;
+          return `<div class="chart-row"><span class="chart-label">${label}</span><div class="chart-track"><span class="chart-fill" style="width:${pct}%;background:${colors[i % colors.length]}"></span></div><span class="chart-value">${brl.format(value)}</span></div>`;
+        }).join("") : "<p>Nenhuma despesa no periodo selecionado.</p>";
+      }
+      function renderMonthlyFlowChart(periodData) {
+        const months = state.period === "month" ? rangeMonths("year", currentMonth()) : periodData.months;
+        const rows = months.map(month => ({ month, ...calc(month) }));
+        const max = Math.max(1, ...rows.flatMap(x => [x.income, x.expense, x.invest]));
+        $("#monthlyFlowChart").innerHTML = rows.map(x => {
+          const title = `${x.month}: entradas ${brl.format(x.income)}, saidas ${brl.format(x.expense)}, investido ${brl.format(x.invest)}`;
+          return `<div class="month-group" title="${title}"><div class="month-bars"><span class="month-bar income" style="height:${Math.max(3, x.income / max * 100)}%"></span><span class="month-bar expense" style="height:${Math.max(3, x.expense / max * 100)}%"></span><span class="month-bar invest" style="height:${Math.max(3, x.invest / max * 100)}%"></span></div><span class="month-label">${labels[Number(x.month.slice(5,7)) - 1]}</span></div>`;
+        }).join("");
       }
       function projection(days = state.projectionDays) {
         const today = new Date().toISOString().slice(0, 10);
@@ -769,6 +945,58 @@
         if (c.savingsRate >= 20 && c.investRate >= 10) return { label: "Forte", bad: false, note: "Mes saudavel: sobra e investimento em bom nivel." };
         return { label: "OK", bad: false, note: "Mes controlado, mas ainda da para fortalecer sobra e investimento." };
       }
+      function scoreStatus(score) {
+        if (score >= 80) return { label: "Forte", cls: "good", color: "#167147" };
+        if (score >= 55) return { label: "Em construcao", cls: "warn", color: "#d6a22b" };
+        return { label: "Atencao", cls: "bad", color: "#d94d60" };
+      }
+      function financialScore(periodData, stats) {
+        const income = periodData.income;
+        const fixed = state.rec.filter(x => x.active !== false && accountKind(x) === "fixa" && x.type !== "entrada").reduce((s,x) => s + n(x.amount), 0);
+        const reserveMonths = fixed ? stats.reserve / fixed : 0;
+        const categories = new Set((state.inv || []).filter(x => n(x.shares) > 0).map(x => x.segment || "Outros"));
+        const investedMonths = periodData.monthly.filter(x => x.invest > 0).length;
+        const budgetRows = state.budgets.filter(b => periodData.months.includes(monthIdFromDate(b.month)));
+        const overBudget = budgetRows.filter(b => {
+          const used = periodData.items.filter(x => x.category === b.category && (x.type === "saida" || x.type === "diario")).reduce((s,x) => s + n(x.amount), 0);
+          return used > n(b.limit_amount);
+        }).length;
+        const investRateScore = Math.min(30, Math.max(0, periodData.investRate / 20 * 30));
+        const controlScore = Math.max(0, Math.min(25, 25 - Math.max(0, periodData.cardRate - 35) * .35 - overBudget * 5));
+        const reserveScore = Math.min(25, reserveMonths / 6 * 25);
+        const diversifyScore = Math.min(10, categories.size / 4 * 10);
+        const regularityScore = periodData.months.length ? Math.min(10, investedMonths / periodData.months.length * 10) : 0;
+        const components = [
+          { label: "Taxa de aporte", score: investRateScore, max: 30, detail: `${periodData.investRate.toFixed(1)}% da receita`, cls: investRateScore >= 18 ? "good" : investRateScore >= 9 ? "warn" : "bad" },
+          { label: "Controle de gastos", score: controlScore, max: 25, detail: `${overBudget} categoria(s) fora do orcamento`, cls: controlScore >= 18 ? "good" : controlScore >= 10 ? "warn" : "bad" },
+          { label: "Reserva", score: reserveScore, max: 25, detail: `${reserveMonths.toFixed(1)} meses cobertos`, cls: reserveScore >= 18 ? "good" : reserveScore >= 10 ? "warn" : "bad" },
+          { label: "Diversificacao", score: diversifyScore, max: 10, detail: `${categories.size} classe(s) na carteira`, cls: diversifyScore >= 7 ? "good" : diversifyScore >= 4 ? "warn" : "bad" },
+          { label: "Regularidade", score: regularityScore, max: 10, detail: `${investedMonths}/${periodData.months.length} meses com aporte`, cls: regularityScore >= 7 ? "good" : regularityScore >= 4 ? "warn" : "bad" }
+        ];
+        const score = Math.round(components.reduce((s,x) => s + x.score, 0));
+        const insights = [];
+        if (periodData.perf < 0) insights.push(`O periodo fecha negativo em ${brl.format(periodData.perf)}. Revise fatura, compras variaveis e contas previstas.`);
+        if (reserveMonths < 6) insights.push(`A reserva cobre ${reserveMonths.toFixed(1)} meses de contas fixas. Para renda variavel, mirar 6 meses deixa o caixa mais tranquilo.`);
+        if (periodData.cardRate > 45) insights.push(`A fatura representa ${Math.round(periodData.cardRate)}% da receita. Esse e o principal ponto para evitar aperto nos proximos meses.`);
+        if (periodData.investRate < 20 && income > 0) insights.push(`A taxa de investimento esta em ${periodData.investRate.toFixed(1)}%. O modelo 50-30-20 pede perto de 20%.`);
+        if (!insights.length) insights.push("O periodo esta equilibrado: gastos controlados, aporte registrado e caixa sem alerta critico.");
+        return { score, components, insights, status: scoreStatus(score) };
+      }
+      function renderHealthPage(periodData, stats) {
+        const h = financialScore(periodData, stats);
+        const deg = Math.max(0, Math.min(100, h.score)) * 3.6;
+        $("#healthScoreRing").style.background = `conic-gradient(${h.status.color} 0deg, ${h.status.color} ${deg}deg, var(--soft) ${deg}deg)`;
+        $("#healthScoreRing").innerHTML = `<strong>${h.score}</strong><small>/100</small>`;
+        $("#healthScoreLabel").textContent = h.status.label;
+        $("#healthScorePeriod").textContent = `${periodText()} - ${periodData.months[0]}${periodData.months.length > 1 ? ` ate ${periodData.months.at(-1)}` : ""}`;
+        $("#healthScoreCards").innerHTML = h.components.map(x => {
+          const pct = x.max ? Math.min(100, x.score / x.max * 100) : 0;
+          return `<article class="score-card ${x.cls}"><div class="row"><strong>${x.label}</strong><span>${Math.round(x.score)}/${x.max}</span></div><div class="bar ${x.cls === "bad" ? "over" : ""}"><span style="width:${pct}%"></span></div><small>${x.detail}</small></article>`;
+        }).join("");
+        $("#healthInsightCount").textContent = String(h.insights.length);
+        $("#healthInsightCount").className = `pill ${h.status.cls === "bad" ? "bad" : "good"}`;
+        $("#healthInsights").innerHTML = h.insights.map(x => `<article class="item ${h.status.cls === "bad" ? "bad" : "good"}"><strong>${x}</strong></article>`).join("");
+      }
       function monthlyAlerts(m, c) {
         const alerts = [];
         const badDay = c.flow.find(x => x.balance < 0);
@@ -785,17 +1013,23 @@
       function render() {
         const m = currentMonth(), c = calc(m);
         const stats = investmentStats();
-        $("#mIncome").textContent = brl.format(c.income);
-        $("#mChecking").textContent = brl.format(c.checkingExpense);
-        $("#mCardBill").textContent = brl.format(c.cardBill);
-        $("#mInvest").textContent = brl.format(c.invest);
+        const periodMonths = rangeMonths(state.period, m);
+        const pc = periodCalc(periodMonths);
+        renderPeriodControls();
+        renderCategoryChart(pc);
+        renderMonthlyFlowChart(pc);
+        renderHealthPage(pc, stats);
+        $("#mIncome").textContent = brl.format(pc.income);
+        $("#mChecking").textContent = brl.format(pc.checkingExpense);
+        $("#mCardBill").textContent = brl.format(pc.cardBill);
+        $("#mInvest").textContent = brl.format(pc.invest);
         const h = health(c);
         $("#mHealth").textContent = h.label;
         $("#mHealth").className = h.bad ? "bad-text" : "good-text";
-        $("#mBalance").textContent = brl.format(c.final);
-        $("#mBalance").className = c.final < 0 ? "bad-text" : "";
-        $("#mBalance").closest(".metric").classList.toggle("bad", c.final < 0);
-        $("#mCardBill").closest(".metric").classList.toggle("bad", c.cardRate > 55);
+        $("#mBalance").textContent = brl.format(pc.final);
+        $("#mBalance").className = pc.final < 0 ? "bad-text" : "";
+        $("#mBalance").closest(".metric").classList.toggle("bad", pc.final < 0);
+        $("#mCardBill").closest(".metric").classList.toggle("bad", pc.cardRate > 55);
         $("#mHealth").closest(".metric").classList.toggle("bad", h.bad);
         $("#mHealth").closest(".metric").classList.toggle("good", !h.bad);
         const neg = c.flow.some(x => x.balance < 0);
@@ -884,6 +1118,61 @@
           return `<article class="projection-row ${x.balance < 0 ? "bad" : ""}"><div class="projection-date">${iso(x.tx_date).slice(8,10)}<br><small>${iso(x.tx_date).slice(5,7)}</small></div><div><strong>${x.description || x.category}</strong><small>${x.category} - ${method(x) === "cartao_credito" ? "cartao" : "conta"}</small></div><div><strong>${brl.format(x.movement)}</strong><small>saldo ${brl.format(x.balance)}</small></div>${action}</article>`;
         }).join("") : "<p>Sem eventos previstos no periodo.</p>";
       }
+      function assetLogoClass(segment) {
+        const s = String(segment || "").toLowerCase();
+        if (s.includes("acao")) return "acao";
+        if (s.includes("fii")) return "fii";
+        if (s.includes("fixa")) return "renda-fixa";
+        if (s.includes("etf")) return "etf";
+        if (s.includes("caixa")) return "caixa";
+        return "";
+      }
+      function assetBadge(symbol, segment) {
+        const clean = String(symbol || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+        const letters = clean.match(/[A-Z]+/)?.[0] || clean || "AT";
+        const short = letters.slice(0, 2);
+        return `<span class="asset-logo ${assetLogoClass(segment)}" title="${segment || "Ativo"}">${short}</span>`;
+      }
+      function portfolioColors() {
+        return ["#2e8f62", "#f1ae2b", "#4f73d9", "#c74848", "#7b55c7", "#12917e", "#a76500"];
+      }
+      function renderPortfolioDonut(allocations, total) {
+        const entries = Object.entries(allocations).sort((a,b) => b[1] - a[1]);
+        if (!entries.length || !total) {
+          $("#portfolioDonut").innerHTML = "<p>Nenhum ativo cadastrado.</p>";
+          return;
+        }
+        const colors = portfolioColors();
+        let start = 0;
+        const stops = entries.map(([label, value], i) => {
+          const pct = value / total * 100;
+          const end = start + pct;
+          const stop = `${colors[i % colors.length]} ${start}% ${end}%`;
+          start = end;
+          return stop;
+        }).join(", ");
+        const list = entries.map(([label, value], i) => {
+          const pct = total ? value / total * 100 : 0;
+          return `<div class="row"><span><i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${colors[i % colors.length]};margin-right:6px"></i>${label}</span><strong>${pct.toFixed(1)}%</strong></div>`;
+        }).join("");
+        $("#portfolioDonut").innerHTML = `<div class="donut" style="background:conic-gradient(${stops})"></div><div class="list">${list}</div>`;
+        $("#portfolioMixLabel").textContent = `${entries.length} classe(s)`;
+      }
+      function renderInvestmentHighlights(rows, total) {
+        const enriched = rows.map(x => {
+          const symbol = String(x.asset || "").toUpperCase();
+          const value = n(x.shares) * assetCurrentPrice(x);
+          const monthly = (n(quoteForAsset(x).monthlyDividend) || n(x.dividend_per_share)) * n(x.shares);
+          const dy = value ? monthly * 12 / value * 100 : 0;
+          return { ...x, symbol, value, monthly, dy };
+        });
+        const card = (title, list, formatter) => `<article class="ranking-card"><h3>${title}</h3>${list.slice(0, 5).map((x, i) => `<div class="rank-row"><span class="rank-pos">#${i + 1}</span>${assetBadge(x.symbol, x.segment)}<div><strong>${x.symbol}</strong><small>${x.segment || ""}</small><span class="rank-value">${formatter(x)}</span></div></div>`).join("") || "<p style=\"padding:12px\">Sem dados.</p>"}</article>`;
+        $("#investmentHighlights").innerHTML = [
+          card("Maior DY estimado", enriched.filter(x => x.dy > 0).sort((a,b) => b.dy - a.dy), x => `${x.dy.toFixed(1)}%`),
+          card("Maior patrimonio", enriched.sort((a,b) => b.value - a.value), x => brl.format(x.value)),
+          card("Maior renda mensal", enriched.filter(x => x.monthly > 0).sort((a,b) => b.monthly - a.monthly), x => brl.format(x.monthly))
+        ].join("");
+      }
       function renderInvestments() {
         const { rows, total, cost, fiis, dividends, profit } = investmentStats();
         const returnPct = cost ? profit / cost * 100 : 0;
@@ -899,6 +1188,8 @@
           map[key] = (map[key] || 0) + n(x.shares) * assetCurrentPrice(x);
           return map;
         }, {});
+        renderPortfolioDonut(allocations, total);
+        renderInvestmentHighlights(rows, total);
         $("#allocationRows").innerHTML = Object.entries(allocations).length ? Object.entries(allocations).sort((a,b) => b[1] - a[1]).map(([label, value]) => {
           const pct = total ? value / total * 100 : 0;
           return `<article class="summary-card"><span>${label}</span><strong>${brl.format(value)}</strong><div class="bar"><span style="width:${Math.min(100, pct)}%"></span></div><small>${Math.round(pct)}% da carteira</small></article>`;
@@ -910,7 +1201,7 @@
           const symbol = String(x.asset || "").toUpperCase(), q = quoteForAsset(x);
           const avg = n(x.price), price = assetCurrentPrice(x), value = n(x.shares) * price, assetCost = n(x.shares) * avg, assetProfit = value - assetCost;
           const dy = value ? (n(q.monthlyDividend) || n(x.dividend_per_share)) * 12 * n(x.shares) / value * 100 : 0;
-          return `<tr><td><div class="asset-cell"><span class="asset-logo">${symbol.slice(0,2)}</span><div><strong>${symbol}</strong><small>${q.name || ""}</small></div></div></td><td>${x.segment || "-"}</td><td>${n(x.shares)}</td><td>${brl.format(avg)}</td><td>${brl.format(price)}${q.change != null ? `<br><small class="${n(q.change) < 0 ? "bad-text" : "good-text"}">${n(q.change).toFixed(2)}%</small>` : ""}</td><td>${brl.format(value)}</td><td class="${assetProfit < 0 ? "bad-text" : "good-text"}">${brl.format(assetProfit)}</td><td>${dy.toFixed(1)}%</td><td><button class="danger" data-inv-del="${x.id}">Excluir</button></td></tr>`;
+          return `<tr><td><div class="asset-cell">${assetBadge(symbol, x.segment)}<div><strong>${symbol}</strong><small>${q.name || ""}</small></div></div></td><td>${x.segment || "-"}</td><td>${n(x.shares)}</td><td>${brl.format(avg)}</td><td>${brl.format(price)}${q.change != null ? `<br><small class="${n(q.change) < 0 ? "bad-text" : "good-text"}">${n(q.change).toFixed(2)}%</small>` : ""}</td><td>${brl.format(value)}</td><td class="${assetProfit < 0 ? "bad-text" : "good-text"}">${brl.format(assetProfit)}</td><td>${dy.toFixed(1)}%</td><td><button class="danger" data-inv-del="${x.id}">Excluir</button></td></tr>`;
         }).join("") : '<tr><td colspan="9">Nenhum ativo cadastrado.</td></tr>';
         let dividendsList = rows.flatMap(x => {
           const symbol = String(x.asset || "").toUpperCase(), q = quoteForAsset(x);
@@ -1251,6 +1542,7 @@
       function bind() {
         document.querySelectorAll(".tab").forEach(b => b.onclick = () => setView(b.dataset.view));
         document.querySelectorAll("[data-view-shortcut]").forEach(b => b.onclick = () => setView(b.dataset.viewShortcut));
+        document.querySelectorAll("[data-period]").forEach(b => b.onclick = () => { state.period = b.dataset.period || "month"; render(); });
         document.querySelector("[data-preset-shortcut='card']").onclick = () => fillTx({ type: "diario", payment_method: "cartao_credito", category: "Alimentacao", description: "Compra no cartao" });
         document.querySelector("[data-preset='fixed']").onclick = () => fillTx({ type: "saida", payment_method: "conta_corrente", category: "Contas", description: "Conta fixa paga" });
         document.querySelector("[data-preset='card']").onclick = () => fillTx({ type: "diario", payment_method: "cartao_credito", category: "Alimentacao", description: "Compra no cartao" });
