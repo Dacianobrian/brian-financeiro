@@ -769,6 +769,7 @@
         $("#subtitle").textContent = copy[1];
       }
       function recurringFor(m) {
+        if (m < monthNow()) return [];
         const max = daysIn(m);
         const paid = paidRecurringIds(m);
         return state.rec.filter(x => x.active !== false && !paid.has(x.id)).map(x => {
