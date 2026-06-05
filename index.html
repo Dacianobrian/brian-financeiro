@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Brian Financeiro</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2335d2ff'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-size='24' font-family='Arial' font-weight='700' fill='white'%3EBF%3C/text%3E%3C/svg%3E" />
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
     <script src="./config.js" defer></script>
     <style>
@@ -39,6 +40,7 @@
       small, p { color: var(--muted); }
       nav { display: grid; gap: 4px; }
       .tab { min-height: 42px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--muted); text-align: left; padding: 0 12px; font-weight: 700; transition: transform .16s ease, border-color .16s ease, background .16s ease, color .16s ease; }
+      .tab::before { content: attr(data-icon); display: inline-grid; place-items: center; width: 22px; height: 22px; margin-right: 8px; border-radius: 7px; background: rgba(53,210,255,.08); color: var(--cyan); font-size: 11px; font-weight: 900; vertical-align: middle; }
       .tab:hover { transform: translateX(3px); background: rgba(53,210,255,.07); border-color: rgba(53,210,255,.18); color: var(--ink); }
       .tab.active { background: linear-gradient(135deg, rgba(66,199,128,.20), rgba(53,210,255,.14), rgba(138,124,255,.12)); border-color: rgba(53,210,255,.50); color: var(--ink); box-shadow: 0 0 22px rgba(53,210,255,.10); }
       main { padding: 28px; min-width: 0; }
@@ -122,6 +124,18 @@
       .goal-section { margin: 12px 0; }
       .quickbar { display: grid; grid-template-columns: repeat(4, minmax(140px, 1fr)); gap: 10px; margin-bottom: 12px; }
       .quickbar button { min-height: 48px; }
+      .tool-row { display: grid; grid-template-columns: minmax(180px, 1fr) 160px 160px auto; gap: 10px; align-items: end; margin-bottom: 12px; }
+      .workflow-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 12px; }
+      .workflow-card { text-align: left; min-height: 74px; display: grid; align-content: center; gap: 5px; border-color: rgba(53,210,255,.22); }
+      .workflow-card span { color: var(--muted); font-size: 12px; font-weight: 800; }
+      .status-badge { border-radius: 999px; padding: 4px 8px; font-size: 11px; font-weight: 900; white-space: nowrap; }
+      .status-badge.income, .status-badge.paid { background: rgba(85,213,135,.14); color: var(--good); border: 1px solid rgba(85,213,135,.22); }
+      .status-badge.card, .status-badge.pending { background: rgba(138,124,255,.16); color: #bcb5ff; border: 1px solid rgba(138,124,255,.24); }
+      .status-badge.expense, .status-badge.overdue { background: rgba(255,95,120,.14); color: var(--danger); border: 1px solid rgba(255,95,120,.22); }
+      .status-badge.invest { background: rgba(53,210,255,.14); color: var(--cyan); border: 1px solid rgba(53,210,255,.22); }
+      .projection-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 10px; }
+      .projection-summary-grid .summary-card { margin: 0; }
+      .account-overview { display: grid; grid-template-columns: repeat(3, minmax(110px, 1fr)); gap: 10px; margin-bottom: 12px; }
       .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-bottom: 12px; }
       .summary-card { border: 1px solid rgba(116,145,170,.28); border-radius: 8px; background: linear-gradient(145deg, rgba(255,255,255,.055), rgba(255,255,255,.018)), var(--card-2); padding: 12px; display: grid; gap: 6px; }
       .summary-card span { color: var(--muted); font-size: 12px; font-weight: 900; }
@@ -190,6 +204,12 @@
       .projection-list { display: grid; gap: 0; }
       .projection-row { display: grid; grid-template-columns: 68px minmax(0, 1fr) minmax(120px, auto) minmax(170px, auto); gap: 12px; align-items: center; border-top: 1px solid var(--line); padding: 12px 0; }
       .projection-row.bad { color: var(--danger); }
+      .projection-row > div { min-width: 0; }
+      .projection-row > div:nth-child(2) { display: grid; gap: 4px; }
+      .projection-row > div:nth-child(2) strong { line-height: 1.15; overflow-wrap: anywhere; }
+      .projection-row > div:nth-child(2) small { display: block; }
+      .projection-row > div:nth-child(3) { display: grid; gap: 4px; justify-items: end; text-align: right; }
+      .projection-row > div:nth-child(3) strong, .projection-row > div:nth-child(3) small { display: block; white-space: nowrap; }
       .projection-date { font-weight: 900; }
       .projection-actions { display: flex; gap: 8px; align-items: center; justify-content: flex-end; }
       .projection-actions input { width: 112px; min-height: 36px; }
@@ -266,6 +286,7 @@
         .header-actions, .date-picker { width: 100%; max-width: none; }
         .date-picker { grid-template-columns: 1fr; }
         nav, .grid-kpi { grid-template-columns: 1fr; }
+        .tool-row, .account-overview { grid-template-columns: 1fr; }
         .quickbar { grid-template-columns: 1fr 1fr; }
         .goal-strip, .goal-summary { grid-template-columns: 1fr; }
         .metric strong { font-size: 23px; }
@@ -282,13 +303,13 @@
           <div><strong>Brian Financeiro</strong><small id="sessionLabel">Desconectado</small></div>
         </div>
         <nav>
-          <button class="tab active" data-view="dashboard">Dashboard</button>
-          <button class="tab" data-view="health">Saude</button>
-          <button class="tab" data-view="transactions">Lancamentos</button>
-          <button class="tab" data-view="simulator">Simular compra</button>
-          <button class="tab" data-view="recurring">Contas</button>
-          <button class="tab" data-view="investments">Investimentos</button>
-          <button class="tab" data-view="settings">Configuracoes</button>
+          <button class="tab active" data-view="dashboard" data-icon="D">Dashboard</button>
+          <button class="tab" data-view="health" data-icon="S">Saude</button>
+          <button class="tab" data-view="transactions" data-icon="L">Lancamentos</button>
+          <button class="tab" data-view="simulator" data-icon="T">Simular compra</button>
+          <button class="tab" data-view="recurring" data-icon="C">Contas</button>
+          <button class="tab" data-view="investments" data-icon="I">Investimentos</button>
+          <button class="tab" data-view="settings" data-icon="A">Configuracoes</button>
         </nav>
         <button id="logout" class="secondary hidden">Sair</button>
       </aside>
@@ -398,7 +419,8 @@
               <h2>Projecao de caixa</h2>
               <div class="actions"><button class="secondary" data-projection="30">30d</button><button class="secondary" data-projection="60">60d</button><button class="secondary" data-projection="90">90d</button></div>
             </div>
-            <div id="projectionSummary" class="row"></div>
+            <div id="projectionRisk" class="notice hidden"></div>
+            <div id="projectionSummary" class="projection-summary-grid"></div>
             <div id="projectionRows" class="projection-list"></div>
             <form id="quickProjectionForm" class="quick-projection">
               <input name="description" placeholder="Descricao..." required />
@@ -431,11 +453,19 @@
 
         <section id="transactions" class="view">
           <div id="txSummary" class="summary-grid"></div>
-          <div class="quickbar">
-            <button class="secondary" data-preset="fixed">Despesa na conta</button>
-            <button class="secondary" data-pay-card>Baixar fatura</button>
-            <button class="secondary" data-preset="card">Compra no cartao</button>
-            <button class="secondary" data-preset="car">Testar compra grande</button>
+          <div class="workflow-grid">
+            <button class="secondary workflow-card" data-preset="income"><strong>Receita</strong><span>Comissao, pro-labore ou entrada variavel</span></button>
+            <button class="secondary workflow-card" data-preset="fixed"><strong>Conta paga</strong><span>Conta corrente, boleto ou saida avulsa</span></button>
+            <button class="secondary workflow-card" data-preset="card"><strong>Compra no cartao</strong><span>Dia a dia, milhas e parcelamentos</span></button>
+            <button class="secondary workflow-card" data-preset="invest"><strong>Investimento</strong><span>Aporte em renda fixa, FII ou acao</span></button>
+            <button class="secondary workflow-card" data-pay-card><strong>Baixar fatura</strong><span>Marca a fatura do mes como paga</span></button>
+            <button class="secondary workflow-card" data-preset="car"><strong>Testar compra grande</strong><span>Simula carro, viagem ou compra pesada</span></button>
+          </div>
+          <div class="tool-row">
+            <label>Buscar<input id="txSearch" placeholder="Descricao, categoria, tipo..." /></label>
+            <label>Tipo<select id="txTypeFilter"><option value="">Todos</option><option value="entrada">Entradas</option><option value="saida">Saidas</option><option value="diario">Cartao</option><option value="investimento">Investimentos</option></select></label>
+            <label>Meio<select id="txMethodFilter"><option value="">Todos</option><option value="conta_corrente">Conta corrente</option><option value="cartao_credito">Cartao de credito</option></select></label>
+            <button id="clearTxFilters" class="secondary" type="button">Limpar</button>
           </div>
           <div class="split">
             <form id="txForm" class="panel">
@@ -496,6 +526,7 @@
               <button class="primary">Salvar</button>
             </form>
             <section class="panel">
+              <div id="accountOverview" class="account-overview"></div>
               <div class="accounts-board">
                 <section>
                   <div class="panel-head"><h2>Contas fixas</h2><span id="fixedTotal" class="pill good">R$ 0,00</span></div>
@@ -605,7 +636,7 @@
 
       const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
       const $ = (q) => document.querySelector(q);
-      const state = { sb: null, session: null, view: "dashboard", period: "month", dateMode: "month", projectionDays: 30, tx: [], rec: [], budgets: [], inv: [], market: {}, settings: {}, simRows: [] };
+      const state = { sb: null, session: null, view: "dashboard", period: "month", dateMode: "month", projectionDays: 30, txSearch: "", txTypeFilter: "", txMethodFilter: "", tx: [], rec: [], budgets: [], inv: [], market: {}, settings: {}, simRows: [] };
       const sheets = ["2025", "2026", "2027", "2028"];
       const starts = [0,7,14,21,28,35,42,49,56,63,70,77];
       const labels = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
@@ -734,6 +765,27 @@
         if (x.account_kind) return x.account_kind;
         if (/^\[\[variavel\]\]/i.test(String(x.name || ""))) return "variavel";
         return "fixa";
+      }
+      function accountStatus(x, paid, m) {
+        if (paid.has(x.id)) return { cls: "paid", label: "Pago" };
+        const due = `${m}-${String(Math.min(Math.max(n(x.day_of_month) || 1, 1), daysIn(m))).padStart(2, "0")}`;
+        if (m === monthNow() && due < todayIso()) return { cls: "overdue", label: "Atrasada" };
+        return { cls: "pending", label: "Pendente" };
+      }
+      function typeBadge(x) {
+        if (x.type === "entrada") return { cls: "income", label: "Receita" };
+        if (x.type === "investimento") return { cls: "invest", label: "Investimento" };
+        if (method(x) === "cartao_credito" || x.type === "diario") return { cls: "card", label: "Cartao" };
+        return { cls: "expense", label: "Saida" };
+      }
+      function txMatchesFilters(x) {
+        const q = String(state.txSearch || "").trim().toLowerCase();
+        const type = state.txTypeFilter || "";
+        const methodFilter = state.txMethodFilter || "";
+        if (type && x.type !== type) return false;
+        if (methodFilter && method(x) !== methodFilter) return false;
+        if (!q) return true;
+        return [x.description, x.category, x.type, method(x), billMonth(x)].some(v => String(v || "").toLowerCase().includes(q));
       }
       function hasPaidCardBill(m) {
         return state.tx.some(x => sourceMeta(x).origin === "card_bill_paid" && sourceMeta(x).bill === m);
@@ -1169,7 +1221,14 @@
         $("#alertCount").textContent = String(badAlerts);
         $("#alertCount").className = `pill ${badAlerts ? "bad" : "good"}`;
         $("#alerts").innerHTML = alerts.map(x => `<article class="item ${x.level}"><div class="row"><strong>${x.title}</strong><span>${x.level === "bad" ? "Alerta" : "OK"}</span></div><small>${x.body}</small></article>`).join("");
-        $("#txRows").innerHTML = state.tx.filter(x => iso(x.tx_date).startsWith(m)).map(x => `<tr><td>${iso(x.tx_date)}</td><td>${x.type}</td><td>${method(x) === "cartao_credito" ? "Cartao" : "Conta"}</td><td>${method(x) === "cartao_credito" ? billMonth(x) : "-"}</td><td>${x.category}</td><td>${x.description || "-"}</td><td>${brl.format(n(x.amount))}</td><td><button class="danger" data-del="${x.id}">Excluir</button></td></tr>`).join("") || '<tr><td colspan="8">Sem lancamentos.</td></tr>';
+        $("#txSearch").value = state.txSearch || "";
+        $("#txTypeFilter").value = state.txTypeFilter || "";
+        $("#txMethodFilter").value = state.txMethodFilter || "";
+        const visibleTx = state.tx.filter(x => iso(x.tx_date).startsWith(m)).filter(txMatchesFilters);
+        $("#txRows").innerHTML = visibleTx.map(x => {
+          const badge = typeBadge(x);
+          return `<tr><td>${iso(x.tx_date)}</td><td><span class="status-badge ${badge.cls}">${badge.label}</span></td><td>${method(x) === "cartao_credito" ? "Cartao" : "Conta"}</td><td>${method(x) === "cartao_credito" ? billMonth(x) : "-"}</td><td>${x.category}</td><td>${x.description || "-"}</td><td>${brl.format(n(x.amount))}</td><td><button class="danger" data-del="${x.id}">Excluir</button></td></tr>`;
+        }).join("") || '<tr><td colspan="8">Sem lancamentos para o filtro atual.</td></tr>';
         $("#txSummary").innerHTML = [
           `<article class="summary-card"><span>Receitas lancadas</span><strong class="good-text">${brl.format(c.income)}</strong></article>`,
           `<article class="summary-card"><span>Gastos no cartao</span><strong class="bad-text">${brl.format(c.cardBill)}</strong></article>`,
@@ -1177,9 +1236,22 @@
           `<article class="summary-card"><span>Investimentos</span><strong>${brl.format(c.invest)}</strong></article>`
         ].join("");
         const paid = paidRecurringIds(m);
-        const accountCard = x => `<article class="item account-card ${paid.has(x.id) ? "good" : ""}"><div class="account-title"><strong>${cleanAccountName(x)}</strong><span>${brl.format(n(x.amount))}</span></div><small>Dia ${x.day_of_month} - ${x.category} - ${method(x) === "cartao_credito" ? "cartao" : "conta corrente"}${paid.has(x.id) ? " - pago" : ""}</small><div class="payline"><label>Valor pago<input data-pay-amount="${x.id}" type="number" min="0.01" step="0.01" value="${n(x.amount)}" ${paid.has(x.id) ? "disabled" : ""} /></label><button class="secondary" data-pay-rec="${x.id}" ${paid.has(x.id) ? "disabled" : ""}>Pago</button></div></article>`;
+        const accountCard = x => {
+          const status = accountStatus(x, paid, m);
+          return `<article class="item account-card ${status.cls === "paid" ? "good" : status.cls === "overdue" ? "bad" : ""}"><div class="account-title"><strong>${cleanAccountName(x)}</strong><span>${brl.format(n(x.amount))}</span></div><div class="row"><small>Dia ${x.day_of_month} - ${x.category} - ${method(x) === "cartao_credito" ? "cartao" : "conta corrente"}</small><span class="status-badge ${status.cls}">${status.label}</span></div><div class="payline"><label>Valor pago<input data-pay-amount="${x.id}" type="number" min="0.01" step="0.01" value="${n(x.amount)}" ${status.cls === "paid" ? "disabled" : ""} /></label><button class="secondary" data-pay-rec="${x.id}" ${status.cls === "paid" ? "disabled" : ""}>Pago</button></div></article>`;
+        };
         const fixed = state.rec.filter(x => accountKind(x) === "fixa");
         const variable = state.rec.filter(x => accountKind(x) === "variavel");
+        const allAccounts = [...fixed, ...variable];
+        const accountStatuses = allAccounts.map(x => accountStatus(x, paid, m));
+        const paidCount = accountStatuses.filter(x => x.cls === "paid").length;
+        const overdueCount = accountStatuses.filter(x => x.cls === "overdue").length;
+        const pendingCount = accountStatuses.filter(x => x.cls === "pending").length;
+        $("#accountOverview").innerHTML = [
+          `<article class="summary-card"><span>Pagas no mes</span><strong class="good-text">${paidCount}/${allAccounts.length}</strong></article>`,
+          `<article class="summary-card"><span>Pendentes</span><strong>${pendingCount}</strong></article>`,
+          `<article class="summary-card"><span>Atrasadas</span><strong class="${overdueCount ? "bad-text" : "good-text"}">${overdueCount}</strong></article>`
+        ].join("");
         $("#fixedTotal").textContent = brl.format(fixed.reduce((s,x) => s + n(x.amount), 0));
         $("#variableTotal").textContent = brl.format(variable.reduce((s,x) => s + n(x.amount), 0));
         $("#fixedRows").innerHTML = fixed.map(accountCard).join("") || "<p>Sem contas fixas.</p>";
@@ -1200,7 +1272,14 @@
       }
       function renderProjection() {
         const p = projection();
-        $("#projectionSummary").innerHTML = `<span class="good-text">Entradas ${brl.format(p.entries)}</span><span class="bad-text">Saidas ${brl.format(p.exits)}</span><strong class="${p.final < 0 ? "bad-text" : "good-text"}">Saldo ${brl.format(p.final)}</strong>`;
+        $("#projectionRisk").classList.toggle("hidden", !p.negative);
+        $("#projectionRisk").innerHTML = p.negative ? `<div><strong>Risco de caixa em ${iso(p.negative.tx_date)}</strong><p>Saldo previsto: ${brl.format(p.negative.balance)}. Antecipe receita, adie despesa ou reduza a compra antes dessa data.</p></div><span class="pill bad">Corrigir</span>` : "";
+        $("#projectionSummary").innerHTML = [
+          `<article class="summary-card"><span>Entradas previstas</span><strong class="good-text">${brl.format(p.entries)}</strong></article>`,
+          `<article class="summary-card"><span>Saidas previstas</span><strong class="bad-text">${brl.format(p.exits)}</strong></article>`,
+          `<article class="summary-card"><span>Saldo ao final</span><strong class="${p.final < 0 ? "bad-text" : "good-text"}">${brl.format(p.final)}</strong></article>`,
+          `<article class="summary-card"><span>Eventos futuros</span><strong>${p.rows.length}</strong></article>`
+        ].join("");
         $("#projectionRows").innerHTML = p.rows.length ? p.rows.slice(0, 24).map(x => {
           const meta = sourceMeta(x);
           const canPayRec = meta.origin === "recurring_preview";
@@ -1209,7 +1288,7 @@
             ? `<div class="projection-actions"><input data-proj-amount="${meta.payment}" type="number" min="0.01" step="0.01" value="${n(x.amount)}" /><button class="secondary" data-proj-pay-rec="${meta.payment}">Pago</button></div>`
             : canPayCard
               ? `<div class="projection-actions"><button class="secondary" data-proj-pay-card="${meta.bill}">Pagar fatura</button></div>`
-              : `<div class="projection-actions"><span class="pill ${x.virtual ? "bad" : "good"}">${x.virtual ? "Previsto" : "Lancado"}</span></div>`;
+              : `<div class="projection-actions"><span class="status-badge ${x.virtual ? "pending" : "paid"}">${x.virtual ? "Previsto" : "Lancado"}</span></div>`;
           return `<article class="projection-row ${x.balance < 0 ? "bad" : ""}"><div class="projection-date">${iso(x.tx_date).slice(8,10)}<br><small>${iso(x.tx_date).slice(5,7)}</small></div><div><strong>${x.description || x.category}</strong><small>${x.category} - ${method(x) === "cartao_credito" ? "cartao" : "conta"}</small></div><div><strong>${brl.format(x.movement)}</strong><small>saldo ${brl.format(x.balance)}</small></div>${action}</article>`;
         }).join("") : "<p>Sem eventos previstos no periodo.</p>";
       }
@@ -1699,10 +1778,16 @@
         document.querySelectorAll("[data-view-shortcut]").forEach(b => b.onclick = () => setView(b.dataset.viewShortcut));
         document.querySelectorAll("[data-period]").forEach(b => b.onclick = () => { state.period = b.dataset.period || "month"; render(); });
         document.querySelector("[data-preset-shortcut='card']").onclick = () => fillTx({ type: "diario", payment_method: "cartao_credito", category: "Alimentacao", description: "Compra no cartao" });
+        document.querySelector("[data-preset='income']").onclick = () => fillTx({ type: "entrada", payment_method: "conta_corrente", category: "Comissao", description: "Receita variavel" });
         document.querySelector("[data-preset='fixed']").onclick = () => fillTx({ type: "saida", payment_method: "conta_corrente", category: "Contas", description: "Conta fixa paga" });
         document.querySelector("[data-preset='card']").onclick = () => fillTx({ type: "diario", payment_method: "cartao_credito", category: "Alimentacao", description: "Compra no cartao" });
+        document.querySelector("[data-preset='invest']").onclick = () => fillTx({ type: "investimento", payment_method: "conta_corrente", category: "Investimento", description: "Aporte de investimento" });
         document.querySelector("[data-preset='car']").onclick = () => fillSim({ category: "Carro", description: "Compra de carro" });
         document.querySelector("[data-pay-card]").onclick = () => payCardBill().catch(alertErr);
+        $("#txSearch").oninput = e => { state.txSearch = e.target.value; render(); };
+        $("#txTypeFilter").onchange = e => { state.txTypeFilter = e.target.value; render(); };
+        $("#txMethodFilter").onchange = e => { state.txMethodFilter = e.target.value; render(); };
+        $("#clearTxFilters").onclick = () => { state.txSearch = ""; state.txTypeFilter = ""; state.txMethodFilter = ""; render(); };
         document.querySelectorAll("[data-projection]").forEach(b => b.onclick = () => { state.projectionDays = n(b.dataset.projection) || 30; renderProjection(); });
         document.querySelector("[data-refresh-quotes]").onclick = () => refreshQuotes().catch(alertErr);
         $("#dateMode").onchange = e => setDateMode(e.target.value);
