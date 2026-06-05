@@ -47,6 +47,10 @@
       h1 { font-size: 28px; line-height: 1.15; background: linear-gradient(90deg, #ffffff, #b8f7ff 45%, #9df7bf); -webkit-background-clip: text; background-clip: text; color: transparent; }
       h2 { font-size: 17px; }
       .actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+      .header-actions { justify-content: flex-end; max-width: 760px; }
+      .date-picker { display: grid; grid-template-columns: 170px minmax(180px, 1fr) auto; gap: 8px; align-items: center; width: min(100%, 680px); }
+      .date-picker select, .date-picker input, .date-picker button { min-height: 46px; }
+      .date-picker button { white-space: nowrap; }
       input, select { width: 100%; min-height: 40px; border: 1px solid var(--line); border-radius: 7px; background: #0c1218; color: var(--ink); padding: 8px 10px; outline: none; transition: border-color .16s ease, box-shadow .16s ease, background .16s ease; }
       input:focus, select:focus { border-color: rgba(53,210,255,.74); box-shadow: 0 0 0 3px rgba(53,210,255,.16), 0 0 24px rgba(66,199,128,.08); background: #0f1720; }
       label { display: grid; gap: 6px; font-size: 13px; font-weight: 800; color: #b6c4cf; }
@@ -259,6 +263,8 @@
       @media (max-width: 620px) {
         main, .shell > aside { padding: 16px; }
         header, .notice { flex-direction: column; align-items: stretch; }
+        .header-actions, .date-picker { width: 100%; max-width: none; }
+        .date-picker { grid-template-columns: 1fr; }
         nav, .grid-kpi { grid-template-columns: 1fr; }
         .quickbar { grid-template-columns: 1fr 1fr; }
         .goal-strip, .goal-summary { grid-template-columns: 1fr; }
@@ -290,7 +296,21 @@
       <main>
         <header>
           <div><h1 id="title">Dashboard</h1><p id="subtitle">Fluxo do mes, orcamento e saldo futuro.</p></div>
-          <div class="actions"><input id="month" type="month" /><button id="demoBtn" class="secondary">Demo visual</button><button id="refresh" class="secondary">Atualizar</button></div>
+          <div class="actions header-actions">
+            <div class="date-picker">
+              <select id="dateMode" aria-label="Periodo">
+                <option value="month">Periodo: Mes</option>
+                <option value="year">Periodo: Ano</option>
+                <option value="date">Data especifica</option>
+              </select>
+              <input id="month" class="date-input" type="month" />
+              <input id="year" class="date-input hidden" type="number" min="2020" max="2100" step="1" />
+              <input id="specificDate" class="date-input hidden" type="date" />
+              <button id="thisMonth" class="secondary" type="button">Este mes</button>
+            </div>
+            <button id="demoBtn" class="secondary">Demo visual</button>
+            <button id="refresh" class="secondary">Atualizar</button>
+          </div>
         </header>
 
         <section id="setup" class="notice hidden">
@@ -585,7 +605,7 @@
 
       const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
       const $ = (q) => document.querySelector(q);
-      const state = { sb: null, session: null, view: "dashboard", period: "month", projectionDays: 30, tx: [], rec: [], budgets: [], inv: [], market: {}, settings: {}, simRows: [] };
+      const state = { sb: null, session: null, view: "dashboard", period: "month", dateMode: "month", projectionDays: 30, tx: [], rec: [], budgets: [], inv: [], market: {}, settings: {}, simRows: [] };
       const sheets = ["2025", "2026", "2027", "2028"];
       const starts = [0,7,14,21,28,35,42,49,56,63,70,77];
       const labels = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
@@ -661,6 +681,9 @@
         const d = new Date();
         return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
       }
+      function todayIso() {
+        return new Date().toISOString().slice(0, 10);
+      }
       function daysIn(m) {
         const [y, mo] = m.split("-").map(Number);
         return new Date(y, mo, 0).getDate();
@@ -674,7 +697,35 @@
       function billMonth(x) { return x.card_bill_month ? iso(x.card_bill_month).slice(0, 7) : sourceMeta(x).bill || iso(x.tx_date).slice(0, 7); }
       function signed(x) { return x.type === "entrada" ? n(x.amount) : -n(x.amount); }
       function cashSigned(x) { return x.type === "entrada" ? n(x.amount) : -n(x.amount); }
-      function currentMonth() { return $("#month").value || monthNow(); }
+      function syncPeriodInputs() {
+        const mode = state.dateMode || "month";
+        if (mode === "year") {
+          const year = String($("#year").value || new Date().getFullYear()).slice(0, 4);
+          $("#year").value = year;
+          $("#month").value = `${year}-01`;
+        } else if (mode === "date") {
+          const day = $("#specificDate").value || todayIso();
+          $("#specificDate").value = day;
+          $("#month").value = day.slice(0, 7);
+        } else if (!$("#month").value) {
+          $("#month").value = monthNow();
+        }
+      }
+      function setDateMode(mode, shouldRender = true) {
+        state.dateMode = mode || "month";
+        $("#dateMode").value = state.dateMode;
+        $("#month").classList.toggle("hidden", state.dateMode !== "month");
+        $("#year").classList.toggle("hidden", state.dateMode !== "year");
+        $("#specificDate").classList.toggle("hidden", state.dateMode !== "date");
+        if (state.dateMode === "year") state.period = "year";
+        if (state.dateMode === "date") state.period = "month";
+        syncPeriodInputs();
+        if (shouldRender) render();
+      }
+      function currentMonth() {
+        syncPeriodInputs();
+        return $("#month").value || monthNow();
+      }
       function paidRecurringIds(m) {
         return new Set(state.tx.filter(x => sourceMeta(x).origin === "recurring_paid" && sourceMeta(x).bill === m).map(x => sourceMeta(x).payment));
       }
@@ -698,6 +749,10 @@
         $("#setup").classList.toggle("hidden", cfgOk());
         document.querySelectorAll(".tab").forEach(b => { b.disabled = locked; });
         $("#month").disabled = locked;
+        $("#year").disabled = locked;
+        $("#specificDate").disabled = locked;
+        $("#dateMode").disabled = locked;
+        $("#thisMonth").disabled = locked;
         $("#refresh").disabled = locked;
       }
       function setView(name) {
@@ -1650,7 +1705,17 @@
         document.querySelector("[data-pay-card]").onclick = () => payCardBill().catch(alertErr);
         document.querySelectorAll("[data-projection]").forEach(b => b.onclick = () => { state.projectionDays = n(b.dataset.projection) || 30; renderProjection(); });
         document.querySelector("[data-refresh-quotes]").onclick = () => refreshQuotes().catch(alertErr);
-        $("#month").onchange = render;
+        $("#dateMode").onchange = e => setDateMode(e.target.value);
+        $("#month").onchange = () => { state.dateMode = "month"; setDateMode("month"); };
+        $("#year").onchange = () => setDateMode("year");
+        $("#specificDate").onchange = () => setDateMode("date");
+        $("#thisMonth").onclick = () => {
+          state.period = "month";
+          $("#month").value = monthNow();
+          $("#year").value = new Date().getFullYear();
+          $("#specificDate").value = todayIso();
+          setDateMode("month");
+        };
         $("#demoBtn").onclick = () => { localStorage.setItem("brian_demo_mode", "1"); useDemoData(); render(); };
         $("#refresh").onclick = () => load().catch(alertErr);
         $("#logout").onclick = () => state.sb.auth.signOut();
@@ -1717,12 +1782,15 @@
       }
       function alertErr(err) { console.error(err); alert(err.message || String(err)); }
       function setDates() {
-        const d = new Date().toISOString().slice(0, 10);
+        const d = todayIso();
         document.querySelectorAll('input[type="date"]').forEach(x => { if (!x.value) x.value = d; });
         document.querySelectorAll('input[name="card_bill_month"]').forEach(x => { if (!x.value) x.value = currentMonth(); });
       }
       async function init() {
         $("#month").value = monthNow();
+        $("#year").value = new Date().getFullYear();
+        $("#specificDate").value = todayIso();
+        setDateMode("month", false);
         setDates();
         bind();
         const demoMode = new URLSearchParams(location.search).get("demo") === "1";
