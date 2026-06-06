@@ -1571,17 +1571,32 @@
             state.sb.from("investments").select("*").order("asset")
           ]);
           for (const r of [tx, rec, budgets, settings, inv]) if (r.error) throw r.error;
+          let txData = tx.data || [];
+          let recData = rec.data || [];
+          let budgetData = budgets.data || [];
+          let settingsData = settings.data || [];
+          let invData = inv.data || [];
+          if (!txData.length) {
+            const snap = await state.sb.rpc("finance_snapshot");
+            if (snap.error) throw snap.error;
+            const data = snap.data || {};
+            txData = data.transactions || [];
+            recData = data.recurring_items || [];
+            budgetData = data.budgets || [];
+            settingsData = data.app_settings || [];
+            invData = data.investments || [];
+          }
           const categoryPatches = [];
-          state.tx = (tx.data || []).map(row => {
+          state.tx = txData.map(row => {
             const category = autoCategory(row);
             if (category !== row.category && row.id) categoryPatches.push({ id: row.id, category });
             return { ...row, category };
           });
-          state.rec = rec.data || [];
-          state.budgets = budgets.data || [];
-          state.inv = inv.data || [];
-          state.settings = Object.fromEntries((settings.data || []).map(x => [x.key, x.value]));
-          state.loadInfo = { tx: state.tx.length, rec: state.rec.length, budgets: state.budgets.length, inv: state.inv.length, settings: settings.data?.length || 0, loadedAt: new Date().toISOString() };
+          state.rec = recData;
+          state.budgets = budgetData;
+          state.inv = invData;
+          state.settings = Object.fromEntries(settingsData.map(x => [x.key, x.value]));
+          state.loadInfo = { tx: state.tx.length, rec: state.rec.length, budgets: state.budgets.length, inv: state.inv.length, settings: settingsData.length || 0, loadedAt: new Date().toISOString() };
           if (categoryPatches.length) {
             await Promise.all(categoryPatches.map(p => state.sb.from("transactions").update({ category: p.category }).eq("id", p.id)));
           }
