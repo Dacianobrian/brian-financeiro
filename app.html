@@ -1562,6 +1562,21 @@
           investments: local.investments || []
         };
       }
+      function applyLoadedData(data, dataSource) {
+        const settingsData = data.app_settings || [];
+        const categoryPatches = [];
+        state.tx = (data.transactions || []).map(row => {
+          const category = autoCategory(row);
+          if (category !== row.category && row.id && dataSource === "supabase") categoryPatches.push({ id: row.id, category });
+          return { ...row, category };
+        });
+        state.rec = data.recurring_items || [];
+        state.budgets = data.budgets || [];
+        state.inv = data.investments || [];
+        state.settings = Object.fromEntries(settingsData.map(x => [x.key, x.value]));
+        state.loadInfo = { tx: state.tx.length, rec: state.rec.length, budgets: state.budgets.length, inv: state.inv.length, settings: settingsData.length || 0, source: dataSource, loadedAt: new Date().toISOString() };
+        return categoryPatches;
+      }
       async function refreshStoredSession() {
         if (!state.sb || !state.session) return;
         try {
@@ -1578,6 +1593,11 @@
       async function load() {
         if (!state.sb || !state.session) return;
         try {
+          const immediateLocal = localFinanceData([], []);
+          if (immediateLocal) {
+            applyLoadedData(immediateLocal, "fallback_local_privado");
+            render();
+          }
           await refreshStoredSession();
           const [tx, rec, budgets, settings, inv] = await Promise.all([
             state.sb.from("transactions").select("*").order("tx_date", { ascending: false }),
@@ -1614,17 +1634,13 @@
             settingsData = data.app_settings || [];
             invData = data.investments || [];
           }
-          const categoryPatches = [];
-          state.tx = txData.map(row => {
-            const category = autoCategory(row);
-            if (category !== row.category && row.id) categoryPatches.push({ id: row.id, category });
-            return { ...row, category };
-          });
-          state.rec = recData;
-          state.budgets = budgetData;
-          state.inv = invData;
-          state.settings = Object.fromEntries(settingsData.map(x => [x.key, x.value]));
-          state.loadInfo = { tx: state.tx.length, rec: state.rec.length, budgets: state.budgets.length, inv: state.inv.length, settings: settingsData.length || 0, source: dataSource, loadedAt: new Date().toISOString() };
+          const categoryPatches = applyLoadedData({
+            transactions: txData,
+            recurring_items: recData,
+            budgets: budgetData,
+            app_settings: settingsData,
+            investments: invData
+          }, dataSource);
           if (categoryPatches.length) {
             await Promise.all(categoryPatches.map(p => state.sb.from("transactions").update({ category: p.category }).eq("id", p.id)));
           }
