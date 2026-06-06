@@ -757,7 +757,7 @@
         $("#logout").classList.toggle("hidden", !state.session);
       }
       function showAuth() {
-        const locked = !state.session;
+        const locked = !state.session && !hasLocalFinanceData();
         document.body.classList.toggle("locked", locked);
         $("#auth").classList.toggle("hidden", !cfgOk() || !locked);
         $("#setup").classList.toggle("hidden", cfgOk());
@@ -770,7 +770,7 @@
         $("#refresh").disabled = locked;
       }
       function setView(name) {
-        if (!state.session) return;
+        if (!state.session && !hasLocalFinanceData()) return;
         state.view = name;
         document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === name));
         document.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b.dataset.view === name));
@@ -1562,6 +1562,9 @@
           investments: local.investments || []
         };
       }
+      function hasLocalFinanceData() {
+        return Boolean((window.BRIAN_FINANCE_BOOTSTRAP || {}).rows?.length);
+      }
       function applyLoadedData(data, dataSource) {
         const settingsData = data.app_settings || [];
         const categoryPatches = [];
@@ -1591,13 +1594,13 @@
         }
       }
       async function load() {
-        if (!state.sb || !state.session) return;
         try {
           const immediateLocal = localFinanceData([], []);
           if (immediateLocal) {
             applyLoadedData(immediateLocal, "fallback_local_privado");
             render();
           }
+          if (!state.sb || !state.session) return;
           await refreshStoredSession();
           const [tx, rec, budgets, settings, inv] = await Promise.all([
             state.sb.from("transactions").select("*").order("tx_date", { ascending: false }),
@@ -2034,12 +2037,19 @@
             if (wasLocked) setView(state.view || "dashboard");
             await load().catch(alertErr);
           } else {
-            state.tx = [];
-            state.rec = [];
-            state.budgets = [];
-            state.inv = [];
-            state.settings = {};
-            state.view = "dashboard";
+            const local = localFinanceData([], []);
+            if (local) {
+              applyLoadedData(local, "fallback_local_privado");
+              setView(state.view || "dashboard");
+              render();
+            } else {
+              state.tx = [];
+              state.rec = [];
+              state.budgets = [];
+              state.inv = [];
+              state.settings = {};
+              state.view = "dashboard";
+            }
           }
         });
         const { data, error } = await state.sb.auth.getSession();
@@ -2051,6 +2061,11 @@
           setView(state.view || "dashboard");
           await load();
         } else {
+          const local = localFinanceData([], []);
+          if (local) {
+            applyLoadedData(local, "fallback_local_privado");
+            setView(state.view || "dashboard");
+          }
           render();
         }
       }
