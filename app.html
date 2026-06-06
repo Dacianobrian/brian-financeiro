@@ -1551,9 +1551,34 @@
         }
         await load();
       }
+      function localFinanceData(recData = [], budgetData = []) {
+        const local = window.BRIAN_FINANCE_BOOTSTRAP || {};
+        if (!(local.rows || []).length) return null;
+        return {
+          transactions: local.rows || [],
+          recurring_items: (local.recurring_items || recData || []),
+          budgets: (local.budgets || budgetData || []),
+          app_settings: Object.entries(local.settings || {}).map(([key, value]) => ({ key, value })),
+          investments: local.investments || []
+        };
+      }
+      async function refreshStoredSession() {
+        if (!state.sb || !state.session) return;
+        try {
+          const { data, error } = await state.sb.auth.getUser();
+          if (error || !data?.user) {
+            const refreshed = await state.sb.auth.refreshSession();
+            if (refreshed.error) console.warn("Sessao nao renovada", refreshed.error);
+            if (refreshed.data?.session) state.session = refreshed.data.session;
+          }
+        } catch (err) {
+          console.warn("Nao foi possivel validar a sessao antes da carga", err);
+        }
+      }
       async function load() {
         if (!state.sb || !state.session) return;
         try {
+          await refreshStoredSession();
           const [tx, rec, budgets, settings, inv] = await Promise.all([
             state.sb.from("transactions").select("*").order("tx_date", { ascending: false }),
             state.sb.from("recurring_items").select("*").order("day_of_month"),
@@ -1561,14 +1586,14 @@
             state.sb.from("app_settings").select("*"),
             state.sb.from("investments").select("*").order("asset")
           ]);
-          for (const r of [tx, rec, budgets, settings, inv]) if (r.error) throw r.error;
-          let txData = tx.data || [];
-          let recData = rec.data || [];
-          let budgetData = budgets.data || [];
-          let settingsData = settings.data || [];
-          let invData = inv.data || [];
+          const remoteErrors = [tx, rec, budgets, settings, inv].filter(r => r.error).map(r => r.error.message || String(r.error));
+          let txData = tx.error ? [] : (tx.data || []);
+          let recData = rec.error ? [] : (rec.data || []);
+          let budgetData = budgets.error ? [] : (budgets.data || []);
+          let settingsData = settings.error ? [] : (settings.data || []);
+          let invData = inv.error ? [] : (inv.data || []);
           let dataSource = "supabase";
-          if (!txData.length) {
+          if (remoteErrors.length || !txData.length) {
             let data = {};
             try {
               const snap = await state.sb.rpc("finance_snapshot");
@@ -1578,15 +1603,9 @@
             } catch (snapErr) {
               console.warn("Snapshot remoto indisponivel, tentando fallback local", snapErr);
             }
-            const local = window.BRIAN_FINANCE_BOOTSTRAP || {};
-            if (!(data.transactions || []).length && (local.rows || []).length) {
-              data = {
-                transactions: local.rows || [],
-                recurring_items: recData,
-                budgets: budgetData,
-                app_settings: Object.entries(local.settings || {}).map(([key, value]) => ({ key, value })),
-                investments: local.investments || []
-              };
+            const localData = localFinanceData(recData, budgetData);
+            if ((remoteErrors.length || !(data.transactions || []).length) && localData) {
+              data = localData;
               dataSource = "fallback_local_privado";
             }
             txData = data.transactions || [];
