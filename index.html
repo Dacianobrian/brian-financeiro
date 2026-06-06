@@ -6,7 +6,7 @@
     <title>Brian Financeiro</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2335d2ff'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-size='24' font-family='Arial' font-weight='700' fill='white'%3EBF%3C/text%3E%3C/svg%3E" />
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
-    <script src="./config.js" defer></script>
+    <script src="./config.js?v=20260606-datafix" defer></script>
     <style>
       :root {
         color-scheme: dark;
@@ -69,6 +69,8 @@
       .panel:hover, .metric:hover, .item:hover, .summary-card:hover, .ratio-card:hover, .result-card:hover, .installment-card:hover, .ranking-card:hover, .score-card:hover { border-color: rgba(53,210,255,.42); box-shadow: 0 18px 48px rgba(0,0,0,.34), 0 0 28px rgba(53,210,255,.075); }
       .metric:hover, .summary-card:hover, .item:hover, .score-card:hover, .installment-card:hover { transform: translateY(-2px); }
       .notice { padding: 16px; margin-bottom: 14px; display: flex; justify-content: space-between; gap: 14px; align-items: center; }
+      .data-status { margin: 0 0 14px; align-items: flex-start; border-color: rgba(53,210,255,.32); background: linear-gradient(135deg, rgba(53,210,255,.12), rgba(66,199,128,.06)), var(--card); }
+      .data-status small { display: block; margin-top: 4px; }
       .hidden { display: none !important; }
       .auth { max-width: 520px; margin: 60px auto; padding: 20px; display: grid; gap: 14px; }
       body.locked nav,
@@ -355,6 +357,7 @@
             <button class="secondary" data-period="year">Ano</button>
             <button class="secondary" data-period="all">Todo periodo</button>
           </div>
+          <div id="dataStatus" class="notice data-status hidden"></div>
           <div class="grid-kpi">
             <article class="metric feature good"><span>Receita do mes</span><strong id="mIncome">R$ 0,00</strong></article>
             <article class="metric feature"><span>Conta corrente</span><strong id="mChecking">R$ 0,00</strong></article>
@@ -635,7 +638,7 @@
 
       const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
       const $ = (q) => document.querySelector(q);
-      const state = { sb: null, session: null, view: "dashboard", period: "month", dateMode: "month", projectionDays: 30, txSearch: "", txTypeFilter: "", txMethodFilter: "", tx: [], rec: [], budgets: [], inv: [], market: {}, settings: {}, simRows: [] };
+      const state = { sb: null, session: null, view: "dashboard", period: "month", dateMode: "month", projectionDays: 30, txSearch: "", txTypeFilter: "", txMethodFilter: "", tx: [], rec: [], budgets: [], inv: [], market: {}, settings: {}, simRows: [], loadInfo: null };
       const sheets = ["2025", "2026", "2027", "2028"];
       const starts = [0,7,14,21,28,35,42,49,56,63,70,77];
       const labels = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
@@ -913,6 +916,16 @@
         $("#flowPeriod").textContent = periodText();
         $("#healthPeriod").textContent = periodText();
       }
+      function renderDataStatus() {
+        const box = $("#dataStatus");
+        if (!box || !state.session) return;
+        const cfg = window.BRIAN_FINANCE_CONFIG || {};
+        const project = cfg.supabaseUrl ? new URL(cfg.supabaseUrl).host.split(".")[0] : "sem-config";
+        const info = state.loadInfo || {};
+        const ok = !info.error && (info.tx || 0) > 0;
+        box.classList.remove("hidden");
+        box.innerHTML = `<div><strong>${ok ? "Dados carregados do Supabase" : "Aguardando dados do Supabase"}</strong><small>Projeto: ${project} · Usuario: ${state.session.user.email || state.session.user.id}</small><small>Lancamentos: ${info.tx || 0} · Investimentos: ${info.inv || 0} · Contas: ${info.rec || 0} · Configuracoes: ${info.settings || 0}</small>${info.error ? `<small class="bad-text">Erro: ${info.error}</small>` : ""}</div><span class="pill ${ok ? "good" : "bad"}">${ok ? "OK" : "Verificar"}</span>`;
+      }
       function renderCategoryChart(periodData) {
         const rows = categoryTotals(periodData.items).slice(0, 10);
         const max = rows[0]?.[1] || 0;
@@ -1134,6 +1147,7 @@
         const stats = investmentStats();
         const periodMonths = rangeMonths(state.period, m);
         const pc = periodCalc(periodMonths);
+        renderDataStatus();
         renderPeriodControls();
         renderCategoryChart(pc);
         renderMonthlyFlowChart(pc);
@@ -1557,11 +1571,14 @@
           state.budgets = budgets.data || [];
           state.inv = inv.data || [];
           state.settings = Object.fromEntries((settings.data || []).map(x => [x.key, x.value]));
+          state.loadInfo = { tx: state.tx.length, rec: state.rec.length, budgets: state.budgets.length, inv: state.inv.length, settings: settings.data?.length || 0, loadedAt: new Date().toISOString() };
           if (categoryPatches.length) {
             await Promise.all(categoryPatches.map(p => state.sb.from("transactions").update({ category: p.category }).eq("id", p.id)));
           }
         } catch (err) {
           console.warn("Falha ao carregar dados financeiros", err);
+          state.loadInfo = { ...(state.loadInfo || {}), error: err.message || String(err) };
+          renderDataStatus();
           throw err;
         }
         render();
