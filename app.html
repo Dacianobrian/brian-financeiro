@@ -1,0 +1,2001 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Brian Financeiro</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2335d2ff'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-size='24' font-family='Arial' font-weight='700' fill='white'%3EBF%3C/text%3E%3C/svg%3E" />
+    <script>
+      if (window.location.protocol === "file:") {
+        document.documentElement.style.background = "#090d12";
+        const onlineUrl = `https://dacianobrian.github.io/brian-financeiro/?v=${Date.now()}`;
+        window.location.replace(onlineUrl);
+        setTimeout(() => {
+          document.body.innerHTML = `<main style="font-family:Arial,sans-serif;background:#090d12;color:#eef4f8;min-height:100vh;display:grid;place-items:center;text-align:center;padding:24px"><section><h1>Abra o app online</h1><p>Esta copia local nao deve ser usada. Clique no botao abaixo.</p><p><a style="display:inline-block;background:#35d2ff;color:#06100b;padding:14px 18px;border-radius:8px;font-weight:800;text-decoration:none" href="${onlineUrl}">Abrir Brian Financeiro</a></p></section></main>`;
+        }, 500);
+      }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+    <script src="./config.js?v=20260606-datafix" defer></script>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #090d12;
+        --card: #111820;
+        --card-2: #151f28;
+        --ink: #eef4f8;
+        --muted: #8fa0ad;
+        --line: #23313d;
+        --brand: #42c780;
+        --cyan: #35d2ff;
+        --violet: #8a7cff;
+        --pink: #ff4fa3;
+        --orange: #ff9f43;
+        --danger: #ff5f78;
+        --good: #55d587;
+        --warn: #f5b83d;
+        --soft: #18242d;
+        --glow: rgba(66, 199, 128, .22);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: radial-gradient(circle at 13% 0%, rgba(66, 199, 128, .20), transparent 30%), radial-gradient(circle at 68% -4%, rgba(53, 210, 255, .16), transparent 28%), radial-gradient(circle at 98% 16%, rgba(138, 124, 255, .18), transparent 30%), radial-gradient(circle at 42% 58%, rgba(255, 79, 163, .075), transparent 34%), var(--bg); color: var(--ink); letter-spacing: 0; }
+      button, input, select { font: inherit; }
+      button { cursor: pointer; }
+      .shell { display: grid; grid-template-columns: 260px minmax(0, 1fr); min-height: 100vh; }
+      .shell > aside { border-right: 1px solid rgba(53,210,255,.18); background: linear-gradient(180deg, rgba(9, 15, 21, .95), rgba(7, 10, 15, .91)); backdrop-filter: blur(18px); padding: 22px 16px; display: flex; flex-direction: column; gap: 22px; position: sticky; top: 0; min-height: 100vh; box-shadow: 18px 0 55px rgba(0,0,0,.22); }
+      .brand { display: flex; align-items: center; gap: 12px; }
+      .logo { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 8px; background: linear-gradient(135deg, #2be07f 0%, #35d2ff 48%, #8a7cff 100%); color: white; font-weight: 900; box-shadow: 0 14px 34px rgba(53,210,255,.18), 0 0 0 1px rgba(255,255,255,.16) inset; }
+      .brand strong, .brand small { display: block; }
+      small, p { color: var(--muted); }
+      nav { display: grid; gap: 4px; }
+      .tab { min-height: 42px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--muted); text-align: left; padding: 0 12px; font-weight: 700; transition: transform .16s ease, border-color .16s ease, background .16s ease, color .16s ease; }
+      .tab::before { content: attr(data-icon); display: inline-grid; place-items: center; width: 22px; height: 22px; margin-right: 8px; border-radius: 7px; background: rgba(53,210,255,.08); color: var(--cyan); font-size: 11px; font-weight: 900; vertical-align: middle; }
+      .tab:hover { transform: translateX(3px); background: rgba(53,210,255,.07); border-color: rgba(53,210,255,.18); color: var(--ink); }
+      .tab.active { background: linear-gradient(135deg, rgba(66,199,128,.20), rgba(53,210,255,.14), rgba(138,124,255,.12)); border-color: rgba(53,210,255,.50); color: var(--ink); box-shadow: 0 0 22px rgba(53,210,255,.10); }
+      main { padding: 28px; min-width: 0; }
+      header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 18px; }
+      h1, h2, p { margin: 0; }
+      h1 { font-size: 28px; line-height: 1.15; background: linear-gradient(90deg, #ffffff, #b8f7ff 45%, #9df7bf); -webkit-background-clip: text; background-clip: text; color: transparent; }
+      h2 { font-size: 17px; }
+      .actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+      .header-actions { justify-content: flex-end; max-width: 760px; }
+      .date-picker { display: grid; grid-template-columns: 170px minmax(180px, 1fr) auto; gap: 8px; align-items: center; width: min(100%, 680px); }
+      .date-picker select, .date-picker input, .date-picker button { min-height: 46px; }
+      .date-picker button { white-space: nowrap; }
+      input, select { width: 100%; min-height: 40px; border: 1px solid var(--line); border-radius: 7px; background: #0c1218; color: var(--ink); padding: 8px 10px; outline: none; transition: border-color .16s ease, box-shadow .16s ease, background .16s ease; }
+      input:focus, select:focus { border-color: rgba(53,210,255,.74); box-shadow: 0 0 0 3px rgba(53,210,255,.16), 0 0 24px rgba(66,199,128,.08); background: #0f1720; }
+      label { display: grid; gap: 6px; font-size: 13px; font-weight: 800; color: #b6c4cf; }
+      .button, .primary, .secondary, .danger { min-height: 40px; border: 1px solid transparent; border-radius: 8px; padding: 0 14px; font-weight: 900; transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease; }
+      .primary { background: linear-gradient(135deg, #2be07f, #35d2ff); color: #06100b; box-shadow: 0 12px 28px rgba(53,210,255,.20), 0 0 0 1px rgba(255,255,255,.15) inset; }
+      .secondary { background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.015)); color: var(--ink); border-color: var(--line); }
+      .danger { background: linear-gradient(135deg, rgba(255,95,120,.18), rgba(255,79,163,.10)); color: #ff9cab; border-color: rgba(255,95,120,.48); }
+      .button:hover, .primary:hover, .secondary:hover, .danger:hover { transform: translateY(-1px); box-shadow: 0 14px 30px rgba(0,0,0,.24); }
+      form > button { align-self: start; width: 100%; min-height: 44px; }
+      .view { display: none; }
+      .view.active { display: block; }
+      .panel, .metric, .notice { background: linear-gradient(180deg, rgba(255,255,255,.052), rgba(255,255,255,.018)), var(--card); border: 1px solid rgba(116,145,170,.28); border-radius: 8px; box-shadow: 0 18px 45px rgba(0, 0, 0, .24); }
+      .panel, .metric, .item, .summary-card, .ratio-card, .result-card, .installment-card, .ranking-card, .score-card { transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease; }
+      .panel:hover, .metric:hover, .item:hover, .summary-card:hover, .ratio-card:hover, .result-card:hover, .installment-card:hover, .ranking-card:hover, .score-card:hover { border-color: rgba(53,210,255,.42); box-shadow: 0 18px 48px rgba(0,0,0,.34), 0 0 28px rgba(53,210,255,.075); }
+      .metric:hover, .summary-card:hover, .item:hover, .score-card:hover, .installment-card:hover { transform: translateY(-2px); }
+      .notice { padding: 16px; margin-bottom: 14px; display: flex; justify-content: space-between; gap: 14px; align-items: center; }
+      .data-status { margin: 0 0 14px; align-items: flex-start; border-color: rgba(53,210,255,.32); background: linear-gradient(135deg, rgba(53,210,255,.12), rgba(66,199,128,.06)), var(--card); }
+      .data-status small { display: block; margin-top: 4px; }
+      .hidden { display: none !important; }
+      .auth { max-width: 520px; margin: 60px auto; padding: 20px; display: grid; gap: 14px; }
+      body.locked nav,
+      body.locked header,
+      body.locked .view,
+      body.locked #logout { display: none !important; }
+      body.locked main { display: grid; align-items: center; min-height: 100vh; }
+      body.locked #auth,
+      body.locked #setup { width: min(520px, 100%); margin: 0 auto; }
+      body.locked .brand { align-items: flex-start; }
+      body.locked .shell > aside { justify-content: center; }
+      .grid-kpi { display: grid; grid-template-columns: repeat(auto-fit, minmax(188px, 1fr)); gap: 12px; margin-bottom: 14px; }
+      .metric { padding: 16px; min-width: 0; overflow: hidden; }
+      .metric span { display: block; color: var(--muted); font-weight: 800; font-size: 13px; }
+      .metric strong { display: block; margin-top: 8px; font-size: clamp(19px, 1.35vw, 25px); line-height: 1.08; overflow-wrap: anywhere; letter-spacing: 0; }
+      .metric.feature { min-height: 112px; display: grid; align-content: center; border-color: var(--line); }
+      .metric.feature.warn { border-color: rgba(245,184,61,.58); background: linear-gradient(135deg, rgba(245,184,61,.16), rgba(245,184,61,.04)); }
+      .metric.feature.bad { border-color: rgba(255,95,120,.58); background: linear-gradient(135deg, rgba(255,95,120,.16), rgba(255,95,120,.04)); }
+      .metric.feature.good { border-color: rgba(85,213,135,.56); background: linear-gradient(135deg, rgba(85,213,135,.16), rgba(85,213,135,.04)); }
+      .grid-kpi .metric { position: relative; isolation: isolate; }
+      .grid-kpi .metric::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; border-radius: 8px 0 0 8px; background: var(--brand); opacity: .95; }
+      .grid-kpi .metric::after { content: ""; position: absolute; inset: 0; z-index: -1; opacity: .44; background: radial-gradient(circle at 90% 12%, var(--metric-glow, rgba(66,199,128,.18)), transparent 42%); }
+      .grid-kpi .metric:nth-child(1) { --metric-glow: rgba(43,224,127,.32); border-color: rgba(43,224,127,.48); }
+      .grid-kpi .metric:nth-child(1)::before { background: #2be07f; }
+      .grid-kpi .metric:nth-child(2) { --metric-glow: rgba(53,210,255,.30); border-color: rgba(53,210,255,.42); }
+      .grid-kpi .metric:nth-child(2)::before { background: #35d2ff; }
+      .grid-kpi .metric:nth-child(3) { --metric-glow: rgba(255,95,120,.30); border-color: rgba(255,95,120,.46); }
+      .grid-kpi .metric:nth-child(3)::before { background: #ff5f78; }
+      .grid-kpi .metric:nth-child(4) { --metric-glow: rgba(138,124,255,.34); border-color: rgba(138,124,255,.44); }
+      .grid-kpi .metric:nth-child(4)::before { background: #8a7cff; }
+      .grid-kpi .metric:nth-child(5) { --metric-glow: rgba(53,210,255,.26); border-color: rgba(85,213,135,.44); }
+      .grid-kpi .metric:nth-child(5)::before { background: linear-gradient(#2be07f, #35d2ff); }
+      .grid-kpi .metric:nth-child(6) { --metric-glow: rgba(245,184,61,.30); border-color: rgba(245,184,61,.44); }
+      .grid-kpi .metric:nth-child(6)::before { background: #f5b83d; }
+      .chartgrid { display: grid; gap: 10px; }
+      .mini-chart { display: grid; gap: 6px; }
+      .mini-chart .row { font-size: 13px; font-weight: 800; }
+      .health-note { display: none; }
+      .ratio-card { border: 1px solid var(--line); border-radius: 8px; padding: 10px; display: grid; gap: 6px; background: var(--card-2); }
+      .ratio-card.over { border-color: rgba(255,95,120,.58); background: rgba(255,95,120,.10); }
+      .ratio-card.good { border-color: rgba(85,213,135,.56); background: rgba(85,213,135,.10); }
+      .ratio-meta { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 12px; font-weight: 800; }
+      .goal-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin: 12px 0; }
+      .goal-card { display: grid; gap: 10px; min-height: 168px; border-color: rgba(245,184,61,.52); background: linear-gradient(145deg, rgba(245,184,61,.12), rgba(138,124,255,.045)), var(--card); }
+      .goal-card .goal-top { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+      .goal-card strong.value { font-size: clamp(24px, 2vw, 32px); line-height: 1.08; color: #ffd166; overflow-wrap: anywhere; text-shadow: 0 0 20px rgba(245,184,61,.16); }
+      .goal-card .bar span { background: linear-gradient(90deg, #ff9f43, #ffd166); }
+      .goal-card.done { border-color: rgba(85,213,135,.56); background: rgba(85,213,135,.10); }
+      .goal-card.done .bar span { background: var(--good); }
+      .goal-card.empty { border-color: var(--line); background: var(--card); }
+      .goal-summary { display: grid; grid-template-columns: repeat(3, minmax(160px, 1fr)); gap: 12px; margin-bottom: 12px; }
+      .goal-summary .metric strong { white-space: normal; }
+      .goal-section { margin: 12px 0; }
+      .quickbar { display: grid; grid-template-columns: repeat(4, minmax(140px, 1fr)); gap: 10px; margin-bottom: 12px; }
+      .quickbar button { min-height: 48px; }
+      .tool-row { display: grid; grid-template-columns: minmax(180px, 1fr) 160px 160px auto; gap: 10px; align-items: end; margin-bottom: 12px; }
+      .workflow-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 12px; }
+      .workflow-card { text-align: left; min-height: 74px; display: grid; align-content: center; gap: 5px; border-color: rgba(53,210,255,.22); }
+      .workflow-card span { color: var(--muted); font-size: 12px; font-weight: 800; }
+      .status-badge { border-radius: 999px; padding: 4px 8px; font-size: 11px; font-weight: 900; white-space: nowrap; }
+      .status-badge.income, .status-badge.paid { background: rgba(85,213,135,.14); color: var(--good); border: 1px solid rgba(85,213,135,.22); }
+      .status-badge.card, .status-badge.pending { background: rgba(138,124,255,.16); color: #bcb5ff; border: 1px solid rgba(138,124,255,.24); }
+      .status-badge.expense, .status-badge.overdue { background: rgba(255,95,120,.14); color: var(--danger); border: 1px solid rgba(255,95,120,.22); }
+      .status-badge.invest { background: rgba(53,210,255,.14); color: var(--cyan); border: 1px solid rgba(53,210,255,.22); }
+      .projection-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 10px; }
+      .projection-summary-grid .summary-card { margin: 0; }
+      .account-overview { display: grid; grid-template-columns: repeat(3, minmax(110px, 1fr)); gap: 10px; margin-bottom: 12px; }
+      .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-bottom: 12px; }
+      .summary-card { border: 1px solid rgba(116,145,170,.28); border-radius: 8px; background: linear-gradient(145deg, rgba(255,255,255,.055), rgba(255,255,255,.018)), var(--card-2); padding: 12px; display: grid; gap: 6px; }
+      .summary-card span { color: var(--muted); font-size: 12px; font-weight: 900; }
+      .summary-card strong { font-size: clamp(18px, 1.25vw, 22px); line-height: 1.08; overflow-wrap: anywhere; }
+      .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+      .form-grid .full { grid-column: 1 / -1; }
+      .section-note { color: var(--muted); font-size: 13px; font-weight: 700; line-height: 1.4; }
+      .result-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 12px 0; }
+      .result-card { border: 1px solid var(--line); border-radius: 8px; padding: 12px; background: var(--card-2); }
+      .result-card span { display: block; color: var(--muted); font-size: 12px; font-weight: 900; }
+      .result-card strong { display: block; margin-top: 6px; font-size: 20px; }
+      .allocation-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 12px; }
+      .period-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+      .period-tabs .secondary.active { background: linear-gradient(135deg, rgba(43,224,127,.22), rgba(53,210,255,.16)); border-color: rgba(53,210,255,.72); box-shadow: inset 0 0 0 2px rgba(53,210,255,.30), 0 0 24px rgba(53,210,255,.14); }
+      .chart-list { display: grid; gap: 10px; }
+      .chart-row { display: grid; grid-template-columns: minmax(118px, 170px) minmax(0, 1fr) minmax(92px, auto); gap: 10px; align-items: center; }
+      .chart-label { color: var(--muted); font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .chart-track { height: 16px; border-radius: 999px; background: #0b1117; overflow: hidden; border: 1px solid rgba(255,255,255,.04); }
+      .chart-fill { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--brand), var(--cyan)); box-shadow: 0 0 18px currentColor; }
+      .chart-value { text-align: right; font-weight: 900; white-space: nowrap; }
+      .monthly-chart { min-height: 260px; display: grid; grid-template-columns: repeat(12, minmax(54px, 1fr)); gap: 10px; align-items: end; overflow: auto; padding-top: 34px; }
+      .month-group { min-height: 220px; display: grid; grid-template-rows: 1fr auto; gap: 8px; justify-items: center; }
+      .month-bars { height: 180px; width: 100%; display: flex; gap: 5px; align-items: end; justify-content: center; border-bottom: 1px solid var(--line); }
+      .month-bar { width: 13px; min-height: 3px; border-radius: 6px 6px 0 0; box-shadow: 0 -8px 20px rgba(255,255,255,.06); }
+      .month-bar.income { background: linear-gradient(180deg, #2be07f, #198f5d); }
+      .month-bar.expense { background: linear-gradient(180deg, #ff5f78, #b63851); }
+      .month-bar.invest { background: linear-gradient(180deg, #8a7cff, #4e52cf); }
+      .month-label { color: var(--muted); font-size: 12px; font-weight: 900; }
+      .legend { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; color: var(--muted); font-size: 12px; font-weight: 900; }
+      .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; margin-right: 5px; }
+      .investment-overview, .health-grid { display: grid; grid-template-columns: minmax(280px, .7fr) minmax(0, 1.3fr); gap: 12px; align-items: start; margin: 12px 0; }
+      .donut-wrap { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 18px; align-items: center; }
+      .donut { width: 180px; aspect-ratio: 1; border-radius: 50%; position: relative; background: conic-gradient(var(--line) 0 100%); }
+      .donut::after { content: ""; position: absolute; inset: 42px; border-radius: 50%; background: var(--card); border: 1px solid var(--line); }
+      .ranking-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 10px; }
+      .ranking-card { border: 1px solid rgba(116,145,170,.28); border-radius: 8px; overflow: hidden; background: linear-gradient(145deg, rgba(255,255,255,.050), rgba(255,255,255,.014)), var(--card-2); }
+      .ranking-card h3 { margin: 0; padding: 12px; font-size: 14px; border-bottom: 1px solid var(--line); }
+      .rank-row { display: grid; grid-template-columns: 28px 34px minmax(0, 1fr); gap: 8px; align-items: center; min-height: 62px; padding: 8px 12px; border-top: 1px solid var(--line); }
+      .rank-row:first-of-type { border-top: 0; }
+      .rank-row small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .rank-row strong { overflow-wrap: anywhere; }
+      .rank-value { display: block; margin-top: 2px; font-weight: 900; white-space: normal; }
+      .rank-pos { color: #ffd166; font-weight: 900; text-shadow: 0 0 16px rgba(255,209,102,.18); }
+      .asset-logo.has-image { overflow: hidden; background: #f8fafc; border: 1px solid rgba(255,255,255,.22); }
+      .asset-logo img { width: 100%; height: 100%; object-fit: contain; padding: 4px; display: block; }
+      .asset-logo.has-image span { display: none; }
+      .asset-logo.acao { background: #eaf2ff; color: #2459a8; }
+      .asset-logo.fii { background: #fff4db; color: #9a6500; }
+      .asset-logo.renda-fixa { background: #e9f8f0; color: #147246; }
+      .asset-logo.etf { background: #eeeaff; color: #5b47b3; }
+      .asset-logo.caixa { background: #edf1f5; color: #49535c; }
+      .health-score { display: grid; place-items: center; gap: 8px; min-height: 210px; text-align: center; }
+      .score-ring { width: 150px; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; position: relative; background: conic-gradient(var(--danger) 0deg, var(--danger) 90deg, var(--soft) 90deg); }
+      .score-ring::after { content: ""; position: absolute; inset: 18px; border-radius: 50%; background: #101820; }
+      .score-ring strong { position: relative; z-index: 1; font-size: 38px; }
+      .score-ring small { position: relative; z-index: 1; display: block; font-weight: 900; }
+      .score-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+      .score-card { border: 1px solid var(--line); border-radius: 8px; padding: 12px; background: var(--card-2); display: grid; gap: 8px; }
+      .score-card.bad { border-color: rgba(255,95,120,.58); background: linear-gradient(135deg, rgba(255,95,120,.15), rgba(255,79,163,.08)); }
+      .score-card.warn { border-color: rgba(245,184,61,.58); background: linear-gradient(135deg, rgba(245,184,61,.15), rgba(255,159,67,.08)); }
+      .score-card.good { border-color: rgba(85,213,135,.56); background: linear-gradient(135deg, rgba(85,213,135,.16), rgba(53,210,255,.07)); }
+      .item.bad { border-color: rgba(255,95,120,.58); background: rgba(255,95,120,.10); }
+      .item.good { border-color: rgba(85,213,135,.56); background: rgba(85,213,135,.10); }
+      .sim-risk { border-color: rgba(255,95,120,.58); background: rgba(255,95,120,.10); }
+      .sim-ok { border-color: rgba(85,213,135,.56); background: rgba(85,213,135,.10); }
+      .projection-list { display: grid; gap: 0; }
+      .projection-row { display: grid; grid-template-columns: 68px minmax(0, 1fr) minmax(120px, auto) minmax(170px, auto); gap: 12px; align-items: center; border-top: 1px solid var(--line); padding: 12px 0; }
+      .projection-row.bad { color: var(--danger); }
+      .projection-row > div { min-width: 0; }
+      .projection-row > div:nth-child(2) { display: grid; gap: 4px; }
+      .projection-row > div:nth-child(2) strong { line-height: 1.15; overflow-wrap: anywhere; }
+      .projection-row > div:nth-child(2) small { display: block; }
+      .projection-row > div:nth-child(3) { display: grid; gap: 4px; justify-items: end; text-align: right; }
+      .projection-row > div:nth-child(3) strong, .projection-row > div:nth-child(3) small { display: block; white-space: nowrap; }
+      .projection-date { font-weight: 900; }
+      .projection-actions { display: flex; gap: 8px; align-items: center; justify-content: flex-end; }
+      .projection-actions input { width: 112px; min-height: 36px; }
+      .quick-projection { display: grid; grid-template-columns: minmax(180px, 1fr) 130px 150px auto auto; gap: 8px; align-items: end; border-top: 1px solid var(--line); padding-top: 12px; margin-top: 10px; }
+      .payline { display: grid; grid-template-columns: 116px 100px; gap: 8px; align-items: end; margin-top: 10px; }
+      .investment-panels { display: grid; grid-template-columns: repeat(2, minmax(260px, 1fr)); gap: 12px; align-items: start; margin-top: 12px; }
+      .asset-table { min-width: 820px; }
+      .asset-logo { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; background: var(--soft); font-weight: 900; }
+      .asset-cell { display: flex; align-items: center; gap: 10px; }
+      .dividend-list { display: grid; gap: 8px; }
+      .layout { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(320px, .75fr); gap: 12px; align-items: start; }
+      .split { display: grid; grid-template-columns: minmax(270px, 360px) minmax(0, 1fr); gap: 12px; }
+      .panel { padding: 16px; min-width: 0; }
+      .panel-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; }
+      .panel-head h2 { display: flex; align-items: center; gap: 8px; }
+      .panel-head h2::before { content: ""; width: 4px; height: 18px; border-radius: 999px; background: linear-gradient(180deg, #35d2ff, #2be07f); box-shadow: 0 0 16px rgba(53,210,255,.22); }
+      form { display: grid; gap: 13px; }
+      .cashgrid { display: grid; gap: 0; }
+      .day { display: grid; grid-template-columns: 58px minmax(0, 1fr) auto; gap: 10px; align-items: center; min-height: 62px; border-top: 1px solid var(--line); background: transparent; padding: 10px 0; }
+      .day.negative { border-color: rgba(255,95,120,.58); background: rgba(255,95,120,.10); }
+      .day.today { border-color: rgba(91,166,255,.72); background: rgba(91,166,255,.06); }
+      .day strong, .day small, .day div { min-width: 0; }
+      .day .day-money { text-align: right; font-weight: 900; white-space: nowrap; }
+      .day .day-balance { color: var(--muted); font-size: 12px; font-weight: 800; }
+      .pill { border-radius: 999px; padding: 5px 9px; font-size: 12px; font-weight: 900; }
+      .pill.good { background: linear-gradient(135deg, rgba(85,213,135,.20), rgba(53,210,255,.10)); color: var(--good); border: 1px solid rgba(85,213,135,.18); }
+      .pill.bad { background: linear-gradient(135deg, rgba(255,95,120,.20), rgba(255,79,163,.10)); color: var(--danger); border: 1px solid rgba(255,95,120,.18); }
+      .list { display: grid; gap: 10px; }
+      .item { border: 1px solid var(--line); border-radius: 8px; padding: 10px; min-width: 0; }
+      .row { display: flex; justify-content: space-between; gap: 10px; align-items: center; min-width: 0; }
+      .row strong, .row span { min-width: 0; }
+      .row span { text-align: right; white-space: nowrap; }
+      .accounts-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; align-items: start; }
+      .account-card { display: grid; gap: 8px; }
+      .account-title { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: start; }
+      .account-title strong { line-height: 1.15; }
+      .account-title span { white-space: nowrap; font-size: 18px; font-weight: 900; }
+      .installment-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; margin-top: 10px; }
+      .installment-title { grid-column: 1 / -1; margin-top: 2px; }
+      .installment-card { border: 1px solid var(--line); border-radius: 8px; padding: 12px; background: var(--card-2); display: grid; gap: 8px; }
+      .installment-card strong { line-height: 1.1; }
+      .installment-card .row span { color: var(--danger); font-weight: 900; }
+      .bar { height: 8px; border-radius: 999px; background: #0a1016; overflow: hidden; margin-top: 8px; border: 1px solid rgba(255,255,255,.04); }
+      .bar span { display: block; height: 100%; background: linear-gradient(90deg, #2be07f, #35d2ff); box-shadow: 0 0 18px rgba(53,210,255,.18); }
+      .bar.over span { background: linear-gradient(90deg, #ff5f78, #ff4fa3); }
+      table { width: 100%; min-width: 720px; border-collapse: collapse; }
+      th, td { border-bottom: 1px solid var(--line); padding: 10px 8px; text-align: left; }
+      tbody tr { transition: background .16s ease; }
+      tbody tr:hover { background: rgba(255,255,255,.035); }
+      th { color: var(--muted); font-size: 12px; text-transform: uppercase; }
+      .tablewrap { overflow: auto; }
+      .good-text { color: var(--good); }
+      .bad-text { color: var(--danger); }
+      .file input { display: none; }
+      ::selection { background: rgba(85,213,135,.32); color: var(--ink); }
+      ::-webkit-scrollbar { width: 10px; height: 10px; }
+      ::-webkit-scrollbar-thumb { background: #263746; border-radius: 999px; }
+      ::-webkit-scrollbar-track { background: #0b1117; }
+      @media (max-width: 980px) {
+        .shell { grid-template-columns: 1fr; }
+        .shell > aside { min-height: auto; }
+        nav { grid-template-columns: repeat(3, 1fr); }
+        .layout, .split, .investment-panels, .accounts-board, .investment-overview, .health-grid { grid-template-columns: 1fr; }
+        .ranking-grid { grid-template-columns: 1fr; }
+        .donut-wrap { grid-template-columns: 1fr; justify-items: center; }
+        .grid-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .goal-strip, .goal-summary { grid-template-columns: 1fr; }
+        .projection-row, .quick-projection { grid-template-columns: 1fr; }
+        .projection-actions { justify-content: stretch; }
+      }
+      @media (max-width: 620px) {
+        main, .shell > aside { padding: 16px; }
+        header, .notice { flex-direction: column; align-items: stretch; }
+        .header-actions, .date-picker { width: 100%; max-width: none; }
+        .date-picker { grid-template-columns: 1fr; }
+        nav, .grid-kpi { grid-template-columns: 1fr; }
+        .tool-row, .account-overview { grid-template-columns: 1fr; }
+        .quickbar { grid-template-columns: 1fr 1fr; }
+        .goal-strip, .goal-summary { grid-template-columns: 1fr; }
+        .metric strong { font-size: 23px; }
+        .payline { grid-template-columns: 1fr; }
+        .form-grid { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside>
+        <div class="brand">
+          <span class="logo">BF</span>
+          <div><strong>Brian Financeiro</strong><small id="sessionLabel">Desconectado</small></div>
+        </div>
+        <nav>
+          <button class="tab active" data-view="dashboard" data-icon="D">Dashboard</button>
+          <button class="tab" data-view="health" data-icon="S">Saude</button>
+          <button class="tab" data-view="transactions" data-icon="L">Lancamentos</button>
+          <button class="tab" data-view="simulator" data-icon="T">Simular compra</button>
+          <button class="tab" data-view="recurring" data-icon="C">Contas</button>
+          <button class="tab" data-view="investments" data-icon="I">Investimentos</button>
+          <button class="tab" data-view="settings" data-icon="A">Configuracoes</button>
+        </nav>
+        <button id="logout" class="secondary hidden">Sair</button>
+      </aside>
+
+      <main>
+        <header>
+          <div><h1 id="title">Dashboard</h1><p id="subtitle">Fluxo do mes, orcamento e saldo futuro.</p></div>
+          <div class="actions header-actions">
+            <div class="date-picker">
+              <select id="dateMode" aria-label="Periodo">
+                <option value="month">Periodo: Mes</option>
+                <option value="year">Periodo: Ano</option>
+                <option value="date">Data especifica</option>
+              </select>
+              <input id="month" class="date-input" type="month" />
+              <input id="year" class="date-input hidden" type="number" min="2020" max="2100" step="1" />
+              <input id="specificDate" class="date-input hidden" type="date" />
+              <button id="thisMonth" class="secondary" type="button">Este mes</button>
+            </div>
+            <button id="refresh" class="secondary">Atualizar</button>
+          </div>
+        </header>
+
+        <section id="setup" class="notice hidden">
+          <div><strong>Configure o Supabase</strong><p>Edite `config.js` com URL e anon public key do projeto.</p></div>
+        </section>
+
+        <section id="auth" class="panel auth hidden">
+          <form id="authForm">
+            <h2>Entrar no app</h2>
+            <p>Entre ou crie sua conta para liberar o menu.</p>
+            <label>Email<input name="email" type="email" required /></label>
+            <label>Senha<input name="password" type="password" minlength="6" required /></label>
+            <div class="actions"><button class="primary" name="mode" value="in">Entrar</button><button class="secondary" name="mode" value="up">Criar conta</button></div>
+            <p id="authMsg"></p>
+          </form>
+        </section>
+
+        <section id="dashboard" class="view active">
+          <div class="period-tabs" id="periodTabs">
+            <button class="secondary active" data-period="month">Mes</button>
+            <button class="secondary" data-period="semester">Semestre</button>
+            <button class="secondary" data-period="year">Ano</button>
+            <button class="secondary" data-period="all">Todo periodo</button>
+          </div>
+          <div id="dataStatus" class="notice data-status hidden"></div>
+          <div class="grid-kpi">
+            <article class="metric feature good"><span>Receita do mes</span><strong id="mIncome">R$ 0,00</strong></article>
+            <article class="metric feature"><span>Conta corrente</span><strong id="mChecking">R$ 0,00</strong></article>
+            <article class="metric feature warn"><span>Fatura cartao</span><strong id="mCardBill">R$ 0,00</strong></article>
+            <article class="metric feature"><span>Investido no mes</span><strong id="mInvest">R$ 0,00</strong></article>
+            <article class="metric feature"><span>Saude</span><strong id="mHealth">OK</strong></article>
+            <article class="metric feature"><span>Saldo final</span><strong id="mBalance">R$ 0,00</strong></article>
+          </div>
+          <div class="layout" style="margin-bottom:12px">
+            <section class="panel">
+              <div class="panel-head"><h2>Despesas por categoria</h2><span id="categoryPeriod" class="pill good">Mes</span></div>
+              <div id="categoryChart" class="chart-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><h2>Fluxo mensal</h2><span id="flowPeriod" class="pill good">Mes</span></div>
+              <div class="legend"><span><i style="background:#2e8f62"></i>Entradas</span><span><i style="background:#c74848"></i>Saidas</span><span><i style="background:#5d54c9"></i>Investido</span></div>
+              <div id="monthlyFlowChart" class="monthly-chart"></div>
+            </section>
+          </div>
+          <section class="goal-section">
+            <div class="panel-head"><h2>Metas financeiras</h2><span id="goalMonth" class="pill good">Atual</span></div>
+            <div id="goalSummary" class="goal-summary">
+              <article class="metric"><span>Metas atingidas</span><strong>0/3</strong></article>
+              <article class="metric"><span>Melhor progresso</span><strong>0%</strong></article>
+              <article class="metric"><span>Mais proxima</span><strong>Configure suas metas</strong></article>
+            </div>
+            <div id="dashboardGoals" class="goal-strip">
+              <article class="panel goal-card empty"><div class="goal-top"><h2>RE Reserva de Emergencia</h2><span class="pill bad">Configurar</span></div><strong class="value">R$ 0,00</strong><small>meta: nao definida</small><div class="bar"><span style="width:0%"></span></div><small>0% concluido</small><strong>Preencha em Configuracoes</strong><small>Renda fixa + caixa</small><small>Prazo estimado: sem meta</small></article>
+              <article class="panel goal-card empty"><div class="goal-top"><h2>PT Patrimonio Total</h2><span class="pill bad">Configurar</span></div><strong class="value">R$ 0,00</strong><small>meta: nao definida</small><div class="bar"><span style="width:0%"></span></div><small>0% concluido</small><strong>Preencha em Configuracoes</strong><small>Conta corrente + carteira</small><small>Prazo estimado: sem meta</small></article>
+              <article class="panel goal-card empty"><div class="goal-top"><h2>RP Renda Passiva Mensal</h2><span class="pill bad">Configurar</span></div><strong class="value">R$ 0,00/mes</strong><small>meta: nao definida</small><div class="bar"><span style="width:0%"></span></div><small>0% concluido</small><strong>Preencha em Configuracoes</strong><small>FIIs e renda mensal manual</small><small>Prazo estimado: sem meta</small></article>
+            </div>
+          </section>
+          <div class="layout">
+            <section class="panel">
+              <div class="panel-head"><h2>Saldo dia a dia</h2><span id="risk" class="pill good">OK</span></div>
+              <div id="cash" class="cashgrid"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><h2>Modelo 50-30-20</h2></div>
+              <div id="healthCharts" class="chartgrid"></div>
+              <p id="healthNote" class="health-note"></p>
+            </section>
+          </div>
+          <div class="layout" style="margin-top:12px">
+            <section class="panel">
+              <div class="panel-head"><h2>Orcamentos por categoria</h2><button class="secondary" data-view-shortcut="settings">Definir metas</button></div>
+              <div id="budgets" class="list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><h2>Cartao de credito</h2><button class="secondary" data-preset-shortcut="card">Nova compra</button></div>
+              <div id="cardRows" class="list"></div>
+              <div id="installmentRows" class="installment-grid"></div>
+            </section>
+          </div>
+          <section class="panel" style="margin-top:12px">
+            <div class="panel-head"><h2>Alertas do mes</h2><span id="alertCount" class="pill good">0</span></div>
+            <div id="alerts" class="list"></div>
+          </section>
+          <section class="panel" style="margin-top:12px">
+            <div class="panel-head">
+              <h2>Projecao de caixa</h2>
+              <div class="actions"><button class="secondary" data-projection="30">30d</button><button class="secondary" data-projection="60">60d</button><button class="secondary" data-projection="90">90d</button></div>
+            </div>
+            <div id="projectionRisk" class="notice hidden"></div>
+            <div id="projectionSummary" class="projection-summary-grid"></div>
+            <div id="projectionRows" class="projection-list"></div>
+            <form id="quickProjectionForm" class="quick-projection">
+              <input name="description" placeholder="Descricao..." required />
+              <input name="amount" type="number" min="0.01" step="0.01" placeholder="R$ 0,00" required />
+              <input name="tx_date" type="date" required />
+              <button class="primary" name="type" value="entrada">+ Receita</button>
+              <button class="danger" name="type" value="saida">+ Despesa</button>
+            </form>
+          </section>
+        </section>
+
+        <section id="health" class="view">
+          <div class="health-grid">
+            <section class="panel health-score">
+              <h2>Score de saude financeira</h2>
+              <div id="healthScoreRing" class="score-ring"><strong>0</strong><small>/100</small></div>
+              <strong id="healthScoreLabel">Aguardando dados</strong>
+              <small id="healthScorePeriod">Mes atual</small>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><h2>Medidores principais</h2><span id="healthPeriod" class="pill good">Mes</span></div>
+              <div id="healthScoreCards" class="score-cards"></div>
+            </section>
+          </div>
+          <section class="panel">
+            <div class="panel-head"><h2>Insights do periodo</h2><span id="healthInsightCount" class="pill good">0</span></div>
+            <div id="healthInsights" class="list"></div>
+          </section>
+        </section>
+
+        <section id="transactions" class="view">
+          <div id="txSummary" class="summary-grid"></div>
+          <div class="workflow-grid">
+            <button class="secondary workflow-card" data-preset="income"><strong>Receita</strong><span>Comissao, pro-labore ou entrada variavel</span></button>
+            <button class="secondary workflow-card" data-preset="fixed"><strong>Conta paga</strong><span>Conta corrente, boleto ou saida avulsa</span></button>
+            <button class="secondary workflow-card" data-preset="card"><strong>Compra no cartao</strong><span>Dia a dia, milhas e parcelamentos</span></button>
+            <button class="secondary workflow-card" data-preset="invest"><strong>Investimento</strong><span>Aporte em renda fixa, FII ou acao</span></button>
+            <button class="secondary workflow-card" data-pay-card><strong>Baixar fatura</strong><span>Marca a fatura do mes como paga</span></button>
+            <button class="secondary workflow-card" data-preset="car"><strong>Testar compra grande</strong><span>Simula carro, viagem ou compra pesada</span></button>
+          </div>
+          <div class="tool-row">
+            <label>Buscar<input id="txSearch" placeholder="Descricao, categoria, tipo..." /></label>
+            <label>Tipo<select id="txTypeFilter"><option value="">Todos</option><option value="entrada">Entradas</option><option value="saida">Saidas</option><option value="diario">Cartao</option><option value="investimento">Investimentos</option></select></label>
+            <label>Meio<select id="txMethodFilter"><option value="">Todos</option><option value="conta_corrente">Conta corrente</option><option value="cartao_credito">Cartao de credito</option></select></label>
+            <button id="clearTxFilters" class="secondary" type="button">Limpar</button>
+          </div>
+          <div class="split">
+            <form id="txForm" class="panel">
+              <h2>Novo lancamento</h2>
+              <p class="section-note">Use entrada para receitas, saida para conta corrente, diario/cartao para compras no cartao e investimento para aportes.</p>
+              <div class="form-grid">
+                <label>Data<input name="tx_date" type="date" required /></label>
+                <label>Tipo<select name="type"><option value="entrada">Entrada</option><option value="saida">Saida</option><option value="investimento">Investimento</option><option value="diario">Diario/cartao</option></select></label>
+                <label>Meio<select name="payment_method"><option value="conta_corrente">Conta corrente</option><option value="cartao_credito">Cartao de credito</option></select></label>
+                <label>Fatura<input name="card_bill_month" type="month" /></label>
+                <label>Categoria<input name="category" list="cats" required /></label>
+                <label>Valor<input name="amount" type="number" min="0.01" step="0.01" required /></label>
+                <label class="full">Descricao<input name="description" /></label>
+                <label>Parcelas<input name="installments" type="number" min="1" max="120" value="1" /></label>
+              </div>
+              <button class="primary">Salvar</button>
+            </form>
+            <section class="panel">
+              <div class="panel-head">
+                <h2>Lancamentos</h2>
+                <label class="secondary file">Importar arquivo<input id="importFile" type="file" accept=".xlsx,.xls,.csv,.json" /></label>
+              </div>
+              <div class="tablewrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Meio</th><th>Fatura</th><th>Categoria</th><th>Descricao</th><th>Valor</th><th></th></tr></thead><tbody id="txRows"></tbody></table></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="simulator" class="view">
+          <div class="split">
+            <form id="simForm" class="panel">
+              <h2>Simular compra</h2>
+              <p class="section-note">Aqui nada e salvo. Serve para testar carro, viagem, shopping ou qualquer compra parcelada antes de comprometer o caixa.</p>
+              <div class="form-grid">
+                <label>Data<input name="tx_date" type="date" required /></label>
+                <label>Fatura inicial<input name="card_bill_month" type="month" /></label>
+                <label>Categoria<input name="category" list="cats" required /></label>
+                <label>Valor total da compra<input name="amount" type="number" min="0.01" step="0.01" required /></label>
+                <label class="full">Descricao<input name="description" /></label>
+                <label>Parcelas<input name="installments" type="number" min="1" max="120" value="1" /></label>
+              </div>
+              <button class="primary">Analisar</button>
+            </form>
+            <section id="simResult" class="panel"><h2>Resultado</h2><p>Preencha a compra para analisar impacto no caixa e orcamento.</p></section>
+          </div>
+        </section>
+
+        <section id="recurring" class="view">
+          <div class="split">
+            <form id="recForm" class="panel">
+              <h2>Nova conta mensal</h2>
+              <label>Aba<select name="account_kind"><option value="fixa">Conta fixa</option><option value="variavel">Conta variavel</option></select></label>
+              <label>Nome<input name="name" required /></label>
+              <label>Dia<input name="day_of_month" type="number" min="1" max="31" required /></label>
+              <label>Tipo<select name="type"><option value="saida">Saida</option><option value="entrada">Entrada</option><option value="investimento">Investimento</option></select></label>
+              <label>Meio<select name="payment_method"><option value="conta_corrente">Conta corrente</option><option value="cartao_credito">Cartao de credito</option></select></label>
+              <label>Categoria<input name="category" list="cats" required /></label>
+              <label>Valor<input name="amount" type="number" min="0.01" step="0.01" required /></label>
+              <button class="primary">Salvar</button>
+            </form>
+            <section class="panel">
+              <div id="accountOverview" class="account-overview"></div>
+              <div class="accounts-board">
+                <section>
+                  <div class="panel-head"><h2>Contas fixas</h2><span id="fixedTotal" class="pill good">R$ 0,00</span></div>
+                  <div id="fixedRows" class="list"></div>
+                </section>
+                <section>
+                  <div class="panel-head"><h2>Contas variaveis</h2><span id="variableTotal" class="pill good">R$ 0,00</span></div>
+                  <div id="variableRows" class="list"></div>
+                </section>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section id="investments" class="view">
+          <div class="grid-kpi">
+            <article class="metric"><span>Patrimonio investido</span><strong id="iTotal">R$ 0,00</strong></article>
+            <article class="metric"><span>Total investido</span><strong id="iCost">R$ 0,00</strong></article>
+            <article class="metric"><span>Rentabilidade</span><strong id="iReturn">0%</strong></article>
+            <article class="metric"><span>FIIs</span><strong id="iFiis">R$ 0,00</strong></article>
+            <article class="metric"><span>Dividendos mes</span><strong id="iDividends">R$ 0,00</strong></article>
+            <article class="metric"><span>Ativos</span><strong id="iCount">0</strong></article>
+          </div>
+          <div class="quickbar">
+            <button class="secondary" data-refresh-quotes>Atualizar cotacoes</button>
+          </div>
+          <div class="investment-overview">
+            <section class="panel">
+              <div class="panel-head"><h2>Grafico da carteira</h2><span id="portfolioMixLabel" class="pill good">Carteira</span></div>
+              <div id="portfolioDonut" class="donut-wrap"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><h2>Destaques da carteira</h2><span class="pill good">Top 5</span></div>
+              <div id="investmentHighlights" class="ranking-grid"></div>
+            </section>
+          </div>
+          <div id="allocationRows" class="allocation-grid"></div>
+          <div class="split">
+            <form id="invForm" class="panel">
+              <h2>Operacao de ativo</h2>
+              <p class="section-note">Para renda fixa ou caixinha, use quantidade 1 e preco como valor aplicado. Para FII/acao, use quantidade de cotas/acoes.</p>
+              <div class="form-grid">
+                <label>Operacao<select name="operation"><option value="buy">Compra</option><option value="sell">Venda</option><option value="set">Ajustar posicao</option></select></label>
+                <label>Classe<select name="segment"><option value="Renda fixa">Renda fixa</option><option value="FII">FII</option><option value="Acao">Acao</option><option value="ETF">ETF</option><option value="Caixa">Caixa</option></select></label>
+                <label class="full">Ativo<input name="asset" placeholder="CDB, Tesouro, MXRF11..." required /></label>
+                <label>Quantidade<input name="shares" type="number" min="0" step="0.0001" required /></label>
+                <label>Preco<input name="price" type="number" min="0" step="0.0001" required /></label>
+                <label class="full">Renda mensal manual por unidade<input name="dividend_per_share" type="number" min="0" step="0.0001" /></label>
+              </div>
+              <button class="primary">Registrar operacao</button>
+            </form>
+            <section class="panel" id="portfolioPanel">
+              <div class="panel-head"><h2>Carteira</h2><span id="quoteStatus" class="pill good">Manual</span></div>
+              <div class="tablewrap"><table class="asset-table"><thead><tr><th>Ativo</th><th>Classe</th><th>Qtd</th><th>Preco medio</th><th>Cotacao</th><th>Patrimonio</th><th>Lucro</th><th>DY est.</th><th></th></tr></thead><tbody id="invRows"></tbody></table></div>
+            </section>
+          </div>
+          <div class="investment-panels">
+            <section class="panel">
+              <div class="panel-head"><h2>Agenda de dividendos</h2></div>
+              <div id="dividendRows" class="dividend-list"><p>Sem agenda carregada. Atualize cotacoes ou preencha renda manual.</p></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><h2>Metas da carteira</h2></div>
+              <div id="goalRows" class="list"><p>Defina suas metas em Configuracoes.</p></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="settings" class="view">
+          <div class="split">
+            <form id="setForm" class="panel">
+              <h2>Metas principais</h2>
+              <p class="section-note">Esses valores alimentam os cards de metas, saude financeira e projecao.</p>
+              <div class="form-grid">
+                <label>Saldo inicial<input name="initial_balance" type="number" step="0.01" /></label>
+                <label>Vencimento do cartao<input name="credit_card_due_day" type="number" min="1" max="31" /></label>
+                <label>Meta minima de receita<input name="variable_income_target" type="number" min="0" step="0.01" /></label>
+                <label>Meta mensal de investimento<input name="monthly_invest_target" type="number" min="0" step="0.01" /></label>
+                <label>Meta reserva de emergencia<input name="emergency_goal" type="number" min="0" step="0.01" /></label>
+                <label>Meta patrimonio investido<input name="portfolio_goal" type="number" min="0" step="0.01" /></label>
+                <label>Meta FIIs<input name="fii_goal" type="number" min="0" step="0.01" /></label>
+                <label>Meta dividendos mensais<input name="dividend_goal" type="number" min="0" step="0.01" /></label>
+                <label class="full">Token brapi gratuito<input name="brapi_token" type="password" placeholder="Opcional para cotacoes/dividendos" /></label>
+              </div>
+              <button class="primary">Salvar</button>
+            </form>
+            <form id="budgetForm" class="panel">
+              <h2>Orcamento por categoria</h2>
+              <p class="section-note">Defina o limite do mes por categoria. O Dashboard fica vermelho quando passar do limite.</p>
+              <label>Mes<input name="month" type="month" required /></label>
+              <label>Categoria<input name="category" list="cats" required /></label>
+              <label>Limite<input name="limit_amount" type="number" min="0" step="0.01" required /></label>
+              <button class="primary">Salvar orcamento</button>
+              <div id="budgetRows" class="list"></div>
+            </form>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <datalist id="cats">
+      <option value="Comissao"></option><option value="Pro-labore"></option><option value="Alimentacao"></option><option value="Shopping"></option><option value="Lazer"></option><option value="Carro"></option><option value="Moradia"></option><option value="Saude"></option><option value="Contas"></option><option value="Financiamento"></option><option value="Investimento"></option><option value="MEI"></option><option value="Diario"></option><option value="Outros"></option>
+    </datalist>
+
+    <script type="module">
+      import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+      const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+      const $ = (q) => document.querySelector(q);
+      const state = { sb: null, session: null, view: "dashboard", period: "month", dateMode: "month", projectionDays: 30, txSearch: "", txTypeFilter: "", txMethodFilter: "", tx: [], rec: [], budgets: [], inv: [], market: {}, settings: {}, simRows: [], loadInfo: null };
+      const sheets = ["2025", "2026", "2027", "2028"];
+      const starts = [0,7,14,21,28,35,42,49,56,63,70,77];
+      const labels = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+      function cfgOk() {
+        const c = window.BRIAN_FINANCE_CONFIG || {};
+        return c.supabaseUrl && c.supabaseAnonKey && !c.supabaseUrl.includes("COLE_");
+      }
+      function n(v) { const x = Number(v || 0); return Number.isFinite(x) ? x : 0; }
+      function iso(v) { return String(v || "").slice(0, 10); }
+      function addMonths(date, months) {
+        const [y, m, d] = iso(date).split("-").map(Number);
+        const target = new Date(Date.UTC(y, m - 1 + months, 1));
+        const max = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate();
+        target.setUTCDate(Math.min(d || 1, max));
+        return `${target.getUTCFullYear()}-${String(target.getUTCMonth()+1).padStart(2,"0")}-${String(target.getUTCDate()).padStart(2,"0")}`;
+      }
+      function monthNow() {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+      }
+      function todayIso() {
+        return new Date().toISOString().slice(0, 10);
+      }
+      function daysIn(m) {
+        const [y, mo] = m.split("-").map(Number);
+        return new Date(y, mo, 0).getDate();
+      }
+      function formData(form) { return Object.fromEntries(new FormData(form).entries()); }
+      function sourceMeta(x) {
+        const parts = String(x.source || "").split("|");
+        return { origin: parts[0] || "manual", payment: parts[1] || "", bill: parts[2] || "" };
+      }
+      function method(x) { return x.payment_method || sourceMeta(x).payment || (x.type === "diario" ? "cartao_credito" : "conta_corrente"); }
+      function billMonth(x) { return x.card_bill_month ? iso(x.card_bill_month).slice(0, 7) : sourceMeta(x).bill || iso(x.tx_date).slice(0, 7); }
+      function isInternalTransfer(x) { return String(x.category || "").toLowerCase() === "transferencia"; }
+      function signed(x) { return x.type === "entrada" ? n(x.amount) : -n(x.amount); }
+      function cashSigned(x) { return x.type === "entrada" ? n(x.amount) : -n(x.amount); }
+      function syncPeriodInputs() {
+        const mode = state.dateMode || "month";
+        if (mode === "year") {
+          const year = String($("#year").value || new Date().getFullYear()).slice(0, 4);
+          $("#year").value = year;
+          $("#month").value = `${year}-01`;
+        } else if (mode === "date") {
+          const day = $("#specificDate").value || todayIso();
+          $("#specificDate").value = day;
+          $("#month").value = day.slice(0, 7);
+        } else if (!$("#month").value) {
+          $("#month").value = monthNow();
+        }
+      }
+      function setDateMode(mode, shouldRender = true) {
+        state.dateMode = mode || "month";
+        $("#dateMode").value = state.dateMode;
+        $("#month").classList.toggle("hidden", state.dateMode !== "month");
+        $("#year").classList.toggle("hidden", state.dateMode !== "year");
+        $("#specificDate").classList.toggle("hidden", state.dateMode !== "date");
+        if (state.dateMode === "year") state.period = "year";
+        if (state.dateMode === "date") state.period = "month";
+        syncPeriodInputs();
+        if (shouldRender) render();
+      }
+      function currentMonth() {
+        syncPeriodInputs();
+        return $("#month").value || monthNow();
+      }
+      function paidRecurringIds(m) {
+        return new Set(state.tx.filter(x => sourceMeta(x).origin === "recurring_paid" && sourceMeta(x).bill === m).map(x => sourceMeta(x).payment));
+      }
+      function cleanAccountName(x) { return String(x.name || "").replace(/^\[\[variavel\]\]\s*/i, ""); }
+      function accountKind(x) {
+        if (x.account_kind) return x.account_kind;
+        if (/^\[\[variavel\]\]/i.test(String(x.name || ""))) return "variavel";
+        return "fixa";
+      }
+      function accountStatus(x, paid, m) {
+        if (paid.has(x.id)) return { cls: "paid", label: "Pago" };
+        const due = `${m}-${String(Math.min(Math.max(n(x.day_of_month) || 1, 1), daysIn(m))).padStart(2, "0")}`;
+        if (m === monthNow() && due < todayIso()) return { cls: "overdue", label: "Atrasada" };
+        return { cls: "pending", label: "Pendente" };
+      }
+      function typeBadge(x) {
+        if (x.type === "entrada") return { cls: "income", label: "Receita" };
+        if (x.type === "investimento") return { cls: "invest", label: "Investimento" };
+        if (method(x) === "cartao_credito" || x.type === "diario") return { cls: "card", label: "Cartao" };
+        return { cls: "expense", label: "Saida" };
+      }
+      function autoCategory(x) {
+        const current = x.category || "";
+        if (current && current !== "Outros") return current;
+        const d = String(x.description || "").toUpperCase();
+        if (d.includes("DACIANO BRIAN")) return "Transferencia";
+        if (["CPFL PAULISTA"].some(k => d.includes(k))) return "Contas";
+        if (["ONR", "INSTITUTO DE ESTUDOS", "REGISTRO CIVIL"].some(k => d.includes(k))) return "MEI";
+        if (["SJR VITTA", "CASA UN FLOR DO CAMPO"].some(k => d.includes(k))) return "Moradia";
+        if (["LIV UP", "BRAZILIAN CONVENIENCE", "H2 RIO PRETO"].some(k => d.includes(k))) return "Alimentacao";
+        if (["DUO TICKET", "DUOTICKET"].some(k => d.includes(k))) return "Lazer";
+        if (["ONE-B.DIGITAL COSMETICS"].some(k => d.includes(k))) return "Shopping";
+        return current || "Outros";
+      }
+      function txMatchesFilters(x) {
+        const q = String(state.txSearch || "").trim().toLowerCase();
+        const type = state.txTypeFilter || "";
+        const methodFilter = state.txMethodFilter || "";
+        if (type && x.type !== type) return false;
+        if (methodFilter && method(x) !== methodFilter) return false;
+        if (!q) return true;
+        return [x.description, x.category, x.type, method(x), billMonth(x)].some(v => String(v || "").toLowerCase().includes(q));
+      }
+      function hasPaidCardBill(m) {
+        return state.tx.some(x => sourceMeta(x).origin === "card_bill_paid" && sourceMeta(x).bill === m);
+      }
+      function setSessionLabel() {
+        $("#sessionLabel").textContent = state.session?.user?.email || "Desconectado";
+        $("#logout").classList.toggle("hidden", !state.session);
+      }
+      function showAuth() {
+        const locked = !state.session;
+        document.body.classList.toggle("locked", locked);
+        $("#auth").classList.toggle("hidden", !cfgOk() || !locked);
+        $("#setup").classList.toggle("hidden", cfgOk());
+        document.querySelectorAll(".tab").forEach(b => { b.disabled = locked; });
+        $("#month").disabled = locked;
+        $("#year").disabled = locked;
+        $("#specificDate").disabled = locked;
+        $("#dateMode").disabled = locked;
+        $("#thisMonth").disabled = locked;
+        $("#refresh").disabled = locked;
+      }
+      function setView(name) {
+        if (!state.session) return;
+        state.view = name;
+        document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === name));
+        document.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b.dataset.view === name));
+        const copy = {
+          dashboard: ["Dashboard", "Fluxo do mes, orcamento e saldo futuro."],
+          health: ["Saude financeira", "Score, riscos e pontos de melhoria."],
+          transactions: ["Lancamentos", "Receitas, despesas, compras no cartao e parcelas."],
+          simulator: ["Simular compra", "Teste antes de comprar e salve quando decidir."],
+          recurring: ["Contas", "Contas fixas e variaveis do mes."],
+          investments: ["Investimentos", "Carteira, dividendos, metas e cotacoes."],
+          settings: ["Configuracoes", "Metas, orcamento e integracoes."]
+        }[name];
+        $("#title").textContent = copy[0];
+        $("#subtitle").textContent = copy[1];
+      }
+      function recurringFor(m) {
+        if (m < monthNow()) return [];
+        const max = daysIn(m);
+        const paid = paidRecurringIds(m);
+        return state.rec.filter(x => x.active !== false && !paid.has(x.id)).map(x => {
+          const d = Math.min(n(x.day_of_month), max);
+          return { tx_date: `${m}-${String(d).padStart(2,"0")}`, type: x.type, category: x.category, description: cleanAccountName(x), amount: n(x.amount), payment_method: method(x), source: `recurring_preview|${x.id}|${m}`, virtual: true };
+        });
+      }
+      function monthItems(m, extra = []) {
+        return [...state.tx.filter(x => iso(x.tx_date).startsWith(m)), ...recurringFor(m), ...extra].sort((a,b) => iso(a.tx_date).localeCompare(iso(b.tx_date)));
+      }
+      function cardBillItems(m, extra = []) {
+        return [...state.tx, ...extra].filter(x => method(x) === "cartao_credito" && billMonth(x) === m && x.type !== "entrada");
+      }
+      function cardBillDueDate(m) {
+        const max = daysIn(m);
+        const day = Math.min(Math.max(n(state.settings.credit_card_due_day) || 10, 1), max);
+        return `${m}-${String(day).padStart(2, "0")}`;
+      }
+      function cashItems(m, extra = []) {
+        const accountItems = monthItems(m, extra).filter(x => method(x) !== "cartao_credito");
+        const billAmount = cardBillItems(m, extra).reduce((s, x) => s + n(x.amount), 0);
+        const bill = billAmount && !hasPaidCardBill(m) ? [{ tx_date: cardBillDueDate(m), type: "saida", category: "Cartao de credito", description: "Fatura do cartao prevista", amount: billAmount, payment_method: "conta_corrente", source: `card_bill_preview||${m}`, virtual: true }] : [];
+        return [...accountItems, ...bill].sort((a,b) => iso(a.tx_date).localeCompare(iso(b.tx_date)));
+      }
+      function opening(m) {
+        const start = `${m}-01`;
+        const accountPast = state.tx.filter(x => method(x) !== "cartao_credito" && iso(x.tx_date) < start).reduce((s,x) => s + cashSigned(x), 0);
+        const paidCardBills = state.tx.filter(x => method(x) === "cartao_credito" && billMonth(x) < m && x.type !== "entrada").reduce((s,x) => s - n(x.amount), 0);
+        return n(state.settings.initial_balance) + accountPast + paidCardBills;
+      }
+      function cashflow(m, extra = []) {
+        const map = new Map();
+        cashItems(m, extra).forEach(x => {
+          const d = Number(iso(x.tx_date).slice(8,10));
+          map.set(d, [...(map.get(d) || []), x]);
+        });
+        let bal = opening(m);
+        return Array.from({ length: daysIn(m) }, (_, i) => {
+          const day = i + 1, items = map.get(day) || [];
+          const mov = items.reduce((s,x) => s + signed(x), 0);
+          bal += mov;
+          return { day, items, movement: mov, balance: bal };
+        });
+      }
+      function currentAccountBalance(m) {
+        const limit = m === monthNow() ? todayIso() : `${m}-${String(daysIn(m)).padStart(2, "0")}`;
+        const realMovements = state.tx.filter(x => method(x) !== "cartao_credito" && iso(x.tx_date).startsWith(m) && iso(x.tx_date) <= limit).reduce((s,x) => s + signed(x), 0);
+        return opening(m) + realMovements;
+      }
+      function calc(m, extra = []) {
+        const items = monthItems(m, extra);
+        const cash = cashItems(m, extra);
+        const card = cardBillItems(m, extra);
+        const financialItems = items.filter(x => !isInternalTransfer(x));
+        const financialCash = cash.filter(x => !isInternalTransfer(x));
+        const income = financialItems.filter(x => x.type === "entrada").reduce((s,x) => s + n(x.amount), 0);
+        const expense = financialItems.filter(x => x.type === "saida" || x.type === "diario").reduce((s,x) => s + n(x.amount), 0);
+        const invest = financialItems.filter(x => x.type === "investimento").reduce((s,x) => s + n(x.amount), 0);
+        const checkingExpense = financialCash.filter(x => x.type !== "entrada").reduce((s,x) => s + n(x.amount), 0);
+        const cardBill = card.reduce((s,x) => s + n(x.amount), 0);
+        const flow = cashflow(m, extra);
+        const perf = income - expense - invest;
+        const savingsRate = income ? perf / income * 100 : 0;
+        const investRate = income ? invest / income * 100 : 0;
+        const cardRate = income ? cardBill / income * 100 : 0;
+        return { items, cash, card, income, expense, invest, checkingExpense, cardBill, perf, savingsRate, investRate, cardRate, flow, currentBalance: currentAccountBalance(m), final: flow.at(-1)?.balance || opening(m) };
+      }
+      function monthIdFromDate(v) {
+        const s = iso(v);
+        return /^\d{4}-\d{2}/.test(s) ? s.slice(0, 7) : "";
+      }
+      function shiftMonth(m, amount) {
+        const [y, mo] = m.split("-").map(Number);
+        const d = new Date(Date.UTC(y, mo - 1 + amount, 1));
+        return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+      }
+      function allKnownMonths() {
+        const set = new Set([currentMonth()]);
+        state.tx.forEach(x => { const m = monthIdFromDate(x.tx_date); if (m) set.add(m); });
+        state.budgets.forEach(x => { const m = monthIdFromDate(x.month); if (m) set.add(m); });
+        if (!set.size) set.add(monthNow());
+        return [...set].sort();
+      }
+      function rangeMonths(period = state.period, selected = currentMonth()) {
+        const [year, month] = selected.split("-").map(Number);
+        if (period === "all") return allKnownMonths();
+        if (period === "year") return Array.from({ length: 12 }, (_, i) => `${year}-${String(i + 1).padStart(2, "0")}`);
+        if (period === "semester") {
+          const start = month <= 6 ? 1 : 7;
+          return Array.from({ length: 6 }, (_, i) => `${year}-${String(start + i).padStart(2, "0")}`);
+        }
+        return [selected];
+      }
+      function periodText(period = state.period) {
+        return { month: "Mes", semester: "Semestre", year: "Ano", all: "Todo periodo" }[period] || "Mes";
+      }
+      function periodCalc(months) {
+        const monthly = months.map(month => ({ month, ...calc(month) }));
+        const last = monthly.at(-1);
+        return {
+          months,
+          monthly,
+          items: monthly.flatMap(x => x.items),
+          income: monthly.reduce((s,x) => s + x.income, 0),
+          expense: monthly.reduce((s,x) => s + x.expense, 0),
+          invest: monthly.reduce((s,x) => s + x.invest, 0),
+          cardBill: monthly.reduce((s,x) => s + x.cardBill, 0),
+          checkingExpense: monthly.reduce((s,x) => s + x.checkingExpense, 0),
+          perf: monthly.reduce((s,x) => s + x.perf, 0),
+          final: last?.final || 0,
+          cardRate: monthly.reduce((s,x) => s + x.income, 0) ? monthly.reduce((s,x) => s + x.cardBill, 0) / monthly.reduce((s,x) => s + x.income, 0) * 100 : 0,
+          investRate: monthly.reduce((s,x) => s + x.income, 0) ? monthly.reduce((s,x) => s + x.invest, 0) / monthly.reduce((s,x) => s + x.income, 0) * 100 : 0,
+          savingsRate: monthly.reduce((s,x) => s + x.income, 0) ? monthly.reduce((s,x) => s + x.perf, 0) / monthly.reduce((s,x) => s + x.income, 0) * 100 : 0
+        };
+      }
+      function categoryTotals(items) {
+        const map = new Map();
+        items.filter(x => !isInternalTransfer(x) && (x.type === "saida" || x.type === "diario") && x.category !== "Cartao de credito").forEach(x => {
+          const key = x.category || "Sem categoria";
+          map.set(key, (map.get(key) || 0) + n(x.amount));
+        });
+        return [...map.entries()].sort((a,b) => b[1] - a[1]);
+      }
+      function renderPeriodControls() {
+        document.querySelectorAll("[data-period]").forEach(b => b.classList.toggle("active", b.dataset.period === state.period));
+        $("#categoryPeriod").textContent = periodText();
+        $("#flowPeriod").textContent = periodText();
+        $("#healthPeriod").textContent = periodText();
+      }
+      function renderDataStatus() {
+        const box = $("#dataStatus");
+        if (!box || !state.session) return;
+        const cfg = window.BRIAN_FINANCE_CONFIG || {};
+        const project = cfg.supabaseUrl ? new URL(cfg.supabaseUrl).host.split(".")[0] : "sem-config";
+        const info = state.loadInfo || {};
+        const ok = !info.error && (info.tx || 0) > 0;
+        box.classList.remove("hidden");
+        box.innerHTML = `<div><strong>${ok ? "Dados carregados do Supabase" : "Aguardando dados do Supabase"}</strong><small>Projeto: ${project} · Usuario: ${state.session.user.email || state.session.user.id}</small><small>Lancamentos: ${info.tx || 0} · Investimentos: ${info.inv || 0} · Contas: ${info.rec || 0} · Configuracoes: ${info.settings || 0}</small>${info.error ? `<small class="bad-text">Erro: ${info.error}</small>` : ""}</div><span class="pill ${ok ? "good" : "bad"}">${ok ? "OK" : "Verificar"}</span>`;
+      }
+      function renderCategoryChart(periodData) {
+        const rows = categoryTotals(periodData.items).slice(0, 10);
+        const max = rows[0]?.[1] || 0;
+        const colors = ["#35d2ff", "#8a7cff", "#ff4fa3", "#ff5f78", "#ff9f43", "#ffd166", "#2be07f", "#20c997", "#4dabf7", "#b197fc"];
+        $("#categoryChart").innerHTML = rows.length ? rows.map(([label, value], i) => {
+          const pct = max ? Math.max(3, value / max * 100) : 0;
+          const color = colors[i % colors.length];
+          return `<div class="chart-row"><span class="chart-label">${label}</span><div class="chart-track"><span class="chart-fill" style="width:${pct}%;background:linear-gradient(90deg, ${color}, rgba(255,255,255,.82))"></span></div><span class="chart-value">${brl.format(value)}</span></div>`;
+        }).join("") : "<p>Nenhuma despesa no periodo selecionado.</p>";
+      }
+      function renderMonthlyFlowChart(periodData) {
+        const months = state.period === "month" ? rangeMonths("year", currentMonth()) : periodData.months;
+        const rows = months.map(month => ({ month, ...calc(month) }));
+        const max = Math.max(1, ...rows.flatMap(x => [x.income, x.expense, x.invest]));
+        $("#monthlyFlowChart").innerHTML = rows.map(x => {
+          const title = `${x.month}: entradas ${brl.format(x.income)}, saidas ${brl.format(x.expense)}, investido ${brl.format(x.invest)}`;
+          return `<div class="month-group" title="${title}"><div class="month-bars"><span class="month-bar income" style="height:${Math.max(3, x.income / max * 100)}%"></span><span class="month-bar expense" style="height:${Math.max(3, x.expense / max * 100)}%"></span><span class="month-bar invest" style="height:${Math.max(3, x.invest / max * 100)}%"></span></div><span class="month-label">${labels[Number(x.month.slice(5,7)) - 1]}</span></div>`;
+        }).join("");
+      }
+      function projection(days = state.projectionDays) {
+        const today = new Date().toISOString().slice(0, 10);
+        const endDate = new Date(`${today}T00:00:00`);
+        endDate.setDate(endDate.getDate() + days - 1);
+        const end = `${endDate.getFullYear()}-${String(endDate.getMonth()+1).padStart(2,"0")}-${String(endDate.getDate()).padStart(2,"0")}`;
+        const startMonth = today.slice(0, 7);
+        let balance = opening(startMonth);
+        const startDay = Number(today.slice(8, 10));
+        cashItems(startMonth).filter(x => Number(iso(x.tx_date).slice(8,10)) < startDay).forEach(x => { balance += signed(x); });
+        const monthSet = new Set();
+        const base = new Date(`${today}T00:00:00`);
+        for (let i = 0; i < days; i++) {
+          const d = new Date(base);
+          d.setDate(base.getDate() + i);
+          monthSet.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`);
+        }
+        const events = [];
+        monthSet.forEach(m => cashItems(m).forEach(x => {
+          const date = iso(x.tx_date);
+          if (date >= today && date <= end) events.push({ ...x, tx_date: date });
+        }));
+        events.sort((a,b) => iso(a.tx_date).localeCompare(iso(b.tx_date)));
+        let entries = 0, exits = 0;
+        const rows = events.map(x => {
+          const mov = signed(x);
+          if (mov > 0) entries += mov; else exits += Math.abs(mov);
+          balance += mov;
+          return { ...x, movement: mov, balance };
+        });
+        return { rows, entries, exits, final: balance, negative: rows.find(x => x.balance < 0) };
+      }
+      function bar(label, value, max, danger = false) {
+        const pct = max ? Math.min(140, Math.max(0, value / max * 100)) : 0;
+        return `<div class="mini-chart"><div class="row"><span>${label}</span><strong>${Math.round(value)}%</strong></div><div class="bar ${danger ? "over" : ""}"><span style="width:${pct}%"></span></div></div>`;
+      }
+      function ratioCard(label, value, income, target) {
+        const pct = income ? value / income * 100 : 0;
+        const over = pct > target + 5;
+        const good = pct <= target;
+        return `<article class="ratio-card ${over ? "over" : good ? "good" : ""}"><div class="row"><strong>${label}</strong><span>${Math.round(pct)}%</span></div><div class="bar ${over ? "over" : ""}"><span style="width:${Math.min(100, pct)}%"></span></div><div class="ratio-meta"><span>${brl.format(value)}</span><span>meta ${target}%</span></div></article>`;
+      }
+      function installmentGroups() {
+        const groups = new Map();
+        const m = currentMonth();
+        state.tx.filter(x => method(x) === "cartao_credito" && sourceMeta(x).origin === "parcela").forEach(x => {
+          const match = String(x.description || "").match(/\((\d+)\/(\d+)\)\s*$/);
+          if (!match) return;
+          const current = Number(match[1]), total = Number(match[2]);
+          const name = String(x.description || "").replace(/\s*\(\d+\/\d+\)\s*$/, "");
+          const key = `${name}|${n(x.amount)}`;
+          const g = groups.get(key) || { name, amount: n(x.amount), total, paid: 0, months: [] };
+          g.total = Math.max(g.total, total);
+          if (billMonth(x) <= m) g.paid = Math.max(g.paid, current);
+          g.months.push(billMonth(x));
+          groups.set(key, g);
+        });
+        return [...groups.values()].filter(g => g.paid < g.total).sort((a,b) => b.amount - a.amount);
+      }
+      function manualQuoteForAsset(symbol) {
+        return (state.settings.manual_quotes || {})[String(symbol || "").toUpperCase()] || {};
+      }
+      function quoteForAsset(x) {
+        const symbol = String(x.asset || "").toUpperCase();
+        return state.market[symbol] || manualQuoteForAsset(symbol) || {};
+      }
+      function assetCurrentPrice(x) { return n(quoteForAsset(x).price) || n(x.price); }
+      function investmentStats() {
+        const rows = state.inv || [];
+        const total = rows.reduce((s,x) => s + n(x.shares) * assetCurrentPrice(x), 0);
+        const cost = rows.reduce((s,x) => s + n(x.shares) * n(x.price), 0);
+        const fiis = rows.filter(x => x.segment === "FII").reduce((s,x) => s + n(x.shares) * assetCurrentPrice(x), 0);
+        const reserve = rows.filter(x => ["Caixa", "Renda fixa"].includes(x.segment)).reduce((s,x) => s + n(x.shares) * assetCurrentPrice(x), 0);
+        const dividends = rows.reduce((s,x) => s + n(x.shares) * (n(quoteForAsset(x).monthlyDividend) || n(x.dividend_per_share)), 0);
+        return { rows, total, cost, fiis, reserve, dividends, profit: total - cost };
+      }
+      function monthLabelAfter(months) {
+        if (months <= 0) return "atingida";
+        if (!Number.isFinite(months)) return "depende de aportes";
+        if (months > 600) return "longo prazo";
+        const d = new Date();
+        d.setMonth(d.getMonth() + Math.ceil(months));
+        if (Number.isNaN(d.getTime())) return "longo prazo";
+        return d.toLocaleDateString("pt-BR", { month: "short", year: "numeric" }).replace(".", "");
+      }
+      function renderDashboardGoals(m, c, stats) {
+        const goalsBox = $("#dashboardGoals"), summaryBox = $("#goalSummary");
+        if (!goalsBox || !summaryBox) return;
+        const monthlyFixed = state.rec.filter(x => x.active !== false && accountKind(x) === "fixa" && x.type !== "entrada").reduce((s,x) => s + n(x.amount), 0);
+        const autoEmergencyTarget = monthlyFixed ? monthlyFixed * 6 : 0;
+        const emergencyTarget = n(state.settings.emergency_goal) || autoEmergencyTarget;
+        const portfolioTarget = n(state.settings.portfolio_goal);
+        const dividendTarget = n(state.settings.dividend_goal);
+        const monthlyPower = Math.max(n(state.settings.monthly_invest_target), c.perf > 0 ? c.perf : 0);
+        const goals = [
+          { icon: "RE", title: "Reserva de Emergencia", current: stats.reserve || Math.max(0, c.final), target: emergencyTarget, detail: autoEmergencyTarget ? `6 meses de custos fixos: ${brl.format(monthlyFixed)}/mes` : "Defina uma meta em Configuracoes", source: stats.reserve ? "Renda fixa + caixa" : "Saldo final da conta", estimate: monthlyPower },
+          { icon: "PT", title: "Patrimonio Total", current: Math.max(0, c.final) + stats.total, target: portfolioTarget, detail: `Conta ${brl.format(Math.max(0, c.final))} + investimentos ${brl.format(stats.total)}`, source: "Conta corrente + carteira", estimate: monthlyPower },
+          { icon: "RP", title: "Renda Passiva Mensal", current: stats.dividends, target: dividendTarget, detail: `Dividendos/renda cadastrada: ${brl.format(stats.dividends)}/mes`, source: "FIIs e renda mensal manual", estimate: 0 }
+        ].map(g => {
+          const pct = g.target ? Math.min(100, g.current / g.target * 100) : 0;
+          const remaining = Math.max(0, g.target - g.current);
+          const months = g.estimate ? remaining / g.estimate : Infinity;
+          return { ...g, pct, remaining, eta: g.target ? monthLabelAfter(months) : "sem meta" };
+        });
+        const configured = goals.filter(g => g.target > 0);
+        const achieved = configured.filter(g => g.pct >= 100).length;
+        const best = configured.sort((a,b) => b.pct - a.pct)[0];
+        const nearest = goals.filter(g => g.target > 0 && g.pct < 100).sort((a,b) => b.pct - a.pct)[0] || best;
+        $("#goalMonth").textContent = m;
+        summaryBox.innerHTML = [
+          `<article class="metric"><span>Metas atingidas</span><strong>${achieved}/${configured.length || 0}</strong></article>`,
+          `<article class="metric"><span>Melhor progresso</span><strong>${best ? `${Math.round(best.pct)}%` : "0%"}</strong></article>`,
+          `<article class="metric"><span>Mais proxima</span><strong>${nearest ? `${nearest.title} - ${Math.round(nearest.pct)}%` : "Sem meta"}</strong></article>`
+        ].join("");
+        goalsBox.innerHTML = goals.map(g => {
+          const cls = !g.target ? "empty" : g.pct >= 100 ? "done" : "";
+          return `<article class="panel goal-card ${cls}"><div class="goal-top"><h2>${g.icon} ${g.title}</h2><span class="pill ${g.pct >= 100 ? "good" : "bad"}">${g.target ? g.pct >= 100 ? "Atingida" : "Em progresso" : "Configurar"}</span></div><strong class="value">${brl.format(g.current)}${g.title.includes("Renda") ? "/mes" : ""}</strong><small>meta: ${g.target ? brl.format(g.target) : "nao definida"}</small><div class="bar"><span style="width:${Math.min(100, g.pct)}%"></span></div><small>${Math.round(g.pct)}% concluido</small><strong>${g.target ? g.remaining ? `Faltam ${brl.format(g.remaining)}` : "Meta atingida" : "Preencha em Configuracoes"}</strong><small>${g.detail}</small><small>Prazo estimado: ${g.eta}</small><small>${g.source}</small></article>`;
+        }).join("");
+      }
+      function safeRenderDashboardGoals(m, c, stats) {
+        try {
+          renderDashboardGoals(m, c, stats);
+        } catch (err) {
+          console.error("Erro ao renderizar metas", err);
+          $("#goalMonth").textContent = m;
+        }
+      }
+      function health(c) {
+        const neg = c.flow.some(x => x.balance < 0);
+        if (neg || c.perf < 0 || c.cardRate > 55) return { label: "Atencao", bad: true, note: "Caixa ou cartao precisam de revisao neste mes." };
+        if (c.savingsRate >= 20 && c.investRate >= 10) return { label: "Forte", bad: false, note: "Mes saudavel: sobra e investimento em bom nivel." };
+        return { label: "OK", bad: false, note: "Mes controlado, mas ainda da para fortalecer sobra e investimento." };
+      }
+      function scoreStatus(score) {
+        if (score >= 80) return { label: "Forte", cls: "good", color: "#2be07f" };
+        if (score >= 55) return { label: "Em construcao", cls: "warn", color: "#ffd166" };
+        return { label: "Atencao", cls: "bad", color: "#ff4fa3" };
+      }
+      function financialScore(periodData, stats) {
+        const income = periodData.income;
+        const fixed = state.rec.filter(x => x.active !== false && accountKind(x) === "fixa" && x.type !== "entrada").reduce((s,x) => s + n(x.amount), 0);
+        const reserveMonths = fixed ? stats.reserve / fixed : 0;
+        const categories = new Set((state.inv || []).filter(x => n(x.shares) > 0).map(x => x.segment || "Outros"));
+        const investedMonths = periodData.monthly.filter(x => x.invest > 0).length;
+        const budgetRows = state.budgets.filter(b => periodData.months.includes(monthIdFromDate(b.month)));
+        const overBudget = budgetRows.filter(b => {
+          const used = periodData.items.filter(x => x.category === b.category && (x.type === "saida" || x.type === "diario")).reduce((s,x) => s + n(x.amount), 0);
+          return used > n(b.limit_amount);
+        }).length;
+        const investRateScore = Math.min(30, Math.max(0, periodData.investRate / 20 * 30));
+        const controlScore = Math.max(0, Math.min(25, 25 - Math.max(0, periodData.cardRate - 35) * .35 - overBudget * 5));
+        const reserveScore = Math.min(25, reserveMonths / 6 * 25);
+        const diversifyScore = Math.min(10, categories.size / 4 * 10);
+        const regularityScore = periodData.months.length ? Math.min(10, investedMonths / periodData.months.length * 10) : 0;
+        const components = [
+          { label: "Taxa de aporte", score: investRateScore, max: 30, detail: `${periodData.investRate.toFixed(1)}% da receita`, cls: investRateScore >= 18 ? "good" : investRateScore >= 9 ? "warn" : "bad" },
+          { label: "Controle de gastos", score: controlScore, max: 25, detail: `${overBudget} categoria(s) fora do orcamento`, cls: controlScore >= 18 ? "good" : controlScore >= 10 ? "warn" : "bad" },
+          { label: "Reserva", score: reserveScore, max: 25, detail: `${reserveMonths.toFixed(1)} meses cobertos`, cls: reserveScore >= 18 ? "good" : reserveScore >= 10 ? "warn" : "bad" },
+          { label: "Diversificacao", score: diversifyScore, max: 10, detail: `${categories.size} classe(s) na carteira`, cls: diversifyScore >= 7 ? "good" : diversifyScore >= 4 ? "warn" : "bad" },
+          { label: "Regularidade", score: regularityScore, max: 10, detail: `${investedMonths}/${periodData.months.length} meses com aporte`, cls: regularityScore >= 7 ? "good" : regularityScore >= 4 ? "warn" : "bad" }
+        ];
+        const score = Math.round(components.reduce((s,x) => s + x.score, 0));
+        const insights = [];
+        if (periodData.perf < 0) insights.push(`O periodo fecha negativo em ${brl.format(periodData.perf)}. Revise fatura, compras variaveis e contas previstas.`);
+        if (reserveMonths < 6) insights.push(`A reserva cobre ${reserveMonths.toFixed(1)} meses de contas fixas. Para renda variavel, mirar 6 meses deixa o caixa mais tranquilo.`);
+        if (periodData.cardRate > 45) insights.push(`A fatura representa ${Math.round(periodData.cardRate)}% da receita. Esse e o principal ponto para evitar aperto nos proximos meses.`);
+        if (periodData.investRate < 20 && income > 0) insights.push(`A taxa de investimento esta em ${periodData.investRate.toFixed(1)}%. O modelo 50-30-20 pede perto de 20%.`);
+        if (!insights.length) insights.push("O periodo esta equilibrado: gastos controlados, aporte registrado e caixa sem alerta critico.");
+        return { score, components, insights, status: scoreStatus(score) };
+      }
+      function renderHealthPage(periodData, stats) {
+        const h = financialScore(periodData, stats);
+        const deg = Math.max(0, Math.min(100, h.score)) * 3.6;
+        $("#healthScoreRing").style.background = `conic-gradient(${h.status.color} 0deg, ${h.status.color} ${deg}deg, var(--soft) ${deg}deg)`;
+        $("#healthScoreRing").innerHTML = `<strong>${h.score}</strong><small>/100</small>`;
+        $("#healthScoreLabel").textContent = h.status.label;
+        $("#healthScorePeriod").textContent = `${periodText()} - ${periodData.months[0]}${periodData.months.length > 1 ? ` ate ${periodData.months.at(-1)}` : ""}`;
+        $("#healthScoreCards").innerHTML = h.components.map(x => {
+          const pct = x.max ? Math.min(100, x.score / x.max * 100) : 0;
+          return `<article class="score-card ${x.cls}"><div class="row"><strong>${x.label}</strong><span>${Math.round(x.score)}/${x.max}</span></div><div class="bar ${x.cls === "bad" ? "over" : ""}"><span style="width:${pct}%"></span></div><small>${x.detail}</small></article>`;
+        }).join("");
+        $("#healthInsightCount").textContent = String(h.insights.length);
+        $("#healthInsightCount").className = `pill ${h.status.cls === "bad" ? "bad" : "good"}`;
+        $("#healthInsights").innerHTML = h.insights.map(x => `<article class="item ${h.status.cls === "bad" ? "bad" : "good"}"><strong>${x}</strong></article>`).join("");
+      }
+      function monthlyAlerts(m, c) {
+        const alerts = [];
+        const badDay = c.flow.find(x => x.balance < 0);
+        if (badDay) alerts.push({ level: "bad", title: `Caixa negativo no dia ${badDay.day}`, body: `Saldo previsto: ${brl.format(badDay.balance)}.` });
+        if (c.perf < 0) alerts.push({ level: "bad", title: "Mes fechando no vermelho", body: `Performance prevista: ${brl.format(c.perf)}.` });
+        if (c.cardRate > 55) alerts.push({ level: "bad", title: "Cartao pesado", body: `A fatura esta em ${Math.round(c.cardRate)}% da receita do mes.` });
+        state.budgets.filter(b => iso(b.month).startsWith(m)).forEach(b => {
+          const used = c.items.filter(x => x.category === b.category && (x.type === "saida" || x.type === "diario")).reduce((s,x) => s + n(x.amount), 0);
+          if (used > n(b.limit_amount)) alerts.push({ level: "bad", title: `${b.category} fora do orcamento`, body: `${brl.format(used)} usado de ${brl.format(n(b.limit_amount))}.` });
+        });
+        if (!alerts.length) alerts.push({ level: "good", title: "Tudo dentro do plano", body: "Nenhum alerta critico para o mes selecionado." });
+        return alerts;
+      }
+      function render() {
+        const m = currentMonth(), c = calc(m);
+        const stats = investmentStats();
+        const periodMonths = rangeMonths(state.period, m);
+        const pc = periodCalc(periodMonths);
+        renderDataStatus();
+        renderPeriodControls();
+        renderCategoryChart(pc);
+        renderMonthlyFlowChart(pc);
+        renderHealthPage(pc, stats);
+        $("#mIncome").textContent = brl.format(pc.income);
+        $("#mChecking").textContent = brl.format(c.currentBalance);
+        $("#mCardBill").textContent = brl.format(pc.cardBill);
+        $("#mInvest").textContent = brl.format(pc.invest);
+        const h = health(c);
+        $("#mHealth").textContent = h.label;
+        $("#mHealth").className = h.bad ? "bad-text" : "good-text";
+        $("#mBalance").textContent = brl.format(pc.final);
+        $("#mBalance").className = pc.final < 0 ? "bad-text" : "";
+        $("#mBalance").closest(".metric").classList.toggle("bad", pc.final < 0);
+        $("#mCardBill").closest(".metric").classList.toggle("bad", pc.cardRate > 55);
+        $("#mHealth").closest(".metric").classList.toggle("bad", h.bad);
+        $("#mHealth").closest(".metric").classList.toggle("good", !h.bad);
+        const neg = c.flow.some(x => x.balance < 0);
+        $("#risk").textContent = neg ? "Risco" : "OK";
+        $("#risk").className = `pill ${neg ? "bad" : "good"}`;
+        const incomeTarget = n(state.settings.variable_income_target);
+        const investTarget = n(state.settings.monthly_invest_target);
+        const incomeTargetPct = incomeTarget ? c.income / incomeTarget * 100 : 0;
+        const investTargetPct = investTarget ? c.invest / investTarget * 100 : c.investRate;
+        const essentialCats = new Set(["Moradia", "Alimentacao", "Saude", "Contas", "MEI", "Financiamento", "Carro"]);
+        const essentials = c.items.filter(x => (x.type === "saida" || x.type === "diario") && essentialCats.has(x.category)).reduce((s,x) => s + n(x.amount), 0);
+        const wants = Math.max(0, c.expense - essentials);
+        $("#healthCharts").innerHTML = [
+          ratioCard("50% essenciais", essentials, c.income, 50),
+          ratioCard("30% estilo de vida", wants, c.income, 30),
+          ratioCard("20% investimentos", c.invest, c.income, 20),
+          ratioCard("Receita x meta", c.income, incomeTarget || c.income || 1, 100)
+        ].join("");
+        $("#healthNote").textContent = "";
+        safeRenderDashboardGoals(m, c, stats);
+        const today = new Date(), tm = monthNow();
+        const flowRows = c.flow.filter(x => x.items.length || (m === tm && x.day === today.getDate()) || x.balance < 0);
+        $("#cash").innerHTML = flowRows.length ? flowRows.map(x => {
+          const title = x.items.length ? x.items.slice(0, 2).map(i => i.description || i.category).join(" + ") : "Sem movimento";
+          return `<article class="day ${x.balance < 0 ? "negative" : ""} ${m === tm && x.day === today.getDate() ? "today" : ""}"><strong>Dia ${x.day}</strong><div><strong>${title}</strong><small>${x.items.length} item(ns)</small></div><div class="day-money ${x.movement < 0 ? "bad-text" : "good-text"}">${brl.format(x.movement)}<div class="day-balance">saldo ${brl.format(x.balance)}</div></div></article>`;
+        }).join("") : "<p>Sem movimentos de caixa neste mes.</p>";
+        const budgets = state.budgets.filter(b => iso(b.month).startsWith(m));
+        $("#budgets").innerHTML = budgets.length ? budgets.map(b => {
+          const used = c.items.filter(x => x.category === b.category && (x.type === "saida" || x.type === "diario")).reduce((s,x) => s + n(x.amount), 0);
+          const limit = n(b.limit_amount), over = used > limit, pct = limit ? Math.min(140, used / limit * 100) : 0;
+          return `<article class="item"><div class="row"><strong>${b.category}</strong><span class="${over ? "bad-text" : ""}">${brl.format(used)} / ${brl.format(limit)}</span></div><div class="bar ${over ? "over" : ""}"><span style="width:${pct}%"></span></div><small>${over ? "Fora do orcamento" : "Dentro do orcamento"}</small></article>`;
+        }).join("") : "<p>Nenhum orcamento neste mes.</p>";
+        $("#cardRows").innerHTML = c.card.length ? c.card.map(x => `<article class="item"><div class="row"><strong>${x.description || x.category}</strong><span>${brl.format(n(x.amount))}</span></div><small>${iso(x.tx_date)} - ${x.category}</small></article>`).join("") : "<p>Nenhuma compra no cartao nesta fatura.</p>";
+        const installments = installmentGroups();
+        $("#installmentRows").innerHTML = installments.length ? `<div class="panel-head installment-title"><h2>Parcelamentos ativos</h2><span class="pill bad">${brl.format(installments.reduce((s,g) => s + g.amount, 0))}/mes</span></div>` + installments.slice(0, 8).map(g => {
+          const remaining = Math.max(0, g.total - g.paid);
+          const pct = g.total ? g.paid / g.total * 100 : 0;
+          return `<article class="installment-card"><div class="row"><strong>${g.name}</strong><span>${brl.format(g.amount)}/mes</span></div><small>${g.paid}/${g.total} parcelas</small><div class="bar"><span style="width:${pct}%"></span></div><div class="ratio-meta"><span>${Math.round(pct)}% pago</span><span>faltam ${remaining}x - ${brl.format(remaining * g.amount)}</span></div></article>`;
+        }).join("") : "";
+        const alerts = monthlyAlerts(m, c);
+        const badAlerts = alerts.filter(x => x.level === "bad").length;
+        $("#alertCount").textContent = String(badAlerts);
+        $("#alertCount").className = `pill ${badAlerts ? "bad" : "good"}`;
+        $("#alerts").innerHTML = alerts.map(x => `<article class="item ${x.level}"><div class="row"><strong>${x.title}</strong><span>${x.level === "bad" ? "Alerta" : "OK"}</span></div><small>${x.body}</small></article>`).join("");
+        $("#txSearch").value = state.txSearch || "";
+        $("#txTypeFilter").value = state.txTypeFilter || "";
+        $("#txMethodFilter").value = state.txMethodFilter || "";
+        const visibleTx = state.tx.filter(x => iso(x.tx_date).startsWith(m)).filter(txMatchesFilters);
+        $("#txRows").innerHTML = visibleTx.map(x => {
+          const badge = typeBadge(x);
+          return `<tr><td>${iso(x.tx_date)}</td><td><span class="status-badge ${badge.cls}">${badge.label}</span></td><td>${method(x) === "cartao_credito" ? "Cartao" : "Conta"}</td><td>${method(x) === "cartao_credito" ? billMonth(x) : "-"}</td><td>${x.category}</td><td>${x.description || "-"}</td><td>${brl.format(n(x.amount))}</td><td><button class="danger" data-del="${x.id}">Excluir</button></td></tr>`;
+        }).join("") || '<tr><td colspan="8">Sem lancamentos para o filtro atual.</td></tr>';
+        $("#txSummary").innerHTML = [
+          `<article class="summary-card"><span>Receitas lancadas</span><strong class="good-text">${brl.format(c.income)}</strong></article>`,
+          `<article class="summary-card"><span>Gastos no cartao</span><strong class="bad-text">${brl.format(c.cardBill)}</strong></article>`,
+          `<article class="summary-card"><span>Saidas da conta</span><strong class="bad-text">${brl.format(c.checkingExpense)}</strong></article>`,
+          `<article class="summary-card"><span>Investimentos</span><strong>${brl.format(c.invest)}</strong></article>`
+        ].join("");
+        const paid = paidRecurringIds(m);
+        const accountCard = x => {
+          const status = accountStatus(x, paid, m);
+          return `<article class="item account-card ${status.cls === "paid" ? "good" : status.cls === "overdue" ? "bad" : ""}"><div class="account-title"><strong>${cleanAccountName(x)}</strong><span>${brl.format(n(x.amount))}</span></div><div class="row"><small>Dia ${x.day_of_month} - ${x.category} - ${method(x) === "cartao_credito" ? "cartao" : "conta corrente"}</small><span class="status-badge ${status.cls}">${status.label}</span></div><div class="payline"><label>Valor pago<input data-pay-amount="${x.id}" type="number" min="0.01" step="0.01" value="${n(x.amount)}" ${status.cls === "paid" ? "disabled" : ""} /></label><button class="secondary" data-pay-rec="${x.id}" ${status.cls === "paid" ? "disabled" : ""}>Pago</button></div></article>`;
+        };
+        const fixed = state.rec.filter(x => accountKind(x) === "fixa");
+        const variable = state.rec.filter(x => accountKind(x) === "variavel");
+        const allAccounts = [...fixed, ...variable];
+        const accountStatuses = allAccounts.map(x => accountStatus(x, paid, m));
+        const paidCount = accountStatuses.filter(x => x.cls === "paid").length;
+        const overdueCount = accountStatuses.filter(x => x.cls === "overdue").length;
+        const pendingCount = accountStatuses.filter(x => x.cls === "pending").length;
+        $("#accountOverview").innerHTML = [
+          `<article class="summary-card"><span>Pagas no mes</span><strong class="good-text">${paidCount}/${allAccounts.length}</strong></article>`,
+          `<article class="summary-card"><span>Pendentes</span><strong>${pendingCount}</strong></article>`,
+          `<article class="summary-card"><span>Atrasadas</span><strong class="${overdueCount ? "bad-text" : "good-text"}">${overdueCount}</strong></article>`
+        ].join("");
+        $("#fixedTotal").textContent = brl.format(fixed.reduce((s,x) => s + n(x.amount), 0));
+        $("#variableTotal").textContent = brl.format(variable.reduce((s,x) => s + n(x.amount), 0));
+        $("#fixedRows").innerHTML = fixed.map(accountCard).join("") || "<p>Sem contas fixas.</p>";
+        $("#variableRows").innerHTML = variable.map(accountCard).join("") || "<p>Sem contas variaveis.</p>";
+        $("#setForm").elements.initial_balance.value = state.settings.initial_balance || "";
+        $("#setForm").elements.credit_card_due_day.value = state.settings.credit_card_due_day || 10;
+        $("#setForm").elements.variable_income_target.value = state.settings.variable_income_target || "";
+        $("#setForm").elements.monthly_invest_target.value = state.settings.monthly_invest_target || "";
+        $("#setForm").elements.emergency_goal.value = state.settings.emergency_goal || "";
+        $("#setForm").elements.portfolio_goal.value = state.settings.portfolio_goal || "";
+        $("#setForm").elements.fii_goal.value = state.settings.fii_goal || "";
+        $("#setForm").elements.dividend_goal.value = state.settings.dividend_goal || "";
+        $("#setForm").elements.brapi_token.value = state.settings.brapi_token || "";
+        $("#budgetForm").elements.month.value = m;
+        $("#budgetRows").innerHTML = budgets.length ? budgets.map(b => `<article class="item"><div class="row"><strong>${b.category}</strong><span>${brl.format(n(b.limit_amount))}</span></div><small>${iso(b.month).slice(0,7)}</small></article>`).join("") : "<p>Nenhum orcamento definido para este mes.</p>";
+        renderInvestments();
+        renderProjection();
+      }
+      function renderProjection() {
+        const p = projection();
+        $("#projectionRisk").classList.toggle("hidden", !p.negative);
+        $("#projectionRisk").innerHTML = p.negative ? `<div><strong>Risco de caixa em ${iso(p.negative.tx_date)}</strong><p>Saldo previsto: ${brl.format(p.negative.balance)}. Antecipe receita, adie despesa ou reduza a compra antes dessa data.</p></div><span class="pill bad">Corrigir</span>` : "";
+        $("#projectionSummary").innerHTML = [
+          `<article class="summary-card"><span>Entradas previstas</span><strong class="good-text">${brl.format(p.entries)}</strong></article>`,
+          `<article class="summary-card"><span>Saidas previstas</span><strong class="bad-text">${brl.format(p.exits)}</strong></article>`,
+          `<article class="summary-card"><span>Saldo ao final</span><strong class="${p.final < 0 ? "bad-text" : "good-text"}">${brl.format(p.final)}</strong></article>`,
+          `<article class="summary-card"><span>Eventos futuros</span><strong>${p.rows.length}</strong></article>`
+        ].join("");
+        $("#projectionRows").innerHTML = p.rows.length ? p.rows.slice(0, 24).map(x => {
+          const meta = sourceMeta(x);
+          const canPayRec = meta.origin === "recurring_preview";
+          const canPayCard = meta.origin === "card_bill_preview";
+          const action = canPayRec
+            ? `<div class="projection-actions"><input data-proj-amount="${meta.payment}" type="number" min="0.01" step="0.01" value="${n(x.amount)}" /><button class="secondary" data-proj-pay-rec="${meta.payment}">Pago</button></div>`
+            : canPayCard
+              ? `<div class="projection-actions"><button class="secondary" data-proj-pay-card="${meta.bill}">Pagar fatura</button></div>`
+              : `<div class="projection-actions"><span class="status-badge ${x.virtual ? "pending" : "paid"}">${x.virtual ? "Previsto" : "Lancado"}</span></div>`;
+          return `<article class="projection-row ${x.balance < 0 ? "bad" : ""}"><div class="projection-date">${iso(x.tx_date).slice(8,10)}<br><small>${iso(x.tx_date).slice(5,7)}</small></div><div><strong>${x.description || x.category}</strong><small>${x.category} - ${method(x) === "cartao_credito" ? "cartao" : "conta"}</small></div><div><strong>${brl.format(x.movement)}</strong><small>saldo ${brl.format(x.balance)}</small></div>${action}</article>`;
+        }).join("") : "<p>Sem eventos previstos no periodo.</p>";
+      }
+      function assetLogoClass(segment) {
+        const s = String(segment || "").toLowerCase();
+        if (s.includes("acao")) return "acao";
+        if (s.includes("fii")) return "fii";
+        if (s.includes("fixa")) return "renda-fixa";
+        if (s.includes("etf")) return "etf";
+        if (s.includes("caixa")) return "caixa";
+        return "";
+      }
+      const logoDomains = {
+        BBAS3: "bb.com.br",
+        BBDC3: "bradesco.com.br",
+        BBDC4: "bradesco.com.br",
+        ITUB3: "itau.com.br",
+        ITUB4: "itau.com.br",
+        ITSA3: "itausa.com.br",
+        ITSA4: "itausa.com.br",
+        PETR3: "petrobras.com.br",
+        PETR4: "petrobras.com.br",
+        VALE3: "vale.com",
+        ABEV3: "ambev.com.br",
+        B3SA3: "b3.com.br",
+        WEGE3: "weg.net",
+        MGLU3: "magazineluiza.com.br",
+        RENT3: "localiza.com",
+        LREN3: "lojasrenner.com.br",
+        VIVT3: "vivo.com.br",
+        TIMS3: "tim.com.br",
+        ELET3: "eletrobras.com",
+        ELET6: "eletrobras.com",
+        SANB11: "santander.com.br",
+        BPAC11: "btgpactual.com",
+        NUBR33: "nubank.com.br",
+        CXSE3: "caixaseguridade.com.br",
+        GGBR4: "gerdau.com",
+        BRCR11: "btgpactual.com",
+        BTCI11: "btgpactual.com",
+        MXRF11: "xpasset.com.br",
+        GARE11: "guardianasset.com.br",
+        TRXF11: "trxf11.com.br",
+        VGIA11: "valora.com.br",
+        HGLG11: "patria.com",
+        KNRI11: "kinea.com.br",
+        KNCR11: "kinea.com.br",
+        XPLG11: "xpasset.com.br",
+        XPML11: "xpasset.com.br",
+        VISC11: "vinci.com.br",
+        HCTR11: "hectarecapital.com.br",
+        BCFF11: "btgpactual.com",
+        RBRF11: "rbrasset.com.br",
+        RBRR11: "rbrasset.com.br",
+        CAIXA: "caixa.gov.br",
+        "BANCO DO BRASIL": "bb.com.br",
+        BRADESCO: "bradesco.com.br",
+        ITAU: "itau.com.br",
+        ITAUSA: "itausa.com.br",
+        PETROBRAS: "petrobras.com.br",
+        VALE: "vale.com",
+        NUBANK: "nubank.com.br",
+        "CAIXINHA NUBANK": "nubank.com.br",
+        "CDB LIQUIDEZ": "bradesco.com.br",
+        "TESOURO SELIC": "tesourodireto.com.br"
+      };
+      function logoSourceFor(symbol) {
+        const clean = String(symbol || "").toUpperCase().trim();
+        const q = state.market[clean] || {};
+        const domain = logoDomains[clean];
+        const domainLogo = domain ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64` : "";
+        if (q.logo) return { primary: q.logo, fallback: domainLogo };
+        return { primary: domainLogo, fallback: "" };
+      }
+      function assetBadge(symbol, segment) {
+        const clean = String(symbol || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+        const letters = clean.match(/[A-Z]+/)?.[0] || clean || "AT";
+        const short = letters.slice(0, 2);
+        const logo = logoSourceFor(symbol);
+        const fallback = `<span>${short}</span>`;
+        return `<span class="asset-logo ${assetLogoClass(segment)} ${logo.primary ? "has-image" : ""}" title="${symbol || segment || "Ativo"}">${logo.primary ? `<img src="${logo.primary}" data-fallback="${logo.fallback}" alt="Logo ${symbol}" loading="lazy" referrerpolicy="no-referrer" onerror="if (this.dataset.fallback) { this.src = this.dataset.fallback; this.dataset.fallback = ''; } else { this.remove(); this.parentElement.classList.remove('has-image'); }" />` : ""}${fallback}</span>`;
+      }
+      function portfolioColors() {
+        return ["#2be07f", "#ffd166", "#35d2ff", "#ff5f78", "#8a7cff", "#ff9f43", "#20c997"];
+      }
+      function renderPortfolioDonut(allocations, total) {
+        const entries = Object.entries(allocations).sort((a,b) => b[1] - a[1]);
+        if (!entries.length || !total) {
+          $("#portfolioDonut").innerHTML = "<p>Nenhum ativo cadastrado.</p>";
+          return;
+        }
+        const colors = portfolioColors();
+        let start = 0;
+        const stops = entries.map(([label, value], i) => {
+          const pct = value / total * 100;
+          const end = start + pct;
+          const stop = `${colors[i % colors.length]} ${start}% ${end}%`;
+          start = end;
+          return stop;
+        }).join(", ");
+        const list = entries.map(([label, value], i) => {
+          const pct = total ? value / total * 100 : 0;
+          return `<div class="row"><span><i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${colors[i % colors.length]};margin-right:6px"></i>${label}</span><strong>${pct.toFixed(1)}%</strong></div>`;
+        }).join("");
+        $("#portfolioDonut").innerHTML = `<div class="donut" style="background:conic-gradient(${stops})"></div><div class="list">${list}</div>`;
+        $("#portfolioMixLabel").textContent = `${entries.length} classe(s)`;
+      }
+      function renderInvestmentHighlights(rows, total) {
+        const enriched = rows.map(x => {
+          const symbol = String(x.asset || "").toUpperCase();
+          const value = n(x.shares) * assetCurrentPrice(x);
+          const monthly = (n(quoteForAsset(x).monthlyDividend) || n(x.dividend_per_share)) * n(x.shares);
+          const dy = value ? monthly * 12 / value * 100 : 0;
+          return { ...x, symbol, value, monthly, dy };
+        });
+        const card = (title, list, formatter) => `<article class="ranking-card"><h3>${title}</h3>${list.slice(0, 5).map((x, i) => `<div class="rank-row"><span class="rank-pos">#${i + 1}</span>${assetBadge(x.symbol, x.segment)}<div><strong>${x.symbol}</strong><small>${x.segment || ""}</small><span class="rank-value">${formatter(x)}</span></div></div>`).join("") || "<p style=\"padding:12px\">Sem dados.</p>"}</article>`;
+        $("#investmentHighlights").innerHTML = [
+          card("Maior DY estimado", enriched.filter(x => x.dy > 0).sort((a,b) => b.dy - a.dy), x => `${x.dy.toFixed(1)}%`),
+          card("Maior patrimonio", enriched.sort((a,b) => b.value - a.value), x => brl.format(x.value)),
+          card("Maior renda mensal", enriched.filter(x => x.monthly > 0).sort((a,b) => b.monthly - a.monthly), x => brl.format(x.monthly))
+        ].join("");
+      }
+      function renderInvestments() {
+        const { rows, total, cost, fiis, dividends, profit } = investmentStats();
+        const returnPct = cost ? profit / cost * 100 : 0;
+        $("#iTotal").textContent = brl.format(total);
+        $("#iCost").textContent = brl.format(cost);
+        $("#iReturn").textContent = `${returnPct.toFixed(1)}%`;
+        $("#iReturn").className = profit < 0 ? "bad-text" : "good-text";
+        $("#iFiis").textContent = brl.format(fiis);
+        $("#iDividends").textContent = brl.format(dividends);
+        $("#iCount").textContent = String(rows.length);
+        const allocations = rows.reduce((map, x) => {
+          const key = x.segment || "Outros";
+          map[key] = (map[key] || 0) + n(x.shares) * assetCurrentPrice(x);
+          return map;
+        }, {});
+        renderPortfolioDonut(allocations, total);
+        renderInvestmentHighlights(rows, total);
+        $("#allocationRows").innerHTML = Object.entries(allocations).length ? Object.entries(allocations).sort((a,b) => b[1] - a[1]).map(([label, value]) => {
+          const pct = total ? value / total * 100 : 0;
+          return `<article class="summary-card"><span>${label}</span><strong>${brl.format(value)}</strong><div class="bar"><span style="width:${Math.min(100, pct)}%"></span></div><small>${Math.round(pct)}% da carteira</small></article>`;
+        }).join("") : "";
+        const liveCount = Object.keys(state.market).length;
+        $("#quoteStatus").textContent = liveCount ? `${liveCount} cotado(s)` : "Manual";
+        $("#quoteStatus").className = `pill ${liveCount ? "good" : "bad"}`;
+        $("#invRows").innerHTML = rows.length ? rows.map(x => {
+          const symbol = String(x.asset || "").toUpperCase(), q = quoteForAsset(x);
+          const avg = n(x.price), price = assetCurrentPrice(x), value = n(x.shares) * price, assetCost = n(x.shares) * avg, assetProfit = value - assetCost;
+          const dy = value ? (n(q.monthlyDividend) || n(x.dividend_per_share)) * 12 * n(x.shares) / value * 100 : 0;
+          return `<tr><td><div class="asset-cell">${assetBadge(symbol, x.segment)}<div><strong>${symbol}</strong><small>${q.name || ""}</small></div></div></td><td>${x.segment || "-"}</td><td>${n(x.shares)}</td><td>${brl.format(avg)}</td><td>${brl.format(price)}${q.change != null ? `<br><small class="${n(q.change) < 0 ? "bad-text" : "good-text"}">${n(q.change).toFixed(2)}%</small>` : ""}</td><td>${brl.format(value)}</td><td class="${assetProfit < 0 ? "bad-text" : "good-text"}">${brl.format(assetProfit)}</td><td>${dy.toFixed(1)}%</td><td><button class="danger" data-inv-del="${x.id}">Excluir</button></td></tr>`;
+        }).join("") : '<tr><td colspan="9">Nenhum ativo cadastrado.</td></tr>';
+        let dividendsList = rows.flatMap(x => {
+          const symbol = String(x.asset || "").toUpperCase(), q = quoteForAsset(x);
+          return (q.dividends || []).map(d => ({ ...d, symbol, total: n(d.amount) * n(x.shares) }));
+        }).filter(d => d.date >= new Date().toISOString().slice(0, 10)).sort((a,b) => a.date.localeCompare(b.date)).slice(0, 12);
+        if (!dividendsList.length) {
+          const nextDividendMonth = addMonths(`${currentMonth()}-15`, 1).slice(0, 7);
+          const base = new Date(`${nextDividendMonth}-10T12:00:00`);
+          dividendsList = rows
+            .map((x, i) => {
+              const amount = n(quoteForAsset(x).monthlyDividend) || n(x.dividend_per_share);
+              if (!amount) return null;
+              const date = new Date(base);
+              date.setDate(Math.min(26, 8 + i * 3));
+              return { symbol: String(x.asset || "").toUpperCase(), date: date.toISOString().slice(0, 10), amount, total: amount * n(x.shares), estimated: true };
+            })
+            .filter(Boolean)
+            .sort((a,b) => a.date.localeCompare(b.date))
+            .slice(0, 12);
+        }
+        $("#dividendRows").innerHTML = dividendsList.length ? dividendsList.map(d => `<article class="item"><div class="row"><strong>${d.symbol}</strong><span>${brl.format(d.total)}</span></div><small>${d.date} - ${brl.format(n(d.amount))} por cota${d.estimated ? " - estimado manual" : ""}</small></article>`).join("") : "<p>Sem agenda carregada. Atualize cotacoes ou preencha renda manual.</p>";
+        const goal = (label, current, target) => {
+          const pct = target ? Math.min(140, current / target * 100) : 0;
+          return `<article class="item"><div class="row"><strong>${label}</strong><span>${brl.format(current)} / ${brl.format(target)}</span></div><div class="bar"><span style="width:${pct}%"></span></div><small>${target ? `${Math.round(Math.min(100, pct))}% atingido` : "Defina uma meta em Configuracoes"}</small></article>`;
+        };
+        $("#goalRows").innerHTML = [
+          goal("Patrimonio", total, n(state.settings.portfolio_goal)),
+          goal("FIIs", fiis, n(state.settings.fii_goal)),
+          goal("Dividendos mensais", dividends, n(state.settings.dividend_goal))
+        ].join("");
+      }
+      function normalizeDividend(d) {
+        const date = iso(d.paymentDate || d.date || d.approvedOn || d.lastDatePrior || "");
+        const amount = n(d.rate ?? d.amount ?? d.value ?? d.cashDividends);
+        return date && amount ? { date, amount } : null;
+      }
+      async function refreshQuotes() {
+        const token = String(state.settings.brapi_token || "").trim();
+        if (!token) return alert("Coloque seu token gratuito da brapi em Configuracoes para atualizar cotacoes.");
+        const symbols = [...new Set((state.inv || []).map(x => String(x.asset || "").toUpperCase()).filter(Boolean))];
+        if (!symbols.length) return alert("Cadastre pelo menos um ativo.");
+        $("#quoteStatus").textContent = "Atualizando...";
+        const base = `https://brapi.dev/api/quote/${symbols.join(",")}?range=1mo&interval=1d&fundamental=true&token=${encodeURIComponent(token)}`;
+        let hasDividendAccess = true;
+        let res = await fetch(`${base}&dividends=true`);
+        if (res.status === 403) {
+          hasDividendAccess = false;
+          res = await fetch(base);
+        }
+        if (!res.ok) throw new Error(`Brapi retornou ${res.status}. Confira o token/plano.`);
+        const data = await res.json();
+        const market = {};
+        (data.results || []).forEach(r => {
+          const symbol = String(r.symbol || r.stock || "").toUpperCase();
+          const rawDividends = r.dividendsData?.cashDividends || r.dividendsData?.stockDividends || r.dividends || [];
+          const dividends = rawDividends.map(normalizeDividend).filter(Boolean);
+          const recent = dividends.filter(d => d.date >= addMonths(new Date().toISOString().slice(0, 10), -12));
+          const monthlyDividend = recent.length ? recent.reduce((s,d) => s + n(d.amount), 0) / 12 : 0;
+          const logo = r.logourl || r.logoUrl || r.logo_url || r.logo || "";
+          if (symbol) market[symbol] = { price: n(r.regularMarketPrice), change: r.regularMarketChangePercent, name: r.longName || r.shortName || "", logo, dividends, monthlyDividend };
+        });
+        state.market = market;
+        renderInvestments();
+        if (!hasDividendAccess) $("#quoteStatus").textContent = `${Object.keys(market).length} cotado(s) sem dividendos`;
+      }
+      async function saveInvestmentOperation(row) {
+        const asset = String(row.asset || "").trim().toUpperCase();
+        if (!asset) throw new Error("Informe o ativo.");
+        const segment = row.segment || "FII";
+        const qty = n(row.shares);
+        const price = n(row.price);
+        const dividend = n(row.dividend_per_share);
+        const current = state.inv.find(x => String(x.asset || "").toUpperCase() === asset && (x.segment || "") === segment);
+        if (!state.session) {
+          if (row.operation === "buy") {
+            if (current) {
+              const oldQty = n(current.shares), oldAvg = n(current.price), newQty = oldQty + qty;
+              current.shares = newQty;
+              current.price = newQty ? ((oldQty * oldAvg) + (qty * price)) / newQty : price;
+              current.dividend_per_share = dividend || n(current.dividend_per_share);
+            } else {
+              state.inv = [...state.inv, { id: `local-inv-${Date.now()}`, asset, segment, shares: qty, price, dividend_per_share: dividend }];
+            }
+          } else if (row.operation === "sell" && current) {
+            current.shares = Math.max(0, n(current.shares) - qty);
+            if (!current.shares) state.inv = state.inv.filter(x => x !== current);
+          } else if (row.operation === "set") {
+            if (current) Object.assign(current, { shares: qty, price, dividend_per_share: dividend });
+            else state.inv = [...state.inv, { id: `local-inv-${Date.now()}`, asset, segment, shares: qty, price, dividend_per_share: dividend }];
+          }
+          render();
+          return;
+        }
+        if (row.operation === "buy") {
+          if (current) {
+            const oldQty = n(current.shares), oldAvg = n(current.price), newQty = oldQty + qty;
+            const newAvg = newQty ? ((oldQty * oldAvg) + (qty * price)) / newQty : price;
+            const { error } = await state.sb.from("investments").update({ shares: newQty, price: newAvg, dividend_per_share: dividend || n(current.dividend_per_share) }).eq("id", current.id);
+            if (error) throw error;
+          } else {
+            await insert("investments", { asset, segment, shares: qty, price, dividend_per_share: dividend });
+            return;
+          }
+        } else if (row.operation === "sell") {
+          if (!current) throw new Error("Ativo nao encontrado para venda.");
+          const newQty = Math.max(0, n(current.shares) - qty);
+          if (newQty <= 0) {
+            const { error } = await state.sb.from("investments").delete().eq("id", current.id);
+            if (error) throw error;
+          } else {
+            const { error } = await state.sb.from("investments").update({ shares: newQty, dividend_per_share: dividend || n(current.dividend_per_share) }).eq("id", current.id);
+            if (error) throw error;
+          }
+        } else {
+          if (current) {
+            const { error } = await state.sb.from("investments").update({ shares: qty, price, dividend_per_share: dividend }).eq("id", current.id);
+            if (error) throw error;
+          } else {
+            await insert("investments", { asset, segment, shares: qty, price, dividend_per_share: dividend });
+            return;
+          }
+        }
+        await load();
+      }
+      async function load() {
+        if (!state.sb || !state.session) return;
+        try {
+          const [tx, rec, budgets, settings, inv] = await Promise.all([
+            state.sb.from("transactions").select("*").order("tx_date", { ascending: false }),
+            state.sb.from("recurring_items").select("*").order("day_of_month"),
+            state.sb.from("budgets").select("*").order("month", { ascending: false }),
+            state.sb.from("app_settings").select("*"),
+            state.sb.from("investments").select("*").order("asset")
+          ]);
+          for (const r of [tx, rec, budgets, settings, inv]) if (r.error) throw r.error;
+          const categoryPatches = [];
+          state.tx = (tx.data || []).map(row => {
+            const category = autoCategory(row);
+            if (category !== row.category && row.id) categoryPatches.push({ id: row.id, category });
+            return { ...row, category };
+          });
+          state.rec = rec.data || [];
+          state.budgets = budgets.data || [];
+          state.inv = inv.data || [];
+          state.settings = Object.fromEntries((settings.data || []).map(x => [x.key, x.value]));
+          state.loadInfo = { tx: state.tx.length, rec: state.rec.length, budgets: state.budgets.length, inv: state.inv.length, settings: settings.data?.length || 0, loadedAt: new Date().toISOString() };
+          if (categoryPatches.length) {
+            await Promise.all(categoryPatches.map(p => state.sb.from("transactions").update({ category: p.category }).eq("id", p.id)));
+          }
+        } catch (err) {
+          console.warn("Falha ao carregar dados financeiros", err);
+          state.loadInfo = { ...(state.loadInfo || {}), error: err.message || String(err) };
+          renderDataStatus();
+          throw err;
+        }
+        render();
+      }
+      async function insert(table, row) {
+        if (!state.session) {
+          const localRow = { ...row, id: `local-${table}-${Date.now()}-${Math.random().toString(16).slice(2)}` };
+          if (table === "transactions") state.tx = [localRow, ...state.tx];
+          if (table === "recurring_items") state.rec = [...state.rec, localRow];
+          if (table === "investments") state.inv = [...state.inv, localRow];
+          render();
+          return;
+        }
+        let { error } = await state.sb.from(table).insert(row);
+        const missingNewCols = error && /payment_method|card_bill_month|account_kind/i.test(error.message || "");
+        if (missingNewCols && table === "transactions") {
+          const { payment_method, card_bill_month, ...legacyRow } = row;
+          ({ error } = await state.sb.from(table).insert(legacyRow));
+        } else if (missingNewCols && table === "recurring_items") {
+          const { payment_method, account_kind, ...legacyRow } = row;
+          if (account_kind === "variavel" && !/^\[\[variavel\]\]/i.test(legacyRow.name || "")) legacyRow.name = `[[variavel]] ${legacyRow.name}`;
+          ({ error } = await state.sb.from(table).insert(legacyRow));
+        }
+        if (error) throw error;
+        await load();
+      }
+      async function insertRows(table, rows) {
+        if (!rows.length) return;
+        if (!state.session) {
+          const localRows = rows.map((row, i) => ({ ...row, id: `local-${table}-${Date.now()}-${i}` }));
+          if (table === "transactions") state.tx = [...localRows, ...state.tx];
+          render();
+          return;
+        }
+        let { error } = await state.sb.from(table).insert(rows);
+        if (error && /payment_method|card_bill_month/i.test(error.message || "") && table === "transactions") {
+          const legacy = rows.map(({ payment_method, card_bill_month, ...row }) => row);
+          ({ error } = await state.sb.from(table).insert(legacy));
+        }
+        if (error) throw error;
+        await load();
+      }
+      async function unlock(session) {
+        state.session = session;
+        setSessionLabel();
+        showAuth();
+        setView(state.view || "dashboard");
+        await load();
+      }
+      function txFrom(row) {
+        const payment = row.payment_method || (row.type === "diario" ? "cartao_credito" : "conta_corrente");
+        const bill = payment === "cartao_credito" ? `${row.card_bill_month || iso(row.tx_date).slice(0,7)}-01` : null;
+        return { tx_date: row.tx_date, type: row.type, category: row.category, description: row.description || null, amount: n(row.amount), payment_method: payment, card_bill_month: bill, status: "previsto", source: `${row.source || "manual"}|${payment}|${bill ? bill.slice(0,7) : ""}` };
+      }
+      function installmentRows(row) {
+        const count = Math.max(1, Math.min(120, Math.round(n(row.installments) || 1)));
+        return Array.from({ length: count }, (_, i) => {
+          const txDate = addMonths(row.tx_date, i);
+          const billBase = row.card_bill_month || iso(row.tx_date).slice(0, 7);
+          const billDate = addMonths(`${billBase}-01`, i).slice(0, 7);
+          const current = txFrom({ ...row, tx_date: txDate, card_bill_month: billDate, source: count > 1 ? "parcela" : row.source || "manual" });
+          return { ...current, description: count > 1 ? `${row.description || row.category} (${i + 1}/${count})` : current.description };
+        });
+      }
+      function fillTx(row) {
+        setView("transactions");
+        const f = $("#txForm").elements;
+        f.tx_date.value = row.tx_date || new Date().toISOString().slice(0, 10);
+        f.type.value = row.type || "saida";
+        f.payment_method.value = row.payment_method || "conta_corrente";
+        f.card_bill_month.value = row.card_bill_month || currentMonth();
+        f.category.value = row.category || "";
+        f.description.value = row.description || "";
+        f.amount.value = row.amount || "";
+        f.installments.value = row.installments || 1;
+      }
+      function fillSim(row) {
+        setView("simulator");
+        const f = $("#simForm").elements;
+        f.tx_date.value = row.tx_date || new Date().toISOString().slice(0, 10);
+        f.card_bill_month.value = row.card_bill_month || currentMonth();
+        f.category.value = row.category || "Carro";
+        f.description.value = row.description || "";
+        f.amount.value = row.amount || "";
+        f.installments.value = row.installments || 1;
+      }
+      async function payRecurring(id, paidAmount) {
+        const item = state.rec.find(x => x.id === id);
+        if (!item) return;
+        const m = currentMonth();
+        await insert("transactions", {
+          tx_date: new Date().toISOString().slice(0, 10),
+          type: item.type,
+          category: item.category,
+          description: cleanAccountName(item),
+          amount: n(paidAmount) || n(item.amount),
+          payment_method: method(item),
+          card_bill_month: method(item) === "cartao_credito" ? `${m}-01` : null,
+          status: "pago",
+          source: `recurring_paid|${item.id}|${m}`
+        });
+      }
+      async function payCardBill(month = currentMonth()) {
+        const m = month || currentMonth(), c = calc(m);
+        if (!c.cardBill) return alert("Nao existe fatura calculada para este mes.");
+        if (hasPaidCardBill(m)) return alert("Fatura deste mes ja registrada como paga.");
+        await insert("transactions", {
+          tx_date: new Date().toISOString().slice(0, 10),
+          type: "saida",
+          category: "Cartao de credito",
+          description: `Fatura do cartao ${m}`,
+          amount: c.cardBill,
+          payment_method: "conta_corrente",
+          card_bill_month: null,
+          status: "pago",
+          source: `card_bill_paid||${m}`
+        });
+      }
+      async function saveQuickProjection(row, type) {
+        const tx = {
+          tx_date: row.tx_date,
+          type,
+          category: type === "entrada" ? "Receita" : "Avulso",
+          description: row.description,
+          amount: n(row.amount),
+          payment_method: "conta_corrente",
+          card_bill_month: null,
+          status: "previsto",
+          source: `projecao_rapida|conta_corrente|`
+        };
+        if (!state.session) {
+          state.tx = [{ ...tx, id: `local-quick-${Date.now()}` }, ...state.tx];
+          render();
+          return;
+        }
+        await insert("transactions", tx);
+      }
+      function sim(row) {
+        const fakeRows = installmentRows({ ...row, type: "saida", payment_method: "cartao_credito", card_bill_month: row.card_bill_month || iso(row.tx_date).slice(0,7), source: "simulador" });
+        state.simRows = fakeRows.map(x => ({ ...x, source: String(x.source || "").replace(/^simulador/, "manual") }));
+        const fake = fakeRows[0];
+        const m = iso(fake.tx_date).slice(0,7), c = calc(m, fakeRows.filter(x => iso(x.tx_date).startsWith(m)));
+        const badDay = c.flow.find(x => x.balance < 0);
+        const b = state.budgets.find(x => iso(x.month).startsWith(m) && x.category === fake.category);
+        const risks = [];
+        if (b) {
+          const used = c.items.filter(x => x.category === fake.category && (x.type === "saida" || x.type === "diario")).reduce((s,x) => s + n(x.amount), 0);
+          if (used > n(b.limit_amount)) risks.push(`Categoria ${fake.category} passa para ${brl.format(used)} de ${brl.format(n(b.limit_amount))}.`);
+        }
+        if (fake.category === "Carro" && !b && n(fake.amount) > Math.max(c.income * 0.15, 3000)) risks.push(`Compra de carro sem orcamento definido e alta para sua receita do mes.`);
+        if (c.perf < 0) risks.push(`Performance fica negativa: ${brl.format(c.perf)}.`);
+        if (badDay) risks.push(`Saldo fica negativo no dia ${badDay.day}: ${brl.format(badDay.balance)}.`);
+        const futureRisk = Array.from(new Set(fakeRows.map(x => iso(x.tx_date).slice(0,7)))).map(month => ({ month, c: calc(month, fakeRows.filter(x => iso(x.tx_date).startsWith(month))) })).find(x => x.c.flow.some(d => d.balance < 0) || x.c.perf < 0);
+        if (futureRisk && futureRisk.month !== m) risks.push(`Parcelas deixam ${futureRisk.month} em risco.`);
+        $("#simResult").className = `panel ${risks.length ? "sim-risk" : "sim-ok"}`;
+        $("#simResult").innerHTML = `<h2 class="${risks.length ? "bad-text" : "good-text"}">${risks.length ? "Compra fora do plano" : "Compra cabe no plano"}</h2><div class="result-grid"><article class="result-card"><span>Parcela mensal</span><strong>${brl.format(n(fake.amount))}</strong></article><article class="result-card"><span>Parcelas</span><strong>${fakeRows.length}x</strong></article><article class="result-card"><span>Fatura inicial</span><strong>${billMonth(fake)}</strong></article><article class="result-card"><span>Saldo final</span><strong class="${c.final < 0 ? "bad-text" : "good-text"}">${brl.format(c.final)}</strong></article><article class="result-card"><span>Sobra do mes</span><strong class="${c.perf < 0 ? "bad-text" : "good-text"}">${brl.format(c.perf)}</strong></article></div>${risks.length ? `<div class="list">${risks.map(x => `<article class="item bad"><strong>${x}</strong></article>`).join("")}</div>` : `<article class="item good"><strong>Nenhum alerta critico encontrado.</strong><small>A compra cabe no caixa projetado e no orcamento cadastrado.</small></article>`}<div class="actions" style="margin-top:12px"><button class="primary" data-apply-sim>Salvar compra simulada</button></div>`;
+      }
+      function excelDate(year, mi, day) {
+        const d = Number(day);
+        if (!Number.isInteger(d) || d < 1 || d > 31) return null;
+        const dt = new Date(Date.UTC(Number(year), mi, d));
+        return dt.getUTCMonth() === mi ? `${year}-${String(mi+1).padStart(2,"0")}-${String(d).padStart(2,"0")}` : null;
+      }
+      function parseCsv(text) {
+        const rows = [];
+        let row = [], cell = "", quote = false;
+        for (let i = 0; i < text.length; i++) {
+          const ch = text[i], next = text[i + 1];
+          if (quote && ch === '"' && next === '"') { cell += '"'; i++; continue; }
+          if (ch === '"') { quote = !quote; continue; }
+          if (!quote && ch === ",") { row.push(cell); cell = ""; continue; }
+          if (!quote && (ch === "\n" || ch === "\r")) {
+            if (ch === "\r" && next === "\n") i++;
+            row.push(cell);
+            if (row.some(x => String(x).trim())) rows.push(row);
+            row = []; cell = "";
+            continue;
+          }
+          cell += ch;
+        }
+        row.push(cell);
+        if (row.some(x => String(x).trim())) rows.push(row);
+        const [head = [], ...body] = rows;
+        return body.map(r => Object.fromEntries(head.map((h, i) => [String(h).trim(), r[i] ?? ""])));
+      }
+      async function insertImportedRows(rows, shouldConfirm = true) {
+        const payload = rows.map(row => {
+          const payment = row.payment_method || (row.type === "diario" ? "cartao_credito" : "conta_corrente");
+          const bill = row.card_bill_month || (payment === "cartao_credito" ? `${billMonth(row)}-01` : null);
+          return { tx_date: row.tx_date, type: row.type, category: row.category, description: row.description || null, amount: n(row.amount), payment_method: payment, card_bill_month: bill || null, status: row.status || "confirmado", source: row.source || "arquivo" };
+        });
+        if (!payload.length || (shouldConfirm && !confirm(`Importar ${payload.length} lancamentos?`))) return;
+        await insertRows("transactions", payload);
+      }
+      async function importInvestmentRows(rows, replace = false) {
+        const payload = rows.map(row => ({
+          asset: String(row.asset || "").trim().toUpperCase(),
+          segment: row.segment || "FII",
+          shares: n(row.shares),
+          price: n(row.price),
+          dividend_per_share: n(row.dividend_per_share)
+        })).filter(row => row.asset && row.shares > 0);
+        if (!payload.length) return;
+        if (replace) {
+          const { error } = await state.sb.from("investments").delete().gte("shares", 0);
+          if (error) throw error;
+          state.inv = [];
+        }
+        for (let i = 0; i < payload.length; i += 500) {
+          const { error } = await state.sb.from("investments").insert(payload.slice(i, i + 500));
+          if (error) throw error;
+        }
+      }
+      async function importJsonPayload(file) {
+        const payload = JSON.parse(await file.text());
+        if (!state.session) throw new Error("Entre no app antes de importar.");
+        const txCount = payload.rows?.length || 0;
+        const invCount = payload.investments?.length || 0;
+        if (!confirm(`Atualizar ${txCount} lancamento(s) e ${invCount} ativo(s) deste pacote?`)) return;
+        if (payload.replace_transactions) {
+          if (!txCount) throw new Error("Restauracao bloqueada: pacote sem lancamentos.");
+          if (!confirm("Isto vai substituir TODOS os lancamentos financeiros do seu usuario. Continuar?")) return;
+          const { error } = await state.sb.from("transactions").delete().neq("source", "__manter_nenhum__");
+          if (error) throw error;
+          state.tx = [];
+        }
+        for (const item of payload.delete || []) {
+          if (!item.source_like && !item.payment_method && !item.card_bill_month_from && !item.card_bill_month_to) throw new Error("Importacao bloqueada: remocao sem filtro.");
+          let query = state.sb.from("transactions").delete();
+          if (item.source_like) query = query.like("source", item.source_like);
+          if (item.payment_method) query = query.eq("payment_method", item.payment_method);
+          if (item.card_bill_month_from) query = query.gte("card_bill_month", item.card_bill_month_from);
+          if (item.card_bill_month_to) query = query.lt("card_bill_month", item.card_bill_month_to);
+          const { error } = await query;
+          if (error) throw error;
+        }
+        if (payload.rows?.length) await insertImportedRows(payload.rows, false);
+        if (payload.investments?.length) await importInvestmentRows(payload.investments, Boolean(payload.replace_investments));
+        if (payload.settings) await upsertSettings(payload.settings);
+        await load();
+      }
+      async function importXlsx(file) {
+        const wb = XLSX.read(await file.arrayBuffer(), { type: "array", raw: true });
+        const rows = [];
+        sheets.forEach(y => {
+          const sh = wb.Sheets[y]; if (!sh) return;
+          const a = XLSX.utils.sheet_to_json(sh, { header: 1, raw: true, blankrows: false });
+          starts.forEach((st, mi) => {
+            for (let r = 2; r <= 32; r++) {
+              const row = a[r] || [], date = excelDate(y, mi, row[st]);
+              if (!date) continue;
+              [["entrada", st+1, "Receita"], ["saida", st+2, "Saidas"], ["investimento", st+3, "Investimento"], ["diario", st+4, "Diario"]].forEach(([type, col, cat]) => {
+                const amount = Math.abs(n(row[col]));
+                if (amount) {
+                  const payment = type === "diario" ? "cartao_credito" : "conta_corrente";
+                  const bill = type === "diario" ? `${y}-${String(mi+1).padStart(2,"0")}` : "";
+                  rows.push({ tx_date: date, type, category: cat, description: `Importado ${y} ${labels[mi]}`, amount, payment_method: payment, card_bill_month: bill ? `${bill}-01` : null, status: "previsto", source: `planilha|${payment}|${bill}` });
+                }
+              });
+            }
+          });
+        });
+        await insertImportedRows(rows);
+      }
+      async function importFinancialFile(file) {
+        const name = file.name.toLowerCase();
+        if (name.endsWith(".json")) return importJsonPayload(file);
+        if (name.endsWith(".csv")) return insertImportedRows(parseCsv(await file.text()));
+        return importXlsx(file);
+      }
+      function bind() {
+        document.querySelectorAll(".tab").forEach(b => b.onclick = () => setView(b.dataset.view));
+        document.querySelectorAll("[data-view-shortcut]").forEach(b => b.onclick = () => setView(b.dataset.viewShortcut));
+        document.querySelectorAll("[data-period]").forEach(b => b.onclick = () => { state.period = b.dataset.period || "month"; render(); });
+        document.querySelector("[data-preset-shortcut='card']").onclick = () => fillTx({ type: "diario", payment_method: "cartao_credito", category: "Alimentacao", description: "Compra no cartao" });
+        document.querySelector("[data-preset='income']").onclick = () => fillTx({ type: "entrada", payment_method: "conta_corrente", category: "Comissao", description: "Receita variavel" });
+        document.querySelector("[data-preset='fixed']").onclick = () => fillTx({ type: "saida", payment_method: "conta_corrente", category: "Contas", description: "Conta fixa paga" });
+        document.querySelector("[data-preset='card']").onclick = () => fillTx({ type: "diario", payment_method: "cartao_credito", category: "Alimentacao", description: "Compra no cartao" });
+        document.querySelector("[data-preset='invest']").onclick = () => fillTx({ type: "investimento", payment_method: "conta_corrente", category: "Investimento", description: "Aporte de investimento" });
+        document.querySelector("[data-preset='car']").onclick = () => fillSim({ category: "Carro", description: "Compra de carro" });
+        document.querySelector("[data-pay-card]").onclick = () => payCardBill().catch(alertErr);
+        $("#txSearch").oninput = e => { state.txSearch = e.target.value; render(); };
+        $("#txTypeFilter").onchange = e => { state.txTypeFilter = e.target.value; render(); };
+        $("#txMethodFilter").onchange = e => { state.txMethodFilter = e.target.value; render(); };
+        $("#clearTxFilters").onclick = () => { state.txSearch = ""; state.txTypeFilter = ""; state.txMethodFilter = ""; render(); };
+        document.querySelectorAll("[data-projection]").forEach(b => b.onclick = () => { state.projectionDays = n(b.dataset.projection) || 30; renderProjection(); });
+        document.querySelector("[data-refresh-quotes]").onclick = () => refreshQuotes().catch(alertErr);
+        $("#dateMode").onchange = e => setDateMode(e.target.value);
+        $("#month").onchange = () => { state.dateMode = "month"; setDateMode("month"); };
+        $("#year").onchange = () => setDateMode("year");
+        $("#specificDate").onchange = () => setDateMode("date");
+        $("#thisMonth").onclick = () => {
+          state.period = "month";
+          $("#month").value = monthNow();
+          $("#year").value = new Date().getFullYear();
+          $("#specificDate").value = todayIso();
+          setDateMode("month");
+        };
+        $("#refresh").onclick = () => load().catch(alertErr);
+        $("#logout").onclick = () => state.sb.auth.signOut();
+        $("#authForm").onsubmit = async (e) => {
+          e.preventDefault();
+          const row = formData(e.currentTarget);
+          const mode = e.submitter.value;
+          const res = mode === "up" ? await state.sb.auth.signUp({ email: row.email, password: row.password }) : await state.sb.auth.signInWithPassword({ email: row.email, password: row.password });
+          if (res.error) alertErr(res.error);
+          else if (res.data.session) {
+            $("#authMsg").textContent = "";
+            e.currentTarget.reset();
+            await unlock(res.data.session).catch(alertErr);
+          } else if (mode === "up") {
+            $("#authMsg").textContent = "Conta criada. Confirme seu email e depois clique em Entrar.";
+          }
+        };
+        $("#txForm").elements.type.onchange = e => {
+          if (e.target.value === "diario") $("#txForm").elements.payment_method.value = "cartao_credito";
+        };
+        $("#txForm").onsubmit = async e => { e.preventDefault(); await insertRows("transactions", installmentRows(formData(e.currentTarget))).catch(alertErr); e.currentTarget.reset(); setDates(); };
+        $("#recForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await insert("recurring_items", { name: r.name, account_kind: r.account_kind || "fixa", day_of_month: n(r.day_of_month), type: r.type, payment_method: r.payment_method || "conta_corrente", category: r.category, amount: n(r.amount), active: true }).catch(alertErr); e.currentTarget.reset(); };
+        $("#simForm").onsubmit = e => { e.preventDefault(); sim(formData(e.currentTarget)); };
+        $("#simResult").onclick = async e => { if (e.target.closest("[data-apply-sim]")) { await insertRows("transactions", state.simRows).catch(alertErr); state.simRows = []; setView("transactions"); } };
+        $("#quickProjectionForm").onsubmit = async e => { e.preventDefault(); await saveQuickProjection(formData(e.currentTarget), e.submitter.value).catch(alertErr); e.currentTarget.reset(); setDates(); };
+        $("#projectionRows").onclick = e => {
+          const rec = e.target.closest("[data-proj-pay-rec]");
+          const card = e.target.closest("[data-proj-pay-card]");
+          if (rec) payRecurring(rec.dataset.projPayRec, document.querySelector(`[data-proj-amount="${rec.dataset.projPayRec}"]`)?.value).catch(alertErr);
+          if (card) payCardBill(card.dataset.projPayCard).catch(alertErr);
+        };
+        $("#invForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await saveInvestmentOperation(r).catch(alertErr); e.currentTarget.reset(); };
+        $("#setForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await upsertSettings({ initial_balance: n(r.initial_balance), credit_card_due_day: n(r.credit_card_due_day) || 10, variable_income_target: n(r.variable_income_target), monthly_invest_target: n(r.monthly_invest_target), emergency_goal: n(r.emergency_goal), portfolio_goal: n(r.portfolio_goal), fii_goal: n(r.fii_goal), dividend_goal: n(r.dividend_goal), brapi_token: String(r.brapi_token || "").trim() }).catch(alertErr); };
+        $("#budgetForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await upsertBudget(r).catch(alertErr); };
+        $("#txRows").onclick = async e => { const b = e.target.closest("[data-del]"); if (b && confirm("Excluir lancamento?")) { if (!state.session) { state.tx = state.tx.filter(x => x.id !== b.dataset.del); render(); return; } const { error } = await state.sb.from("transactions").delete().eq("id", b.dataset.del); if (error) alertErr(error); else await load(); } };
+        $("#invRows").onclick = async e => { const b = e.target.closest("[data-inv-del]"); if (b && confirm("Excluir ativo?")) { if (!state.session) { state.inv = state.inv.filter(x => x.id !== b.dataset.invDel); render(); return; } const { error } = await state.sb.from("investments").delete().eq("id", b.dataset.invDel); if (error) alertErr(error); else await load(); } };
+        $("#fixedRows").onclick = e => { const b = e.target.closest("[data-pay-rec]"); if (b) payRecurring(b.dataset.payRec, document.querySelector(`[data-pay-amount="${b.dataset.payRec}"]`)?.value).catch(alertErr); };
+        $("#variableRows").onclick = e => { const b = e.target.closest("[data-pay-rec]"); if (b) payRecurring(b.dataset.payRec, document.querySelector(`[data-pay-amount="${b.dataset.payRec}"]`)?.value).catch(alertErr); };
+        $("#importFile").onchange = async e => { const f = e.target.files[0]; if (f) await importFinancialFile(f).catch(alertErr); e.target.value = ""; };
+      }
+      async function upsertSettings(obj) {
+        if (!state.session) {
+          state.settings = { ...state.settings, ...obj };
+          render();
+          return;
+        }
+        const rows = Object.entries(obj).map(([key, value]) => ({ user_id: state.session.user.id, key, value }));
+        const { error } = await state.sb.from("app_settings").upsert(rows, { onConflict: "user_id,key" });
+        if (error) throw error;
+        await load();
+      }
+      async function upsertBudget(r) {
+        if (!state.session) {
+          const month = `${r.month}-01`;
+          const existing = state.budgets.find(x => iso(x.month) === month && x.category === r.category);
+          if (existing) existing.limit_amount = n(r.limit_amount);
+          else state.budgets = [{ id: `local-budget-${Date.now()}`, month, category: r.category, limit_amount: n(r.limit_amount) }, ...state.budgets];
+          render();
+          return;
+        }
+        const { error } = await state.sb.from("budgets").upsert({ user_id: state.session.user.id, month: `${r.month}-01`, category: r.category, limit_amount: n(r.limit_amount) }, { onConflict: "user_id,month,category" });
+        if (error) throw error;
+        await load();
+      }
+      function alertErr(err) { console.error(err); alert(err.message || String(err)); }
+      function setDates() {
+        const d = todayIso();
+        document.querySelectorAll('input[type="date"]').forEach(x => { if (!x.value) x.value = d; });
+        document.querySelectorAll('input[name="card_bill_month"]').forEach(x => { if (!x.value) x.value = currentMonth(); });
+      }
+      async function init() {
+        $("#month").value = monthNow();
+        $("#year").value = new Date().getFullYear();
+        $("#specificDate").value = todayIso();
+        setDateMode("month", false);
+        setDates();
+        bind();
+        if (!cfgOk()) { showAuth(); render(); return; }
+        const c = window.BRIAN_FINANCE_CONFIG;
+        state.sb = createClient(c.supabaseUrl, c.supabaseAnonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+        state.sb.auth.onAuthStateChange(async (_event, session) => {
+          const wasLocked = !state.session;
+          state.session = session;
+          setSessionLabel();
+          showAuth();
+          if (session) {
+            if (wasLocked) setView(state.view || "dashboard");
+            await load().catch(alertErr);
+          } else {
+            state.tx = [];
+            state.rec = [];
+            state.budgets = [];
+            state.inv = [];
+            state.settings = {};
+            state.view = "dashboard";
+          }
+        });
+        const { data, error } = await state.sb.auth.getSession();
+        if (error) throw error;
+        state.session = data.session;
+        setSessionLabel();
+        showAuth();
+        if (state.session) {
+          setView(state.view || "dashboard");
+          await load();
+        } else {
+          render();
+        }
+      }
+      init().catch(alertErr);
+    </script>
+  </body>
+</html>
