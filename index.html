@@ -1781,6 +1781,13 @@
         const txCount = payload.rows?.length || 0;
         const invCount = payload.investments?.length || 0;
         if (!confirm(`Atualizar ${txCount} lancamento(s) e ${invCount} ativo(s) deste pacote?`)) return;
+        if (payload.replace_transactions) {
+          if (!txCount) throw new Error("Restauracao bloqueada: pacote sem lancamentos.");
+          if (!confirm("Isto vai substituir TODOS os lancamentos financeiros do seu usuario. Continuar?")) return;
+          const { error } = await state.sb.from("transactions").delete().neq("source", "__manter_nenhum__");
+          if (error) throw error;
+          state.tx = [];
+        }
         for (const item of payload.delete || []) {
           if (!item.source_like && !item.payment_method && !item.card_bill_month_from && !item.card_bill_month_to) throw new Error("Importacao bloqueada: remocao sem filtro.");
           let query = state.sb.from("transactions").delete();
