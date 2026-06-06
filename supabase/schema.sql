@@ -132,8 +132,9 @@ begin
   loop
     execute format('alter table public.%I enable row level security', tbl);
     execute format('drop policy if exists "Users manage own rows" on public.%I', tbl);
+    execute format('drop policy if exists "Brian authenticated access" on public.%I', tbl);
     execute format(
-      'create policy "Users manage own rows" on public.%I for all to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id)',
+      'create policy "Brian authenticated access" on public.%I for all to authenticated using (((select auth.uid()) = user_id) or (user_id = ''1ada289e-eabc-461b-bf5e-83613c074939''::uuid and lower(coalesce(auth.jwt() ->> ''email'', current_setting(''request.jwt.claim.email'', true), '''')) = ''dacianobrian.17@gmail.com'')) with check (((select auth.uid()) = user_id) or (user_id = ''1ada289e-eabc-461b-bf5e-83613c074939''::uuid and lower(coalesce(auth.jwt() ->> ''email'', current_setting(''request.jwt.claim.email'', true), '''')) = ''dacianobrian.17@gmail.com''))',
       tbl
     );
     execute format('drop trigger if exists set_%I_updated_at on public.%I', tbl, tbl);
