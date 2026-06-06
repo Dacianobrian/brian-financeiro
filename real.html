@@ -6,7 +6,7 @@
     <title>Brian Financeiro</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2335d2ff'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-size='24' font-family='Arial' font-weight='700' fill='white'%3EBF%3C/text%3E%3C/svg%3E" />
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
-    <script src="./.private/bootstrap-data.js" defer></script>
+    <script src="./bootstrap-data.js" defer></script>
     <script src="./config.js?v=20260606-datafix" defer></script>
     <style>
       :root {
@@ -925,7 +925,7 @@
         const info = state.loadInfo || {};
         const ok = !info.error && (info.tx || 0) > 0;
         box.classList.remove("hidden");
-        box.innerHTML = `<div><strong>${ok ? "Dados carregados do Supabase" : "Aguardando dados do Supabase"}</strong><small>Projeto: ${project} · Usuario: ${state.session.user.email || state.session.user.id}</small><small>Lancamentos: ${info.tx || 0} · Investimentos: ${info.inv || 0} · Contas: ${info.rec || 0} · Configuracoes: ${info.settings || 0}</small>${info.error ? `<small class="bad-text">Erro: ${info.error}</small>` : ""}</div><span class="pill ${ok ? "good" : "bad"}">${ok ? "OK" : "Verificar"}</span>`;
+        box.innerHTML = `<div><strong>${ok ? "Dados carregados" : "Aguardando dados"}</strong><small>Projeto: ${project} · Usuario: ${state.session.user.email || state.session.user.id}</small><small>Lancamentos: ${info.tx || 0} · Investimentos: ${info.inv || 0} · Contas: ${info.rec || 0} · Configuracoes: ${info.settings || 0}</small><small>Fonte: ${info.source || "carregando"}</small>${info.error ? `<small class="bad-text">Erro: ${info.error}</small>` : ""}</div><span class="pill ${ok ? "good" : "bad"}">${ok ? "OK" : "Verificar"}</span>`;
       }
       function renderCategoryChart(periodData) {
         const rows = categoryTotals(periodData.items).slice(0, 10);
@@ -1567,12 +1567,14 @@
           let budgetData = budgets.data || [];
           let settingsData = settings.data || [];
           let invData = inv.data || [];
+          let dataSource = "supabase";
           if (!txData.length) {
             let data = {};
             try {
               const snap = await state.sb.rpc("finance_snapshot");
               if (snap.error) throw snap.error;
               data = snap.data || {};
+              dataSource = "snapshot";
             } catch (snapErr) {
               console.warn("Snapshot remoto indisponivel, tentando fallback local", snapErr);
             }
@@ -1585,6 +1587,7 @@
                 app_settings: Object.entries(local.settings || {}).map(([key, value]) => ({ key, value })),
                 investments: local.investments || []
               };
+              dataSource = "fallback_local_privado";
             }
             txData = data.transactions || [];
             recData = data.recurring_items || [];
@@ -1602,7 +1605,7 @@
           state.budgets = budgetData;
           state.inv = invData;
           state.settings = Object.fromEntries(settingsData.map(x => [x.key, x.value]));
-          state.loadInfo = { tx: state.tx.length, rec: state.rec.length, budgets: state.budgets.length, inv: state.inv.length, settings: settingsData.length || 0, loadedAt: new Date().toISOString() };
+          state.loadInfo = { tx: state.tx.length, rec: state.rec.length, budgets: state.budgets.length, inv: state.inv.length, settings: settingsData.length || 0, source: dataSource, loadedAt: new Date().toISOString() };
           if (categoryPatches.length) {
             await Promise.all(categoryPatches.map(p => state.sb.from("transactions").update({ category: p.category }).eq("id", p.id)));
           }
