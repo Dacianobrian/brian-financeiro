@@ -670,8 +670,9 @@
       }
       function method(x) { return x.payment_method || sourceMeta(x).payment || (x.type === "diario" ? "cartao_credito" : "conta_corrente"); }
       function billMonth(x) { return x.card_bill_month ? iso(x.card_bill_month).slice(0, 7) : sourceMeta(x).bill || iso(x.tx_date).slice(0, 7); }
-      function signed(x) { return x.type === "entrada" ? n(x.amount) : -n(x.amount); }
-      function cashSigned(x) { return x.type === "entrada" ? n(x.amount) : -n(x.amount); }
+      function isInternalTransfer(x) { return String(x.category || "").toLowerCase() === "transferencia"; }
+      function signed(x) { return isInternalTransfer(x) ? 0 : x.type === "entrada" ? n(x.amount) : -n(x.amount); }
+      function cashSigned(x) { return isInternalTransfer(x) ? 0 : x.type === "entrada" ? n(x.amount) : -n(x.amount); }
       function syncPeriodInputs() {
         const mode = state.dateMode || "month";
         if (mode === "year") {
@@ -721,6 +722,19 @@
         if (x.type === "investimento") return { cls: "invest", label: "Investimento" };
         if (method(x) === "cartao_credito" || x.type === "diario") return { cls: "card", label: "Cartao" };
         return { cls: "expense", label: "Saida" };
+      }
+      function autoCategory(x) {
+        const current = x.category || "";
+        if (current && current !== "Outros") return current;
+        const d = String(x.description || "").toUpperCase();
+        if (d.includes("DACIANO BRIAN")) return "Transferencia";
+        if (["CPFL PAULISTA"].some(k => d.includes(k))) return "Contas";
+        if (["ONR", "INSTITUTO DE ESTUDOS", "REGISTRO CIVIL"].some(k => d.includes(k))) return "MEI";
+        if (["SJR VITTA", "CASA UN FLOR DO CAMPO"].some(k => d.includes(k))) return "Moradia";
+        if (["LIV UP", "BRAZILIAN CONVENIENCE", "H2 RIO PRETO"].some(k => d.includes(k))) return "Alimentacao";
+        if (["DUO TICKET", "DUOTICKET"].some(k => d.includes(k))) return "Lazer";
+        if (["ONE-B.DIGITAL COSMETICS"].some(k => d.includes(k))) return "Shopping";
+        return current || "Outros";
       }
       function txMatchesFilters(x) {
         const q = String(state.txSearch || "").trim().toLowerCase();
@@ -818,10 +832,12 @@
         const items = monthItems(m, extra);
         const cash = cashItems(m, extra);
         const card = cardBillItems(m, extra);
-        const income = items.filter(x => x.type === "entrada").reduce((s,x) => s + n(x.amount), 0);
-        const expense = items.filter(x => x.type === "saida" || x.type === "diario").reduce((s,x) => s + n(x.amount), 0);
-        const invest = items.filter(x => x.type === "investimento").reduce((s,x) => s + n(x.amount), 0);
-        const checkingExpense = cash.filter(x => x.type !== "entrada").reduce((s,x) => s + n(x.amount), 0);
+        const financialItems = items.filter(x => !isInternalTransfer(x));
+        const financialCash = cash.filter(x => !isInternalTransfer(x));
+        const income = financialItems.filter(x => x.type === "entrada").reduce((s,x) => s + n(x.amount), 0);
+        const expense = financialItems.filter(x => x.type === "saida" || x.type === "diario").reduce((s,x) => s + n(x.amount), 0);
+        const invest = financialItems.filter(x => x.type === "investimento").reduce((s,x) => s + n(x.amount), 0);
+        const checkingExpense = financialCash.filter(x => x.type !== "entrada").reduce((s,x) => s + n(x.amount), 0);
         const cardBill = card.reduce((s,x) => s + n(x.amount), 0);
         const flow = cashflow(m, extra);
         const perf = income - expense - invest;
@@ -880,7 +896,7 @@
       }
       function categoryTotals(items) {
         const map = new Map();
-        items.filter(x => (x.type === "saida" || x.type === "diario") && x.category !== "Cartao de credito").forEach(x => {
+        items.filter(x => !isInternalTransfer(x) && (x.type === "saida" || x.type === "diario") && x.category !== "Cartao de credito").forEach(x => {
           const key = x.category || "Sem categoria";
           map.set(key, (map.get(key) || 0) + n(x.amount));
         });
@@ -1514,11 +1530,19 @@
             state.sb.from("investments").select("*").order("asset")
           ]);
           for (const r of [tx, rec, budgets, settings, inv]) if (r.error) throw r.error;
-          state.tx = tx.data || [];
+          const categoryPatches = [];
+          state.tx = (tx.data || []).map(row => {
+            const category = autoCategory(row);
+            if (category !== row.category && row.id) categoryPatches.push({ id: row.id, category });
+            return { ...row, category };
+          });
           state.rec = rec.data || [];
           state.budgets = budgets.data || [];
           state.inv = inv.data || [];
           state.settings = Object.fromEntries((settings.data || []).map(x => [x.key, x.value]));
+          if (categoryPatches.length) {
+            await Promise.all(categoryPatches.map(p => state.sb.from("transactions").update({ category: p.category }).eq("id", p.id)));
+          }
         } catch (err) {
           console.warn("Falha ao carregar dados financeiros", err);
           throw err;
