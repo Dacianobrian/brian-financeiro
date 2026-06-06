@@ -485,7 +485,7 @@
             <section class="panel">
               <div class="panel-head">
                 <h2>Lancamentos</h2>
-                <label class="secondary file">Importar planilha<input id="xlsx" type="file" accept=".xlsx,.xls" /></label>
+                <label class="secondary file">Importar arquivo<input id="importFile" type="file" accept=".xlsx,.xls,.csv,.json" /></label>
               </div>
               <div class="tablewrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Meio</th><th>Fatura</th><th>Categoria</th><th>Descricao</th><th>Valor</th><th></th></tr></thead><tbody id="txRows"></tbody></table></div>
             </section>
@@ -671,8 +671,8 @@
       function method(x) { return x.payment_method || sourceMeta(x).payment || (x.type === "diario" ? "cartao_credito" : "conta_corrente"); }
       function billMonth(x) { return x.card_bill_month ? iso(x.card_bill_month).slice(0, 7) : sourceMeta(x).bill || iso(x.tx_date).slice(0, 7); }
       function isInternalTransfer(x) { return String(x.category || "").toLowerCase() === "transferencia"; }
-      function signed(x) { return isInternalTransfer(x) ? 0 : x.type === "entrada" ? n(x.amount) : -n(x.amount); }
-      function cashSigned(x) { return isInternalTransfer(x) ? 0 : x.type === "entrada" ? n(x.amount) : -n(x.amount); }
+      function signed(x) { return x.type === "entrada" ? n(x.amount) : -n(x.amount); }
+      function cashSigned(x) { return x.type === "entrada" ? n(x.amount) : -n(x.amount); }
       function syncPeriodInputs() {
         const mode = state.dateMode || "month";
         if (mode === "year") {
@@ -828,6 +828,11 @@
           return { day, items, movement: mov, balance: bal };
         });
       }
+      function currentAccountBalance(m) {
+        const limit = m === monthNow() ? todayIso() : `${m}-${String(daysIn(m)).padStart(2, "0")}`;
+        const realMovements = state.tx.filter(x => method(x) !== "cartao_credito" && iso(x.tx_date).startsWith(m) && iso(x.tx_date) <= limit).reduce((s,x) => s + signed(x), 0);
+        return opening(m) + realMovements;
+      }
       function calc(m, extra = []) {
         const items = monthItems(m, extra);
         const cash = cashItems(m, extra);
@@ -844,7 +849,7 @@
         const savingsRate = income ? perf / income * 100 : 0;
         const investRate = income ? invest / income * 100 : 0;
         const cardRate = income ? cardBill / income * 100 : 0;
-        return { items, cash, card, income, expense, invest, checkingExpense, cardBill, perf, savingsRate, investRate, cardRate, flow, final: flow.at(-1)?.balance || opening(m) };
+        return { items, cash, card, income, expense, invest, checkingExpense, cardBill, perf, savingsRate, investRate, cardRate, flow, currentBalance: currentAccountBalance(m), final: flow.at(-1)?.balance || opening(m) };
       }
       function monthIdFromDate(v) {
         const s = iso(v);
@@ -1128,7 +1133,7 @@
         renderMonthlyFlowChart(pc);
         renderHealthPage(pc, stats);
         $("#mIncome").textContent = brl.format(pc.income);
-        $("#mChecking").textContent = brl.format(pc.checkingExpense);
+        $("#mChecking").textContent = brl.format(c.currentBalance);
         $("#mCardBill").textContent = brl.format(pc.cardBill);
         $("#mInvest").textContent = brl.format(pc.invest);
         const h = health(c);
@@ -1708,6 +1713,55 @@
         const dt = new Date(Date.UTC(Number(year), mi, d));
         return dt.getUTCMonth() === mi ? `${year}-${String(mi+1).padStart(2,"0")}-${String(d).padStart(2,"0")}` : null;
       }
+      function parseCsv(text) {
+        const rows = [];
+        let row = [], cell = "", quote = false;
+        for (let i = 0; i < text.length; i++) {
+          const ch = text[i], next = text[i + 1];
+          if (quote && ch === '"' && next === '"') { cell += '"'; i++; continue; }
+          if (ch === '"') { quote = !quote; continue; }
+          if (!quote && ch === ",") { row.push(cell); cell = ""; continue; }
+          if (!quote && (ch === "\n" || ch === "\r")) {
+            if (ch === "\r" && next === "\n") i++;
+            row.push(cell);
+            if (row.some(x => String(x).trim())) rows.push(row);
+            row = []; cell = "";
+            continue;
+          }
+          cell += ch;
+        }
+        row.push(cell);
+        if (row.some(x => String(x).trim())) rows.push(row);
+        const [head = [], ...body] = rows;
+        return body.map(r => Object.fromEntries(head.map((h, i) => [String(h).trim(), r[i] ?? ""])));
+      }
+      async function insertImportedRows(rows, shouldConfirm = true) {
+        const payload = rows.map(row => {
+          const payment = row.payment_method || (row.type === "diario" ? "cartao_credito" : "conta_corrente");
+          const bill = row.card_bill_month || (payment === "cartao_credito" ? `${billMonth(row)}-01` : null);
+          return { tx_date: row.tx_date, type: row.type, category: row.category, description: row.description || null, amount: n(row.amount), payment_method: payment, card_bill_month: bill || null, status: row.status || "confirmado", source: row.source || "arquivo" };
+        });
+        if (!payload.length || (shouldConfirm && !confirm(`Importar ${payload.length} lancamentos?`))) return;
+        await insertRows("transactions", payload);
+      }
+      async function importJsonPayload(file) {
+        const payload = JSON.parse(await file.text());
+        if (!state.session) throw new Error("Entre no app antes de importar.");
+        if (!confirm(`Atualizar ${payload.rows?.length || 0} lancamentos e substituir dados antigos deste pacote?`)) return;
+        for (const item of payload.delete || []) {
+          if (!item.source_like && !item.payment_method && !item.card_bill_month_from && !item.card_bill_month_to) throw new Error("Importacao bloqueada: remocao sem filtro.");
+          let query = state.sb.from("transactions").delete();
+          if (item.source_like) query = query.like("source", item.source_like);
+          if (item.payment_method) query = query.eq("payment_method", item.payment_method);
+          if (item.card_bill_month_from) query = query.gte("card_bill_month", item.card_bill_month_from);
+          if (item.card_bill_month_to) query = query.lt("card_bill_month", item.card_bill_month_to);
+          const { error } = await query;
+          if (error) throw error;
+        }
+        if (payload.rows?.length) await insertImportedRows(payload.rows, false);
+        if (payload.settings) await upsertSettings(payload.settings);
+        await load();
+      }
       async function importXlsx(file) {
         const wb = XLSX.read(await file.arrayBuffer(), { type: "array", raw: true });
         const rows = [];
@@ -1729,17 +1783,13 @@
             }
           });
         });
-        if (!rows.length || !confirm(`Importar ${rows.length} lancamentos?`)) return;
-        for (let i = 0; i < rows.length; i += 500) {
-          const batch = rows.slice(i, i + 500);
-          let { error } = await state.sb.from("transactions").insert(batch);
-          if (error && /payment_method|card_bill_month/i.test(error.message || "")) {
-            const legacy = batch.map(({ payment_method, card_bill_month, ...row }) => row);
-            ({ error } = await state.sb.from("transactions").insert(legacy));
-          }
-          if (error) throw error;
-        }
-        await load();
+        await insertImportedRows(rows);
+      }
+      async function importFinancialFile(file) {
+        const name = file.name.toLowerCase();
+        if (name.endsWith(".json")) return importJsonPayload(file);
+        if (name.endsWith(".csv")) return insertImportedRows(parseCsv(await file.text()));
+        return importXlsx(file);
       }
       function bind() {
         document.querySelectorAll(".tab").forEach(b => b.onclick = () => setView(b.dataset.view));
@@ -1806,7 +1856,7 @@
         $("#invRows").onclick = async e => { const b = e.target.closest("[data-inv-del]"); if (b && confirm("Excluir ativo?")) { if (!state.session) { state.inv = state.inv.filter(x => x.id !== b.dataset.invDel); render(); return; } const { error } = await state.sb.from("investments").delete().eq("id", b.dataset.invDel); if (error) alertErr(error); else await load(); } };
         $("#fixedRows").onclick = e => { const b = e.target.closest("[data-pay-rec]"); if (b) payRecurring(b.dataset.payRec, document.querySelector(`[data-pay-amount="${b.dataset.payRec}"]`)?.value).catch(alertErr); };
         $("#variableRows").onclick = e => { const b = e.target.closest("[data-pay-rec]"); if (b) payRecurring(b.dataset.payRec, document.querySelector(`[data-pay-amount="${b.dataset.payRec}"]`)?.value).catch(alertErr); };
-        $("#xlsx").onchange = async e => { const f = e.target.files[0]; if (f) await importXlsx(f).catch(alertErr); e.target.value = ""; };
+        $("#importFile").onchange = async e => { const f = e.target.files[0]; if (f) await importFinancialFile(f).catch(alertErr); e.target.value = ""; };
       }
       async function upsertSettings(obj) {
         if (!state.session) {
