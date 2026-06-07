@@ -9,7 +9,7 @@
     <title>Brian Financeiro</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2335d2ff'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-size='24' font-family='Arial' font-weight='700' fill='white'%3EBF%3C/text%3E%3C/svg%3E" />
     <script>
-      window.BRIAN_FINANCE_APP_VERSION = "20260607-snapshot-1";
+      window.BRIAN_FINANCE_APP_VERSION = "20260607-logout-1";
       (function () {
         if (!/^https?:$/.test(window.location.protocol)) return;
         var current = window.BRIAN_FINANCE_APP_VERSION;
@@ -30,7 +30,7 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
     <script src="./bootstrap-data.js" defer></script>
-    <script src="./config.js?v=20260607-snapshot-1" defer></script>
+    <script src="./config.js?v=20260607-logout-1" defer></script>
     <style>
       :root {
         color-scheme: dark;
@@ -662,7 +662,8 @@
 
       const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
       const $ = (q) => document.querySelector(q);
-      const state = { sb: null, session: null, view: "dashboard", period: "month", dateMode: "month", projectionDays: 30, txSearch: "", txTypeFilter: "", txMethodFilter: "", tx: [], rec: [], budgets: [], inv: [], market: {}, settings: {}, simRows: [], loadInfo: null };
+      const localLogoutKey = "brian-finance-local-logout";
+      const state = { sb: null, session: null, view: "dashboard", period: "month", dateMode: "month", projectionDays: 30, txSearch: "", txTypeFilter: "", txMethodFilter: "", tx: [], rec: [], budgets: [], inv: [], market: {}, settings: {}, simRows: [], loadInfo: null, localLogout: false };
       const sheets = ["2025", "2026", "2027", "2028"];
       const starts = [0,7,14,21,28,35,42,49,56,63,70,77];
       const labels = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
@@ -775,9 +776,22 @@
       function hasPaidCardBill(m) {
         return state.tx.some(x => sourceMeta(x).origin === "card_bill_paid" && sourceMeta(x).bill === m);
       }
+      function localStorageGet(key) {
+        try { return localStorage.getItem(key); } catch (_) { return null; }
+      }
+      function localStorageSet(key, value) {
+        try { localStorage.setItem(key, value); } catch (_) {}
+      }
+      function localStorageRemove(key) {
+        try { localStorage.removeItem(key); } catch (_) {}
+      }
+      function localFallbackEnabled() {
+        return Boolean((window.BRIAN_FINANCE_BOOTSTRAP || {}).rows?.length) && !state.localLogout;
+      }
       function setSessionLabel() {
-        $("#sessionLabel").textContent = state.session?.user?.email || "Desconectado";
-        $("#logout").classList.toggle("hidden", !state.session);
+        const local = localFallbackEnabled();
+        $("#sessionLabel").textContent = state.session?.user?.email || (local ? "Dados locais" : "Desconectado");
+        $("#logout").classList.toggle("hidden", !state.session && !local);
       }
       function showAuth() {
         const locked = !state.session && !hasLocalFinanceData();
@@ -1576,7 +1590,7 @@
       }
       function localFinanceData(recData = [], budgetData = []) {
         const local = window.BRIAN_FINANCE_BOOTSTRAP || {};
-        if (!(local.rows || []).length) return null;
+        if (!localFallbackEnabled()) return null;
         return {
           transactions: local.rows || [],
           recurring_items: (local.recurring_items || recData || []),
@@ -1586,7 +1600,19 @@
         };
       }
       function hasLocalFinanceData() {
-        return Boolean((window.BRIAN_FINANCE_BOOTSTRAP || {}).rows?.length);
+        return localFallbackEnabled();
+      }
+      function clearFinanceState() {
+        state.tx = [];
+        state.rec = [];
+        state.budgets = [];
+        state.inv = [];
+        state.market = {};
+        state.settings = {};
+        state.simRows = [];
+        state.loadInfo = null;
+        state.view = "dashboard";
+        $("#dataStatus").classList.add("hidden");
       }
       function applyLoadedData(data, dataSource) {
         const settingsData = data.app_settings || [];
@@ -1753,11 +1779,28 @@
         await load();
       }
       async function unlock(session) {
+        state.localLogout = false;
+        localStorageRemove(localLogoutKey);
         state.session = session;
         setSessionLabel();
         showAuth();
         setView(state.view || "dashboard");
         await load();
+      }
+      async function logout() {
+        state.localLogout = true;
+        localStorageSet(localLogoutKey, "1");
+        try {
+          if (state.sb?.auth) await state.sb.auth.signOut({ scope: "local" });
+        } catch (err) {
+          console.warn("Falha no signOut remoto, bloqueando localmente mesmo assim", err);
+        }
+        state.session = null;
+        clearFinanceState();
+        setSessionLabel();
+        showAuth();
+        $("#authMsg").textContent = "Sessao encerrada. Digite sua senha para entrar.";
+        render();
       }
       function txFrom(row) {
         const payment = row.payment_method || (row.type === "diario" ? "cartao_credito" : "conta_corrente");
@@ -2009,7 +2052,7 @@
           setDateMode("month");
         };
         $("#refresh").onclick = () => load().catch(alertErr);
-        $("#logout").onclick = () => state.sb.auth.signOut();
+        $("#logout").onclick = () => logout().catch(alertErr);
         $("#authForm").onsubmit = async (e) => {
           e.preventDefault();
           const row = formData(e.currentTarget);
@@ -2078,6 +2121,7 @@
         document.querySelectorAll('input[name="card_bill_month"]').forEach(x => { if (!x.value) x.value = currentMonth(); });
       }
       async function init() {
+        state.localLogout = localStorageGet(localLogoutKey) === "1";
         $("#month").value = monthNow();
         $("#year").value = new Date().getFullYear();
         $("#specificDate").value = todayIso();
@@ -2090,6 +2134,10 @@
         state.sb.auth.onAuthStateChange(async (_event, session) => {
           const wasLocked = !state.session;
           state.session = session;
+          if (session) {
+            state.localLogout = false;
+            localStorageRemove(localLogoutKey);
+          }
           setSessionLabel();
           showAuth();
           if (session) {
@@ -2114,6 +2162,10 @@
         const { data, error } = await state.sb.auth.getSession();
         if (error) throw error;
         state.session = data.session;
+        if (state.session) {
+          state.localLogout = false;
+          localStorageRemove(localLogoutKey);
+        }
         setSessionLabel();
         showAuth();
         if (state.session) {
