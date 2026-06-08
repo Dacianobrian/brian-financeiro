@@ -9,7 +9,7 @@
     <title>Brian Financeiro</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2335d2ff'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-size='24' font-family='Arial' font-weight='700' fill='white'%3EBF%3C/text%3E%3C/svg%3E" />
     <script>
-      window.BRIAN_FINANCE_APP_VERSION = "20260608-clean-login-1";
+      window.BRIAN_FINANCE_APP_VERSION = "20260608-login-reentry-1";
       (function () {
         if ("serviceWorker" in navigator) {
           navigator.serviceWorker.getRegistrations()
@@ -40,7 +40,7 @@
       })();
     </script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
-    <script src="./config.js?v=20260608-clean-login-1"></script>
+    <script src="./config.js?v=20260608-login-reentry-1"></script>
     <style>
       :root {
         color-scheme: dark;
@@ -681,7 +681,7 @@
       const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
       const $ = (q) => document.querySelector(q);
       const localLogoutKey = "brian-finance-local-logout";
-      const state = { sb: null, supabaseLoad: null, authObserverReady: false, session: null, view: "dashboard", period: "month", dateMode: "month", projectionDays: 30, txSearch: "", txTypeFilter: "", txMethodFilter: "", tx: [], rec: [], budgets: [], inv: [], market: {}, settings: {}, simRows: [], loadInfo: null, localLogout: false };
+      const state = { sb: null, supabaseLoad: null, authObserverReady: false, directAuth: false, session: null, view: "dashboard", period: "month", dateMode: "month", projectionDays: 30, txSearch: "", txTypeFilter: "", txMethodFilter: "", tx: [], rec: [], budgets: [], inv: [], market: {}, settings: {}, simRows: [], loadInfo: null, localLogout: false };
       const sheets = ["2025", "2026", "2027", "2028"];
       const starts = [0,7,14,21,28,35,42,49,56,63,70,77];
       const labels = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
@@ -691,6 +691,35 @@
       }
       function sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
+      }
+      function withTimeout(promise, ms, label) {
+        let timer;
+        const timeout = new Promise((_, reject) => {
+          timer = setTimeout(() => reject(new Error(`${label} demorou demais.`)), ms);
+        });
+        return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+      }
+      async function fetchJsonWithTimeout(url, options = {}, ms = 15000) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), ms);
+        try {
+          const res = await fetch(url, { ...options, signal: controller.signal });
+          const text = await res.text();
+          let data = {};
+          try { data = text ? JSON.parse(text) : {}; } catch (_) { data = { message: text }; }
+          if (!res.ok) {
+            const message = data.msg || data.error_description || data.message || data.error || `HTTP ${res.status}`;
+            const err = new Error(message);
+            err.status = res.status;
+            throw err;
+          }
+          return data;
+        } catch (err) {
+          if (err.name === "AbortError") throw new Error("A conexao com o Supabase demorou demais.");
+          throw err;
+        } finally {
+          clearTimeout(timer);
+        }
       }
       async function waitForConfig() {
         for (let i = 0; i < 30; i++) {
@@ -1660,6 +1689,7 @@
       }
       async function refreshStoredSession() {
         if (!state.sb || !state.session) return;
+        if (state.directAuth) return;
         try {
           const { data, error } = await state.sb.auth.getUser();
           if (error || !data?.user) {
@@ -1818,6 +1848,7 @@
       }
       async function logout() {
         state.localLogout = true;
+        state.directAuth = false;
         localStorageSet(localLogoutKey, "1");
         state.session = null;
         clearFinanceState();
@@ -2087,11 +2118,12 @@
           const form = e.currentTarget;
           const button = form.querySelector("button");
           const row = formData(form);
+          state.localLogout = false;
+          localStorageRemove(localLogoutKey);
           button.disabled = true;
           $("#authMsg").textContent = "Entrando...";
           try {
-            const sb = await ensureSupabaseClient();
-            const res = await sb.auth.signInWithPassword({ email: "dacianobrian.17@gmail.com", password: row.password });
+            const res = await loginWithPassword(row.password);
             if (res.error) {
               $("#authMsg").textContent = "Senha incorreta ou sessao indisponivel.";
               return;
@@ -2103,7 +2135,9 @@
             }
           } catch (err) {
             console.error(err);
-            $("#authMsg").textContent = "Nao consegui conectar. Verifique a internet e tente novamente.";
+            $("#authMsg").textContent = err.status === 400
+              ? "Senha incorreta."
+              : "Nao consegui conectar. Verifique a internet e tente novamente.";
           } finally {
             button.disabled = false;
           }
@@ -2158,21 +2192,27 @@
       function alertErr(err) { console.error(err); alert(err.message || String(err)); }
       function loadExternalScript(src) {
         return new Promise((resolve, reject) => {
+          let timer;
+          const done = (fn, value) => {
+            clearTimeout(timer);
+            fn(value);
+          };
+          timer = setTimeout(() => reject(new Error(`Tempo esgotado ao carregar ${src}`)), 12000);
           const existing = document.querySelector(`script[src="${src}"]`);
           if (existing?.dataset.loaded === "true") {
-            resolve();
+            done(resolve);
             return;
           }
           if (existing) {
-            existing.addEventListener("load", () => resolve(), { once: true });
-            existing.addEventListener("error", () => reject(new Error(`Falha ao carregar ${src}`)), { once: true });
+            existing.addEventListener("load", () => done(resolve), { once: true });
+            existing.addEventListener("error", () => done(reject, new Error(`Falha ao carregar ${src}`)), { once: true });
             return;
           }
           const script = document.createElement("script");
           script.src = src;
           script.async = true;
-          script.onload = () => { script.dataset.loaded = "true"; resolve(); };
-          script.onerror = () => reject(new Error(`Falha ao carregar ${src}`));
+          script.onload = () => { script.dataset.loaded = "true"; done(resolve); };
+          script.onerror = () => done(reject, new Error(`Falha ao carregar ${src}`));
           document.head.appendChild(script);
         });
       }
@@ -2192,6 +2232,53 @@
           }
         }
         throw lastError || new Error("Biblioteca Supabase indisponivel.");
+      }
+      async function directPasswordLogin(password) {
+        const c = window.BRIAN_FINANCE_CONFIG;
+        const data = await fetchJsonWithTimeout(`${c.supabaseUrl}/auth/v1/token?grant_type=password`, {
+          method: "POST",
+          headers: {
+            apikey: c.supabaseAnonKey,
+            Authorization: `Bearer ${c.supabaseAnonKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ email: "dacianobrian.17@gmail.com", password })
+        }, 15000);
+        if (!data.access_token || !data.user) throw new Error("Login direto nao retornou sessao.");
+        return {
+          access_token: data.access_token,
+          refresh_token: data.refresh_token,
+          expires_in: data.expires_in,
+          expires_at: Math.floor(Date.now() / 1000) + (data.expires_in || 3600),
+          token_type: data.token_type || "bearer",
+          user: data.user
+        };
+      }
+      async function createAuthenticatedDataClient(session) {
+        const c = window.BRIAN_FINANCE_CONFIG;
+        const createClient = await withTimeout(getSupabaseFactory(), 12000, "Biblioteca Supabase");
+        state.directAuth = true;
+        state.authObserverReady = false;
+        state.sb = createClient(c.supabaseUrl, c.supabaseAnonKey, {
+          global: { headers: { Authorization: `Bearer ${session.access_token}` } },
+          auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+        });
+      }
+      async function loginWithPassword(password) {
+        try {
+          const sb = await withTimeout(ensureSupabaseClient(), 12000, "Conexao inicial");
+          return await withTimeout(
+            sb.auth.signInWithPassword({ email: "dacianobrian.17@gmail.com", password }),
+            15000,
+            "Login"
+          );
+        } catch (err) {
+          console.warn("Login pelo SDK demorou/falhou; tentando login direto", err);
+          $("#authMsg").textContent = "Conexao lenta. Tentando outro caminho...";
+          const session = await directPasswordLogin(password);
+          await createAuthenticatedDataClient(session);
+          return { data: { session }, error: null };
+        }
       }
       async function handleAuthStateChange(_event, session) {
         if (state.localLogout && session) {
@@ -2233,8 +2320,9 @@
           if (!cfgOk()) throw new Error("Supabase nao configurado.");
           const c = window.BRIAN_FINANCE_CONFIG;
           const createClient = await getSupabaseFactory();
+          state.directAuth = false;
           state.sb = createClient(c.supabaseUrl, c.supabaseAnonKey, {
-            auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+            auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, lockAcquireTimeout: 5000 }
           });
           if (!state.authObserverReady) {
             state.authObserverReady = true;
@@ -2263,7 +2351,7 @@
         if (!(await waitForConfig())) { showAuth(); render(); return; }
         showAuth();
         $("#authMsg").textContent = "Preparando conexao...";
-        const sb = await ensureSupabaseClient();
+        const sb = await withTimeout(ensureSupabaseClient(), 15000, "Conexao inicial");
         $("#authMsg").textContent = "";
         const { data, error } = await sb.auth.getSession();
         if (error) throw error;
