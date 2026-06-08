@@ -9,7 +9,7 @@
     <title>Brian Financeiro</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2335d2ff'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-size='24' font-family='Arial' font-weight='700' fill='white'%3EBF%3C/text%3E%3C/svg%3E" />
     <script>
-      window.BRIAN_FINANCE_APP_VERSION = "20260608-login-robust-1";
+      window.BRIAN_FINANCE_APP_VERSION = "20260608-config-sync-1";
       (function () {
         if ("serviceWorker" in navigator) {
           navigator.serviceWorker.getRegistrations()
@@ -41,7 +41,7 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
     <script src="./bootstrap-data.js" defer></script>
-    <script src="./config.js?v=20260608-login-robust-1" defer></script>
+    <script src="./config.js?v=20260608-config-sync-1"></script>
     <style>
       :root {
         color-scheme: dark;
@@ -689,6 +689,16 @@
       function cfgOk() {
         const c = window.BRIAN_FINANCE_CONFIG || {};
         return c.supabaseUrl && c.supabaseAnonKey && !c.supabaseUrl.includes("COLE_");
+      }
+      function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
+      async function waitForConfig() {
+        for (let i = 0; i < 30; i++) {
+          if (cfgOk()) return true;
+          await sleep(100);
+        }
+        return cfgOk();
       }
       function n(v) { const x = Number(v || 0); return Number.isFinite(x) ? x : 0; }
       function iso(v) { return String(v || "").slice(0, 10); }
@@ -2251,7 +2261,7 @@
         setDateMode("month", false);
         setDates();
         bind();
-        if (!cfgOk()) { showAuth(); render(); return; }
+        if (!(await waitForConfig())) { showAuth(); render(); return; }
         showAuth();
         $("#authMsg").textContent = "Preparando conexao...";
         const sb = await ensureSupabaseClient();
