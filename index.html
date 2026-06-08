@@ -9,7 +9,7 @@
     <title>Brian Financeiro</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2335d2ff'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-size='24' font-family='Arial' font-weight='700' fill='white'%3EBF%3C/text%3E%3C/svg%3E" />
     <script>
-      window.BRIAN_FINANCE_APP_VERSION = "20260608-cache-lock-1";
+      window.BRIAN_FINANCE_APP_VERSION = "20260608-login-reset-1";
       (function () {
         if ("serviceWorker" in navigator) {
           navigator.serviceWorker.getRegistrations()
@@ -41,7 +41,7 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
     <script src="./bootstrap-data.js" defer></script>
-    <script src="./config.js?v=20260608-cache-lock-1" defer></script>
+    <script src="./config.js?v=20260608-login-reset-1" defer></script>
     <style>
       :root {
         color-scheme: dark;
@@ -2076,7 +2076,8 @@
         $("#logout").onclick = () => logout().catch(alertErr);
         $("#authForm").onsubmit = async (e) => {
           e.preventDefault();
-          const row = formData(e.currentTarget);
+          const form = e.currentTarget;
+          const row = formData(form);
           const res = await state.sb.auth.signInWithPassword({ email: "dacianobrian.17@gmail.com", password: row.password });
           if (res.error) {
             $("#authMsg").textContent = "Senha incorreta ou sessao indisponivel.";
@@ -2084,7 +2085,7 @@
           }
           else if (res.data.session) {
             $("#authMsg").textContent = "";
-            e.currentTarget.reset();
+            form.reset();
             await unlock(res.data.session).catch(alertErr);
           }
         };
