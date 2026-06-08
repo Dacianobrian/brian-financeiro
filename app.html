@@ -9,7 +9,7 @@
     <title>Brian Financeiro</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2335d2ff'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-size='24' font-family='Arial' font-weight='700' fill='white'%3EBF%3C/text%3E%3C/svg%3E" />
     <script>
-      window.BRIAN_FINANCE_APP_VERSION = "20260608-auth-visible-1";
+      window.BRIAN_FINANCE_APP_VERSION = "20260608-login-robust-1";
       (function () {
         if ("serviceWorker" in navigator) {
           navigator.serviceWorker.getRegistrations()
@@ -41,7 +41,7 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
     <script src="./bootstrap-data.js" defer></script>
-    <script src="./config.js?v=20260608-auth-visible-1" defer></script>
+    <script src="./config.js?v=20260608-login-robust-1" defer></script>
     <style>
       :root {
         color-scheme: dark;
@@ -678,13 +678,11 @@
       <option value="Comissao"></option><option value="Pro-labore"></option><option value="Alimentacao"></option><option value="Shopping"></option><option value="Lazer"></option><option value="Carro"></option><option value="Moradia"></option><option value="Saude"></option><option value="Contas"></option><option value="Financiamento"></option><option value="Investimento"></option><option value="MEI"></option><option value="Diario"></option><option value="Outros"></option>
     </datalist>
 
-    <script type="module">
-      import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
+    <script>
       const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
       const $ = (q) => document.querySelector(q);
       const localLogoutKey = "brian-finance-local-logout";
-      const state = { sb: null, session: null, view: "dashboard", period: "month", dateMode: "month", projectionDays: 30, txSearch: "", txTypeFilter: "", txMethodFilter: "", tx: [], rec: [], budgets: [], inv: [], market: {}, settings: {}, simRows: [], loadInfo: null, localLogout: false };
+      const state = { sb: null, supabaseLoad: null, authObserverReady: false, session: null, view: "dashboard", period: "month", dateMode: "month", projectionDays: 30, txSearch: "", txTypeFilter: "", txMethodFilter: "", tx: [], rec: [], budgets: [], inv: [], market: {}, settings: {}, simRows: [], loadInfo: null, localLogout: false };
       const sheets = ["2025", "2026", "2027", "2028"];
       const starts = [0,7,14,21,28,35,42,49,56,63,70,77];
       const labels = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
@@ -2078,16 +2076,27 @@
         $("#authForm").onsubmit = async (e) => {
           e.preventDefault();
           const form = e.currentTarget;
+          const button = form.querySelector("button");
           const row = formData(form);
-          const res = await state.sb.auth.signInWithPassword({ email: "dacianobrian.17@gmail.com", password: row.password });
-          if (res.error) {
-            $("#authMsg").textContent = "Senha incorreta ou sessao indisponivel.";
-            return;
-          }
-          else if (res.data.session) {
-            $("#authMsg").textContent = "";
-            form.reset();
-            await unlock(res.data.session).catch(alertErr);
+          button.disabled = true;
+          $("#authMsg").textContent = "Entrando...";
+          try {
+            const sb = await ensureSupabaseClient();
+            const res = await sb.auth.signInWithPassword({ email: "dacianobrian.17@gmail.com", password: row.password });
+            if (res.error) {
+              $("#authMsg").textContent = "Senha incorreta ou sessao indisponivel.";
+              return;
+            }
+            else if (res.data.session) {
+              $("#authMsg").textContent = "";
+              form.reset();
+              await unlock(res.data.session).catch(alertErr);
+            }
+          } catch (err) {
+            console.error(err);
+            $("#authMsg").textContent = "Nao consegui conectar. Verifique a internet e tente novamente.";
+          } finally {
+            button.disabled = false;
           }
         };
         $("#txForm").elements.type.onchange = e => {
@@ -2138,6 +2147,97 @@
         await load();
       }
       function alertErr(err) { console.error(err); alert(err.message || String(err)); }
+      function loadExternalScript(src) {
+        return new Promise((resolve, reject) => {
+          const existing = document.querySelector(`script[src="${src}"]`);
+          if (existing?.dataset.loaded === "true") {
+            resolve();
+            return;
+          }
+          if (existing) {
+            existing.addEventListener("load", () => resolve(), { once: true });
+            existing.addEventListener("error", () => reject(new Error(`Falha ao carregar ${src}`)), { once: true });
+            return;
+          }
+          const script = document.createElement("script");
+          script.src = src;
+          script.async = true;
+          script.onload = () => { script.dataset.loaded = "true"; resolve(); };
+          script.onerror = () => reject(new Error(`Falha ao carregar ${src}`));
+          document.head.appendChild(script);
+        });
+      }
+      async function getSupabaseFactory() {
+        if (window.supabase?.createClient) return window.supabase.createClient;
+        const cdns = [
+          "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2",
+          "https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"
+        ];
+        let lastError = null;
+        for (const src of cdns) {
+          try {
+            await loadExternalScript(src);
+            if (window.supabase?.createClient) return window.supabase.createClient;
+          } catch (err) {
+            lastError = err;
+          }
+        }
+        throw lastError || new Error("Biblioteca Supabase indisponivel.");
+      }
+      async function handleAuthStateChange(_event, session) {
+        if (state.localLogout && session) {
+          await state.sb.auth.signOut({ scope: "local" }).catch(() => {});
+          state.session = null;
+          clearFinanceState();
+          setSessionLabel();
+          showAuth();
+          render();
+          return;
+        }
+        const wasLocked = !state.session;
+        state.session = session;
+        if (session) {
+          state.localLogout = false;
+          localStorageRemove(localLogoutKey);
+        }
+        setSessionLabel();
+        showAuth();
+        if (session) {
+          if (wasLocked) setView(state.view || "dashboard");
+          await load().catch(alertErr);
+        } else {
+          const local = localFinanceData([], []);
+          if (local) {
+            applyLoadedData(local, "fallback_local_privado");
+            setView(state.view || "dashboard");
+            render();
+          } else {
+            clearFinanceState();
+            render();
+          }
+        }
+      }
+      async function ensureSupabaseClient() {
+        if (state.sb) return state.sb;
+        if (state.supabaseLoad) return state.supabaseLoad;
+        state.supabaseLoad = (async () => {
+          if (!cfgOk()) throw new Error("Supabase nao configurado.");
+          const c = window.BRIAN_FINANCE_CONFIG;
+          const createClient = await getSupabaseFactory();
+          state.sb = createClient(c.supabaseUrl, c.supabaseAnonKey, {
+            auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+          });
+          if (!state.authObserverReady) {
+            state.authObserverReady = true;
+            state.sb.auth.onAuthStateChange(handleAuthStateChange);
+          }
+          return state.sb;
+        })().catch(err => {
+          state.supabaseLoad = null;
+          throw err;
+        });
+        return state.supabaseLoad;
+      }
       function setDates() {
         const d = todayIso();
         document.querySelectorAll('input[type="date"]').forEach(x => { if (!x.value) x.value = d; });
@@ -2152,49 +2252,14 @@
         setDates();
         bind();
         if (!cfgOk()) { showAuth(); render(); return; }
-        const c = window.BRIAN_FINANCE_CONFIG;
-        state.sb = createClient(c.supabaseUrl, c.supabaseAnonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
-        state.sb.auth.onAuthStateChange(async (_event, session) => {
-          if (state.localLogout && session) {
-            await state.sb.auth.signOut({ scope: "local" }).catch(() => {});
-            state.session = null;
-            clearFinanceState();
-            setSessionLabel();
-            showAuth();
-            render();
-            return;
-          }
-          const wasLocked = !state.session;
-          state.session = session;
-          if (session) {
-            state.localLogout = false;
-            localStorageRemove(localLogoutKey);
-          }
-          setSessionLabel();
-          showAuth();
-          if (session) {
-            if (wasLocked) setView(state.view || "dashboard");
-            await load().catch(alertErr);
-          } else {
-            const local = localFinanceData([], []);
-            if (local) {
-              applyLoadedData(local, "fallback_local_privado");
-              setView(state.view || "dashboard");
-              render();
-            } else {
-              state.tx = [];
-              state.rec = [];
-              state.budgets = [];
-              state.inv = [];
-              state.settings = {};
-              state.view = "dashboard";
-            }
-          }
-        });
-        const { data, error } = await state.sb.auth.getSession();
+        showAuth();
+        $("#authMsg").textContent = "Preparando conexao...";
+        const sb = await ensureSupabaseClient();
+        $("#authMsg").textContent = "";
+        const { data, error } = await sb.auth.getSession();
         if (error) throw error;
         if (state.localLogout && data.session) {
-          await state.sb.auth.signOut({ scope: "local" }).catch(() => {});
+          await sb.auth.signOut({ scope: "local" }).catch(() => {});
           state.session = null;
         } else {
           state.session = data.session;
