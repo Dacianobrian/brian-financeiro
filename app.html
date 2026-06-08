@@ -9,7 +9,7 @@
     <title>Brian Financeiro</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2335d2ff'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-size='24' font-family='Arial' font-weight='700' fill='white'%3EBF%3C/text%3E%3C/svg%3E" />
     <script>
-      window.BRIAN_FINANCE_APP_VERSION = "20260608-icons-clean-1";
+      window.BRIAN_FINANCE_APP_VERSION = "20260608-dashboard-accounts-1";
       (function () {
         if ("serviceWorker" in navigator) {
           navigator.serviceWorker.getRegistrations()
@@ -40,7 +40,7 @@
       })();
     </script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
-    <script src="./config.js?v=20260608-icons-clean-1"></script>
+    <script src="./config.js?v=20260608-dashboard-accounts-1"></script>
     <style>
       :root {
         color-scheme: dark;
@@ -298,9 +298,15 @@
       .row span { text-align: right; white-space: nowrap; }
       .accounts-board { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
       .account-card { display: grid; gap: 10px; padding: 12px; overflow: hidden; background: linear-gradient(145deg, rgba(53,210,255,.06), rgba(255,255,255,.018)), var(--card-2); }
-      .account-title { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: start; }
+      .account-title { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: start; }
       .account-title strong { line-height: 1.15; overflow-wrap: anywhere; }
       .account-title span { white-space: nowrap; font-size: 18px; font-weight: 900; }
+      .mini-icon { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, rgba(53,210,255,.16), rgba(66,199,128,.10)); box-shadow: 0 0 0 1px rgba(255,255,255,.08) inset, 0 10px 24px rgba(0,0,0,.16); font-size: 18px; flex: 0 0 auto; }
+      .mini-icon.card { background: linear-gradient(135deg, rgba(255,95,120,.18), rgba(138,124,255,.13)); }
+      .mini-icon.cash { background: linear-gradient(135deg, rgba(85,213,135,.18), rgba(53,210,255,.10)); }
+      .mini-icon.warn { background: linear-gradient(135deg, rgba(245,184,61,.18), rgba(255,159,67,.10)); }
+      .card-title { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: start; min-width: 0; }
+      .card-title strong { min-width: 0; overflow-wrap: anywhere; }
       .account-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
       .method-pill { border-radius: 999px; padding: 5px 8px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.045); color: #c7d4de; font-size: 11px; font-weight: 900; }
       .method-pill.card { color: #c5beff; border-color: rgba(138,124,255,.35); background: rgba(138,124,255,.12); }
@@ -320,6 +326,8 @@
       .installment-card .ratio-meta span:last-child { text-align: right; }
       .credit-panel .installment-grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
       .credit-panel #cardRows:not(:empty) { margin-bottom: 10px; }
+      .dashboard-accounts .accounts-board { margin-top: 10px; }
+      .dashboard-accounts .account-overview { margin-bottom: 10px; }
       .bar { height: 8px; border-radius: 999px; background: #0a1016; overflow: hidden; margin-top: 8px; border: 1px solid rgba(255,255,255,.04); }
       .bar span { display: block; height: 100%; background: linear-gradient(90deg, #2be07f, #35d2ff); box-shadow: 0 0 18px rgba(53,210,255,.18); }
       .bar.over span { background: linear-gradient(90deg, #ff5f78, #ff4fa3); }
@@ -380,7 +388,6 @@
           <button class="tab" data-view="health" data-icon="🩺">Saude</button>
           <button class="tab" data-view="transactions" data-icon="🧾">Lancamentos</button>
           <button class="tab" data-view="simulator" data-icon="⚡">Simular compra</button>
-          <button class="tab" data-view="recurring" data-icon="📅">Contas</button>
           <button class="tab" data-view="investments" data-icon="📈">Investimentos</button>
           <button class="tab" data-view="settings" data-icon="⚙️">Configuracoes</button>
         </nav>
@@ -482,6 +489,23 @@
               <div id="alerts" class="list"></div>
             </section>
           </div>
+          <section class="panel dashboard-accounts">
+            <div class="panel-head">
+              <h2>Contas do mes</h2>
+              <button class="secondary" data-view-shortcut="recurring">Nova ou editar conta</button>
+            </div>
+            <div id="dashAccountOverview" class="account-overview"></div>
+            <div class="accounts-board">
+              <section>
+                <div class="panel-head"><h2>Fixas</h2><span id="dashFixedTotal" class="pill good">R$ 0,00</span></div>
+                <div id="dashFixedRows" class="list"></div>
+              </section>
+              <section>
+                <div class="panel-head"><h2>Variaveis</h2><span id="dashVariableTotal" class="pill good">R$ 0,00</span></div>
+                <div id="dashVariableRows" class="list"></div>
+              </section>
+            </div>
+          </section>
           <section class="panel credit-panel">
             <div class="panel-head"><h2>Cartao de credito</h2><button class="secondary" data-preset-shortcut="card">Nova compra</button></div>
             <div id="cardRows" class="list"></div>
@@ -1090,6 +1114,26 @@
         box.classList.remove("hidden");
         box.innerHTML = `<div><strong>Verificar conexao dos dados</strong><small>Projeto: ${project} · Usuario: ${state.session.user.email || state.session.user.id}</small><small class="bad-text">Erro: ${info.error}</small></div><span class="pill bad">Verificar</span>`;
       }
+      function financeIcon(text = "", methodValue = "") {
+        const s = String(text || "").toLowerCase();
+        if (/aluguel|condominio|casa|moradia|financiamento/.test(s)) return "🏠";
+        if (/mercado|supermercado|aliment|restaurante|ifood|padaria/.test(s)) return "🛒";
+        if (/saude|unimed|med|farmacia|metlife|seguro/.test(s)) return "🛡️";
+        if (/shopping|zara|roupa|luiz fernando|loja|mercado livre|amazon/.test(s)) return "🛍️";
+        if (/icloud|whatsapp|assinatura|streaming|netflix|spotify|claro|telefone|internet|celular/.test(s)) return "📱";
+        if (/creci|imposto|mei|conselho/.test(s)) return "📌";
+        if (/invest|aporte|fii|acao|caixinha/.test(s)) return "📈";
+        if (/carro|combustivel|uber|posto|transporte/.test(s)) return "🚗";
+        if (/lazer|viagem|hotel|beto|smiles/.test(s)) return "🎯";
+        if (/bradesco|cartao|fatura|nubank|banco/.test(s) || methodValue === "cartao_credito") return "💳";
+        return "💰";
+      }
+      function iconClassFor(item) {
+        if (method(item) === "cartao_credito") return "card";
+        if (item?.type === "entrada") return "cash";
+        if (item?.type === "investimento") return "warn";
+        return "cash";
+      }
       function renderCategoryChart(periodData) {
         const rows = categoryTotals(periodData.items).slice(0, 10);
         const max = rows[0]?.[1] || 0;
@@ -1359,12 +1403,15 @@
           const limit = n(b.limit_amount), over = used > limit, pct = limit ? Math.min(140, used / limit * 100) : 0;
           return `<article class="item"><div class="row"><strong>${b.category}</strong><span class="${over ? "bad-text" : ""}">${brl.format(used)} / ${brl.format(limit)}</span></div><div class="bar ${over ? "over" : ""}"><span style="width:${pct}%"></span></div><small>${over ? "Fora do orcamento" : "Dentro do orcamento"}</small></article>`;
         }).join("") : "<p>Nenhum orcamento neste mes.</p>";
-        $("#cardRows").innerHTML = c.card.length ? c.card.map(x => `<article class="item"><div class="row"><strong>${x.description || x.category}</strong><span>${brl.format(n(x.amount))}</span></div><small>${iso(x.tx_date)} - ${x.category}</small></article>`).join("") : "<p>Nenhuma compra no cartao nesta fatura.</p>";
+        $("#cardRows").innerHTML = c.card.length ? c.card.map(x => {
+          const label = x.description || x.category;
+          return `<article class="item"><div class="row"><div class="card-title"><span class="mini-icon card">${financeIcon(`${label} ${x.category}`, "cartao_credito")}</span><strong>${label}</strong></div><span>${brl.format(n(x.amount))}</span></div><small>${iso(x.tx_date)} - ${x.category}</small></article>`;
+        }).join("") : "<p>Nenhuma compra no cartao nesta fatura.</p>";
         const installments = installmentGroups();
         $("#installmentRows").innerHTML = installments.length ? `<div class="panel-head installment-title"><h2>Parcelamentos ativos</h2><span class="pill bad">${brl.format(installments.reduce((s,g) => s + g.amount, 0))}/mes</span></div>` + installments.slice(0, 8).map(g => {
           const remaining = Math.max(0, g.total - g.paid);
           const pct = g.total ? g.paid / g.total * 100 : 0;
-          return `<article class="installment-card"><div class="row"><strong>${g.name}</strong><span>${brl.format(g.amount)}/mes</span></div><small>${g.paid}/${g.total} parcelas</small><div class="bar"><span style="width:${pct}%"></span></div><div class="ratio-meta"><span>${Math.round(pct)}% pago</span><span>faltam ${remaining}x - ${brl.format(remaining * g.amount)}</span></div></article>`;
+          return `<article class="installment-card"><div class="row"><div class="card-title"><span class="mini-icon card">${financeIcon(g.name, "cartao_credito")}</span><strong>${g.name}</strong></div><span>${brl.format(g.amount)}/mes</span></div><small>${g.paid}/${g.total} parcelas</small><div class="bar"><span style="width:${pct}%"></span></div><div class="ratio-meta"><span>${Math.round(pct)}% pago</span><span>faltam ${remaining}x - ${brl.format(remaining * g.amount)}</span></div></article>`;
         }).join("") : "";
         const alerts = monthlyAlerts(m, c);
         const badAlerts = alerts.filter(x => x.level === "bad").length;
@@ -1392,7 +1439,7 @@
           const isCard = method(x) === "cartao_credito";
           const debitLabel = isCard ? "Entra na fatura do cartao" : "Debita da conta corrente";
           const typeLabel = x.type === "entrada" ? "Entrada" : x.type === "investimento" ? "Investimento" : "Saida";
-          return `<article class="item account-card ${status.cls === "paid" ? "good" : status.cls === "overdue" ? "bad" : ""}"><div class="account-title"><strong>${cleanAccountName(x)}</strong><span>${brl.format(n(x.amount))}</span></div><div class="account-meta"><span class="status-badge ${status.cls}">${status.label}</span><span class="method-pill">${typeLabel}</span><span class="method-pill">${x.category || "Sem categoria"}</span><span class="method-pill ${isCard ? "card" : "cash"}">${debitLabel}</span><span class="method-pill">Todo dia ${x.day_of_month}</span></div><div class="payline"><label>Valor pago<input data-pay-amount="${id}" type="number" min="0.01" step="0.01" value="${n(x.amount)}" ${status.cls === "paid" ? "disabled" : ""} /></label><button class="secondary" data-pay-rec="${id}" ${status.cls === "paid" ? "disabled" : ""}>Pago</button></div><div class="account-actions"><button class="secondary" data-edit-rec="${id}" type="button">Editar</button><button class="danger" data-del-rec="${id}" type="button">Remover</button></div></article>`;
+          return `<article class="item account-card ${status.cls === "paid" ? "good" : status.cls === "overdue" ? "bad" : ""}"><div class="account-title"><span class="mini-icon ${iconClassFor(x)}">${financeIcon(`${cleanAccountName(x)} ${x.category}`, method(x))}</span><strong>${cleanAccountName(x)}</strong><span>${brl.format(n(x.amount))}</span></div><div class="account-meta"><span class="status-badge ${status.cls}">${status.label}</span><span class="method-pill">${typeLabel}</span><span class="method-pill">${x.category || "Sem categoria"}</span><span class="method-pill ${isCard ? "card" : "cash"}">${debitLabel}</span><span class="method-pill">Todo dia ${x.day_of_month}</span></div><div class="payline"><label>Valor pago<input data-pay-amount="${id}" type="number" min="0.01" step="0.01" value="${n(x.amount)}" ${status.cls === "paid" ? "disabled" : ""} /></label><button class="secondary" data-pay-rec="${id}" ${status.cls === "paid" ? "disabled" : ""}>Pago</button></div><div class="account-actions"><button class="secondary" data-edit-rec="${id}" type="button">Editar</button><button class="danger" data-del-rec="${id}" type="button">Remover</button></div></article>`;
         };
         const fixed = state.rec.filter(x => accountKind(x) === "fixa");
         const variable = state.rec.filter(x => accountKind(x) === "variavel");
@@ -1401,15 +1448,20 @@
         const paidCount = accountStatuses.filter(x => x.cls === "paid").length;
         const overdueCount = accountStatuses.filter(x => x.cls === "overdue").length;
         const pendingCount = accountStatuses.filter(x => x.cls === "pending").length;
-        $("#accountOverview").innerHTML = [
+        const overviewHtml = [
           `<article class="summary-card"><span>Pagas no mes</span><strong class="good-text">${paidCount}/${allAccounts.length}</strong></article>`,
           `<article class="summary-card"><span>Pendentes</span><strong>${pendingCount}</strong></article>`,
           `<article class="summary-card"><span>Atrasadas</span><strong class="${overdueCount ? "bad-text" : "good-text"}">${overdueCount}</strong></article>`
         ].join("");
-        $("#fixedTotal").textContent = brl.format(fixed.reduce((s,x) => s + n(x.amount), 0));
-        $("#variableTotal").textContent = brl.format(variable.reduce((s,x) => s + n(x.amount), 0));
-        $("#fixedRows").innerHTML = fixed.map(accountCard).join("") || "<p>Sem contas fixas.</p>";
-        $("#variableRows").innerHTML = variable.map(accountCard).join("") || "<p>Sem contas variaveis.</p>";
+        const fixedHtml = fixed.map(accountCard).join("") || "<p>Sem contas fixas.</p>";
+        const variableHtml = variable.map(accountCard).join("") || "<p>Sem contas variaveis.</p>";
+        const fixedTotal = brl.format(fixed.reduce((s,x) => s + n(x.amount), 0));
+        const variableTotal = brl.format(variable.reduce((s,x) => s + n(x.amount), 0));
+        ["accountOverview", "dashAccountOverview"].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = overviewHtml; });
+        ["fixedTotal", "dashFixedTotal"].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = fixedTotal; });
+        ["variableTotal", "dashVariableTotal"].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = variableTotal; });
+        ["fixedRows", "dashFixedRows"].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = fixedHtml; });
+        ["variableRows", "dashVariableRows"].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = variableHtml; });
         $("#setForm").elements.initial_balance.value = state.settings.initial_balance || "";
         $("#setForm").elements.credit_card_due_day.value = state.settings.credit_card_due_day || 10;
         $("#setForm").elements.variable_income_target.value = state.settings.variable_income_target || "";
@@ -2362,6 +2414,8 @@
         $("#invRows").onclick = async e => { const b = e.target.closest("[data-inv-del]"); if (b && confirm("Excluir ativo?")) { if (!state.session) { state.inv = state.inv.filter(x => x.id !== b.dataset.invDel); render(); return; } const { error } = await state.sb.from("investments").delete().eq("id", b.dataset.invDel); if (error) alertErr(error); else await load(); } };
         $("#fixedRows").onclick = handleRecurringClick;
         $("#variableRows").onclick = handleRecurringClick;
+        $("#dashFixedRows").onclick = handleRecurringClick;
+        $("#dashVariableRows").onclick = handleRecurringClick;
         $("#importFile").onchange = async e => { const f = e.target.files[0]; if (f) await importFinancialFile(f).catch(alertErr); e.target.value = ""; };
       }
       async function upsertSettings(obj) {
