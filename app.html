@@ -9,7 +9,7 @@
     <title>Brian Financeiro</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2335d2ff'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-size='24' font-family='Arial' font-weight='700' fill='white'%3EBF%3C/text%3E%3C/svg%3E" />
     <script>
-      window.BRIAN_FINANCE_APP_VERSION = "20260608-dashboard-accounts-1";
+      window.BRIAN_FINANCE_APP_VERSION = "20260608-remove-conta-1";
       (function () {
         if ("serviceWorker" in navigator) {
           navigator.serviceWorker.getRegistrations()
@@ -40,7 +40,7 @@
       })();
     </script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
-    <script src="./config.js?v=20260608-dashboard-accounts-1"></script>
+    <script src="./config.js?v=20260608-remove-conta-1"></script>
     <style>
       :root {
         color-scheme: dark;
@@ -2130,17 +2130,25 @@
         const item = state.rec.find(x => String(x.id) === String(id));
         if (!item) return;
         if (!confirm(`Remover "${cleanAccountName(item)}" das contas mensais?`)) return;
-        if (!state.session) {
+        const removeLocal = () => {
           state.rec = state.rec.filter(x => String(x.id) !== String(id));
+          saveFinanceCache({
+            transactions: state.tx,
+            recurring_items: state.rec,
+            budgets: state.budgets,
+            app_settings: Object.entries(state.settings || {}).map(([key, value]) => ({ key, value })),
+            investments: state.inv
+          });
           render();
+        };
+        if (!state.session) {
+          removeLocal();
           return;
         }
-        let { error } = await state.sb.from("recurring_items").update({ active: false }).eq("id", id);
-        if (error && /active/i.test(error.message || "")) {
-          ({ error } = await state.sb.from("recurring_items").delete().eq("id", id));
-        }
+        let { error } = await state.sb.from("recurring_items").delete().eq("id", id);
+        if (error) ({ error } = await state.sb.from("recurring_items").update({ active: false }).eq("id", id));
         if (error) throw error;
-        await load();
+        removeLocal();
       }
       function handleRecurringClick(e) {
         const pay = e.target.closest("[data-pay-rec]");
