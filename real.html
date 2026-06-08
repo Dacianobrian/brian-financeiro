@@ -9,7 +9,7 @@
     <title>Brian Financeiro</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2335d2ff'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-size='24' font-family='Arial' font-weight='700' fill='white'%3EBF%3C/text%3E%3C/svg%3E" />
     <script>
-      window.BRIAN_FINANCE_APP_VERSION = "20260608-workspace-layout-1";
+      window.BRIAN_FINANCE_APP_VERSION = "20260608-icons-clean-1";
       (function () {
         if ("serviceWorker" in navigator) {
           navigator.serviceWorker.getRegistrations()
@@ -40,7 +40,7 @@
       })();
     </script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
-    <script src="./config.js?v=20260608-workspace-layout-1"></script>
+    <script src="./config.js?v=20260608-icons-clean-1"></script>
     <style>
       :root {
         color-scheme: dark;
@@ -73,8 +73,8 @@
       .brand strong, .brand small { display: block; }
       small, p { color: var(--muted); }
       nav { display: grid; gap: 4px; }
-      .tab { min-height: 42px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--muted); text-align: left; padding: 0 12px; font-weight: 700; transition: transform .16s ease, border-color .16s ease, background .16s ease, color .16s ease; }
-      .tab::before { content: attr(data-icon); display: inline-grid; place-items: center; width: 22px; height: 22px; margin-right: 8px; border-radius: 7px; background: rgba(53,210,255,.08); color: var(--cyan); font-size: 11px; font-weight: 900; vertical-align: middle; }
+      .tab { min-height: 46px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--muted); text-align: left; padding: 0 12px; font-weight: 800; display: flex; align-items: center; gap: 10px; transition: transform .16s ease, border-color .16s ease, background .16s ease, color .16s ease; }
+      .tab::before { content: attr(data-icon); display: inline-grid; place-items: center; flex: 0 0 28px; width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, rgba(53,210,255,.16), rgba(66,199,128,.10)); color: var(--cyan); font-size: 15px; font-weight: 900; box-shadow: 0 0 0 1px rgba(53,210,255,.10) inset; }
       .tab:hover { transform: translateX(3px); background: rgba(53,210,255,.07); border-color: rgba(53,210,255,.18); color: var(--ink); }
       .tab.active { background: linear-gradient(135deg, rgba(66,199,128,.20), rgba(53,210,255,.14), rgba(138,124,255,.12)); border-color: rgba(53,210,255,.50); color: var(--ink); box-shadow: 0 0 22px rgba(53,210,255,.10); }
       main { padding: 28px; min-width: 0; }
@@ -129,16 +129,22 @@
       .grid-kpi .metric::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; border-radius: 8px 0 0 8px; background: var(--brand); opacity: .95; }
       .grid-kpi .metric::after { content: ""; position: absolute; inset: 0; z-index: -1; opacity: .44; background: radial-gradient(circle at 90% 12%, var(--metric-glow, rgba(66,199,128,.18)), transparent 42%); }
       .grid-kpi .metric:nth-child(1) { --metric-glow: rgba(43,224,127,.32); border-color: rgba(43,224,127,.48); }
+      .grid-kpi .metric:nth-child(1) span::before { content: "💚 "; }
       .grid-kpi .metric:nth-child(1)::before { background: #2be07f; }
       .grid-kpi .metric:nth-child(2) { --metric-glow: rgba(53,210,255,.30); border-color: rgba(53,210,255,.42); }
+      .grid-kpi .metric:nth-child(2) span::before { content: "🏦 "; }
       .grid-kpi .metric:nth-child(2)::before { background: #35d2ff; }
       .grid-kpi .metric:nth-child(3) { --metric-glow: rgba(255,95,120,.30); border-color: rgba(255,95,120,.46); }
+      .grid-kpi .metric:nth-child(3) span::before { content: "💳 "; }
       .grid-kpi .metric:nth-child(3)::before { background: #ff5f78; }
       .grid-kpi .metric:nth-child(4) { --metric-glow: rgba(138,124,255,.34); border-color: rgba(138,124,255,.44); }
+      .grid-kpi .metric:nth-child(4) span::before { content: "📈 "; }
       .grid-kpi .metric:nth-child(4)::before { background: #8a7cff; }
       .grid-kpi .metric:nth-child(5) { --metric-glow: rgba(53,210,255,.26); border-color: rgba(85,213,135,.44); }
+      .grid-kpi .metric:nth-child(5) span::before { content: "🩺 "; }
       .grid-kpi .metric:nth-child(5)::before { background: linear-gradient(#2be07f, #35d2ff); }
       .grid-kpi .metric:nth-child(6) { --metric-glow: rgba(245,184,61,.30); border-color: rgba(245,184,61,.44); }
+      .grid-kpi .metric:nth-child(6) span::before { content: "⚖️ "; }
       .grid-kpi .metric:nth-child(6)::before { background: #f5b83d; }
       .chartgrid { display: grid; gap: 10px; }
       .mini-chart { display: grid; gap: 6px; }
@@ -163,7 +169,8 @@
       .quickbar button { min-height: 48px; }
       .tool-row { display: grid; grid-template-columns: minmax(180px, 1fr) 160px 160px auto; gap: 10px; align-items: end; margin-bottom: 12px; }
       .workflow-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 12px; }
-      .workflow-card { text-align: left; min-height: 74px; display: grid; align-content: center; gap: 5px; border-color: rgba(53,210,255,.22); }
+      .workflow-card { text-align: left; min-height: 82px; display: grid; grid-template-columns: 34px minmax(0, 1fr); align-content: center; gap: 4px 10px; border-color: rgba(53,210,255,.22); }
+      .workflow-card::before { content: attr(data-action-icon); grid-row: 1 / span 2; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; background: linear-gradient(135deg, rgba(53,210,255,.16), rgba(138,124,255,.14)); box-shadow: 0 0 0 1px rgba(255,255,255,.08) inset; font-size: 17px; }
       .workflow-card span { color: var(--muted); font-size: 12px; font-weight: 800; }
       .status-badge { border-radius: 999px; padding: 4px 8px; font-size: 11px; font-weight: 900; white-space: nowrap; }
       .status-badge.income, .status-badge.paid { background: rgba(85,213,135,.14); color: var(--good); border: 1px solid rgba(85,213,135,.22); }
@@ -369,13 +376,13 @@
           <div><strong>Brian Financeiro</strong><small id="sessionLabel">Desconectado</small></div>
         </div>
         <nav>
-          <button class="tab active" data-view="dashboard" data-icon="D">Dashboard</button>
-          <button class="tab" data-view="health" data-icon="S">Saude</button>
-          <button class="tab" data-view="transactions" data-icon="L">Lancamentos</button>
-          <button class="tab" data-view="simulator" data-icon="T">Simular compra</button>
-          <button class="tab" data-view="recurring" data-icon="C">Contas</button>
-          <button class="tab" data-view="investments" data-icon="I">Investimentos</button>
-          <button class="tab" data-view="settings" data-icon="A">Configuracoes</button>
+          <button class="tab active" data-view="dashboard" data-icon="📊">Dashboard</button>
+          <button class="tab" data-view="health" data-icon="🩺">Saude</button>
+          <button class="tab" data-view="transactions" data-icon="🧾">Lancamentos</button>
+          <button class="tab" data-view="simulator" data-icon="⚡">Simular compra</button>
+          <button class="tab" data-view="recurring" data-icon="📅">Contas</button>
+          <button class="tab" data-view="investments" data-icon="📈">Investimentos</button>
+          <button class="tab" data-view="settings" data-icon="⚙️">Configuracoes</button>
         </nav>
         <button id="logout" class="secondary hidden">Sair</button>
       </aside>
@@ -520,12 +527,12 @@
         <section id="transactions" class="view">
           <div id="txSummary" class="summary-grid"></div>
           <div class="workflow-grid">
-            <button class="secondary workflow-card" data-preset="income"><strong>Receita</strong><span>Comissao, pro-labore ou entrada variavel</span></button>
-            <button class="secondary workflow-card" data-preset="fixed"><strong>Conta paga</strong><span>Conta corrente, boleto ou saida avulsa</span></button>
-            <button class="secondary workflow-card" data-preset="card"><strong>Compra no cartao</strong><span>Dia a dia, milhas e parcelamentos</span></button>
-            <button class="secondary workflow-card" data-preset="invest"><strong>Investimento</strong><span>Aporte em renda fixa, FII ou acao</span></button>
-            <button class="secondary workflow-card" data-pay-card><strong>Baixar fatura</strong><span>Marca a fatura do mes como paga</span></button>
-            <button class="secondary workflow-card" data-preset="car"><strong>Testar compra grande</strong><span>Simula carro, viagem ou compra pesada</span></button>
+            <button class="secondary workflow-card" data-preset="income" data-action-icon="💚"><strong>Receita</strong><span>Comissao, pro-labore ou entrada variavel</span></button>
+            <button class="secondary workflow-card" data-preset="fixed" data-action-icon="✅"><strong>Conta paga</strong><span>Conta corrente, boleto ou saida avulsa</span></button>
+            <button class="secondary workflow-card" data-preset="card" data-action-icon="💳"><strong>Compra no cartao</strong><span>Dia a dia, milhas e parcelamentos</span></button>
+            <button class="secondary workflow-card" data-preset="invest" data-action-icon="📈"><strong>Investimento</strong><span>Aporte em renda fixa, FII ou acao</span></button>
+            <button class="secondary workflow-card" data-pay-card data-action-icon="🏦"><strong>Baixar fatura</strong><span>Marca a fatura do mes como paga</span></button>
+            <button class="secondary workflow-card" data-preset="car" data-action-icon="🚗"><strong>Testar compra grande</strong><span>Simula carro, viagem ou compra pesada</span></button>
           </div>
           <div class="tool-row">
             <label>Buscar<input id="txSearch" placeholder="Descricao, categoria, tipo..." /></label>
@@ -1077,9 +1084,11 @@
         const cfg = window.BRIAN_FINANCE_CONFIG || {};
         const project = cfg.supabaseUrl ? new URL(cfg.supabaseUrl).host.split(".")[0] : "sem-config";
         const info = state.loadInfo || {};
-        const ok = !info.error && (info.tx || 0) > 0;
+        box.classList.add("hidden");
+        box.innerHTML = "";
+        if (!info.error) return;
         box.classList.remove("hidden");
-        box.innerHTML = `<div><strong>${ok ? "Dados carregados" : "Aguardando dados"}</strong><small>Projeto: ${project} · Usuario: ${state.session.user.email || state.session.user.id}</small><small>Lancamentos: ${info.tx || 0} · Investimentos: ${info.inv || 0} · Contas: ${info.rec || 0} · Configuracoes: ${info.settings || 0}</small><small>Fonte: ${info.source || "carregando"}</small>${info.error ? `<small class="bad-text">Erro: ${info.error}</small>` : ""}</div><span class="pill ${ok ? "good" : "bad"}">${ok ? "OK" : "Verificar"}</span>`;
+        box.innerHTML = `<div><strong>Verificar conexao dos dados</strong><small>Projeto: ${project} · Usuario: ${state.session.user.email || state.session.user.id}</small><small class="bad-text">Erro: ${info.error}</small></div><span class="pill bad">Verificar</span>`;
       }
       function renderCategoryChart(periodData) {
         const rows = categoryTotals(periodData.items).slice(0, 10);
