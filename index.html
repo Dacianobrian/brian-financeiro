@@ -9,7 +9,7 @@
     <title>Brian Financeiro</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2335d2ff'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-size='24' font-family='Arial' font-weight='700' fill='white'%3EBF%3C/text%3E%3C/svg%3E" />
     <script>
-      window.BRIAN_FINANCE_APP_VERSION = "20260608-login-reentry-1";
+      window.BRIAN_FINANCE_APP_VERSION = "20260608-contas-ux-1";
       (function () {
         if ("serviceWorker" in navigator) {
           navigator.serviceWorker.getRegistrations()
@@ -40,7 +40,7 @@
       })();
     </script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
-    <script src="./config.js?v=20260608-login-reentry-1"></script>
+    <script src="./config.js?v=20260608-contas-ux-1"></script>
     <style>
       :root {
         color-scheme: dark;
@@ -117,7 +117,7 @@
       body:not(.locked) #auth { display: none !important; }
       body.locked .brand { align-items: flex-start; }
       body.locked .shell > aside { justify-content: center; }
-      .grid-kpi { display: grid; grid-template-columns: repeat(auto-fit, minmax(188px, 1fr)); gap: 12px; margin-bottom: 14px; }
+      .grid-kpi { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
       .metric { padding: 16px; min-width: 0; overflow: hidden; }
       .metric span { display: block; color: var(--muted); font-weight: 800; font-size: 13px; }
       .metric strong { display: block; margin-top: 8px; font-size: clamp(19px, 1.35vw, 25px); line-height: 1.08; overflow-wrap: anywhere; letter-spacing: 0; }
@@ -251,7 +251,7 @@
       .projection-actions { display: flex; gap: 8px; align-items: center; justify-content: flex-end; }
       .projection-actions input { width: 112px; min-height: 36px; }
       .quick-projection { display: grid; grid-template-columns: minmax(180px, 1fr) 130px 150px auto auto; gap: 8px; align-items: end; border-top: 1px solid var(--line); padding-top: 12px; margin-top: 10px; }
-      .payline { display: grid; grid-template-columns: 116px 100px; gap: 8px; align-items: end; margin-top: 10px; }
+      .payline { display: grid; grid-template-columns: minmax(96px, 1fr) minmax(92px, auto); gap: 8px; align-items: end; margin-top: 10px; }
       .investment-panels { display: grid; grid-template-columns: repeat(2, minmax(260px, 1fr)); gap: 12px; align-items: start; margin-top: 12px; }
       .asset-table { min-width: 820px; }
       .asset-logo { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; background: var(--soft); font-weight: 900; }
@@ -279,11 +279,18 @@
       .row { display: flex; justify-content: space-between; gap: 10px; align-items: center; min-width: 0; }
       .row strong, .row span { min-width: 0; }
       .row span { text-align: right; white-space: nowrap; }
-      .accounts-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; align-items: start; }
-      .account-card { display: grid; gap: 8px; }
+      .accounts-board { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
+      .account-card { display: grid; gap: 10px; padding: 12px; overflow: hidden; background: linear-gradient(145deg, rgba(53,210,255,.06), rgba(255,255,255,.018)), var(--card-2); }
       .account-title { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: start; }
-      .account-title strong { line-height: 1.15; }
+      .account-title strong { line-height: 1.15; overflow-wrap: anywhere; }
       .account-title span { white-space: nowrap; font-size: 18px; font-weight: 900; }
+      .account-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+      .method-pill { border-radius: 999px; padding: 5px 8px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.045); color: #c7d4de; font-size: 11px; font-weight: 900; }
+      .method-pill.card { color: #c5beff; border-color: rgba(138,124,255,.35); background: rgba(138,124,255,.12); }
+      .method-pill.cash { color: #aaf2c3; border-color: rgba(85,213,135,.30); background: rgba(85,213,135,.10); }
+      .account-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .account-actions button { min-height: 34px; padding: 0 10px; font-size: 12px; }
+      .form-actions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(110px, auto); gap: 8px; }
       .installment-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; margin-top: 10px; }
       .installment-title { grid-column: 1 / -1; margin-top: 2px; flex-wrap: wrap; }
       .installment-title .pill { white-space: nowrap; }
@@ -317,7 +324,7 @@
         .layout, .split, .investment-panels, .accounts-board, .investment-overview, .health-grid { grid-template-columns: 1fr; }
         .ranking-grid { grid-template-columns: 1fr; }
         .donut-wrap { grid-template-columns: 1fr; justify-items: center; }
-        .grid-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .grid-kpi { grid-template-columns: repeat(3, minmax(0, 1fr)); }
         .goal-strip, .goal-summary { grid-template-columns: 1fr; }
         .projection-row, .quick-projection { grid-template-columns: 1fr; }
         .projection-actions { justify-content: stretch; }
@@ -337,6 +344,7 @@
         .goal-strip, .goal-summary { grid-template-columns: 1fr; }
         .metric strong { font-size: 23px; }
         .payline { grid-template-columns: 1fr; }
+        .form-actions, .account-actions { grid-template-columns: 1fr; }
         .form-grid { grid-template-columns: 1fr; }
       }
     </style>
@@ -561,15 +569,19 @@
         <section id="recurring" class="view">
           <div class="split">
             <form id="recForm" class="panel">
-              <h2>Nova conta mensal</h2>
+              <h2 id="recFormTitle">Nova conta mensal</h2>
+              <input name="id" type="hidden" />
               <label>Aba<select name="account_kind"><option value="fixa">Conta fixa</option><option value="variavel">Conta variavel</option></select></label>
               <label>Nome<input name="name" required /></label>
               <label>Dia<input name="day_of_month" type="number" min="1" max="31" required /></label>
               <label>Tipo<select name="type"><option value="saida">Saida</option><option value="entrada">Entrada</option><option value="investimento">Investimento</option></select></label>
-              <label>Meio<select name="payment_method"><option value="conta_corrente">Conta corrente</option><option value="cartao_credito">Cartao de credito</option></select></label>
+              <label>Debitar em<select name="payment_method"><option value="conta_corrente">Conta corrente</option><option value="cartao_credito">Cartao de credito / fatura</option></select></label>
               <label>Categoria<input name="category" list="cats" required /></label>
               <label>Valor<input name="amount" type="number" min="0.01" step="0.01" required /></label>
-              <button class="primary">Salvar</button>
+              <div class="form-actions">
+                <button id="recSubmit" class="primary">Salvar</button>
+                <button id="cancelRecEdit" class="secondary hidden" type="button">Cancelar</button>
+              </div>
             </form>
             <section class="panel">
               <div id="accountOverview" class="account-overview"></div>
@@ -681,6 +693,7 @@
       const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
       const $ = (q) => document.querySelector(q);
       const localLogoutKey = "brian-finance-local-logout";
+      const financeCacheKey = "brian-finance-data-cache-v2";
       const state = { sb: null, supabaseLoad: null, authObserverReady: false, directAuth: false, session: null, view: "dashboard", period: "month", dateMode: "month", projectionDays: 30, txSearch: "", txTypeFilter: "", txMethodFilter: "", tx: [], rec: [], budgets: [], inv: [], market: {}, settings: {}, simRows: [], loadInfo: null, localLogout: false };
       const sheets = ["2025", "2026", "2027", "2028"];
       const starts = [0,7,14,21,28,35,42,49,56,63,70,77];
@@ -788,7 +801,7 @@
         return $("#month").value || monthNow();
       }
       function paidRecurringIds(m) {
-        return new Set(state.tx.filter(x => sourceMeta(x).origin === "recurring_paid" && sourceMeta(x).bill === m).map(x => sourceMeta(x).payment));
+        return new Set(state.tx.filter(x => sourceMeta(x).origin === "recurring_paid" && sourceMeta(x).bill === m).map(x => String(sourceMeta(x).payment)));
       }
       function cleanAccountName(x) { return String(x.name || "").replace(/^\[\[variavel\]\]\s*/i, ""); }
       function accountKind(x) {
@@ -797,7 +810,7 @@
         return "fixa";
       }
       function accountStatus(x, paid, m) {
-        if (paid.has(x.id)) return { cls: "paid", label: "Pago" };
+        if (paid.has(String(x.id))) return { cls: "paid", label: "Pago" };
         const due = `${m}-${String(Math.min(Math.max(n(x.day_of_month) || 1, 1), daysIn(m))).padStart(2, "0")}`;
         if (m === monthNow() && due < todayIso()) return { cls: "overdue", label: "Atrasada" };
         return { cls: "pending", label: "Pendente" };
@@ -841,6 +854,40 @@
       }
       function localStorageRemove(key) {
         try { localStorage.removeItem(key); } catch (_) {}
+      }
+      function cachePayloadFrom(data) {
+        const tx = data.transactions || [];
+        const rec = data.recurring_items || [];
+        const budgets = data.budgets || [];
+        const settings = data.app_settings || [];
+        const inv = data.investments || [];
+        if (!tx.length && !rec.length && !budgets.length && !settings.length && !inv.length) return null;
+        return {
+          version: 2,
+          userId: state.session?.user?.id || "",
+          email: state.session?.user?.email || "",
+          savedAt: new Date().toISOString(),
+          data: { transactions: tx, recurring_items: rec, budgets, app_settings: settings, investments: inv }
+        };
+      }
+      function saveFinanceCache(data) {
+        const payload = cachePayloadFrom(data);
+        if (payload) localStorageSet(financeCacheKey, JSON.stringify(payload));
+      }
+      function readFinanceCache() {
+        try {
+          const raw = localStorageGet(financeCacheKey);
+          if (!raw) return null;
+          const payload = JSON.parse(raw);
+          if (!payload?.data) return null;
+          const sessionUser = state.session?.user;
+          if (sessionUser?.id && payload.userId && payload.userId !== sessionUser.id) return null;
+          if (sessionUser?.email && payload.email && payload.email !== sessionUser.email) return null;
+          return payload.data;
+        } catch (err) {
+          localStorageRemove(financeCacheKey);
+          return null;
+        }
       }
       function localFallbackEnabled() {
         return Boolean((window.BRIAN_FINANCE_BOOTSTRAP || {}).rows?.length) && !state.localLogout;
@@ -1320,7 +1367,11 @@
         const paid = paidRecurringIds(m);
         const accountCard = x => {
           const status = accountStatus(x, paid, m);
-          return `<article class="item account-card ${status.cls === "paid" ? "good" : status.cls === "overdue" ? "bad" : ""}"><div class="account-title"><strong>${cleanAccountName(x)}</strong><span>${brl.format(n(x.amount))}</span></div><div class="row"><small>Dia ${x.day_of_month} - ${x.category} - ${method(x) === "cartao_credito" ? "cartao" : "conta corrente"}</small><span class="status-badge ${status.cls}">${status.label}</span></div><div class="payline"><label>Valor pago<input data-pay-amount="${x.id}" type="number" min="0.01" step="0.01" value="${n(x.amount)}" ${status.cls === "paid" ? "disabled" : ""} /></label><button class="secondary" data-pay-rec="${x.id}" ${status.cls === "paid" ? "disabled" : ""}>Pago</button></div></article>`;
+          const id = String(x.id);
+          const isCard = method(x) === "cartao_credito";
+          const debitLabel = isCard ? "Entra na fatura do cartao" : "Debita da conta corrente";
+          const typeLabel = x.type === "entrada" ? "Entrada" : x.type === "investimento" ? "Investimento" : "Saida";
+          return `<article class="item account-card ${status.cls === "paid" ? "good" : status.cls === "overdue" ? "bad" : ""}"><div class="account-title"><strong>${cleanAccountName(x)}</strong><span>${brl.format(n(x.amount))}</span></div><div class="account-meta"><span class="status-badge ${status.cls}">${status.label}</span><span class="method-pill">${typeLabel}</span><span class="method-pill">${x.category || "Sem categoria"}</span><span class="method-pill ${isCard ? "card" : "cash"}">${debitLabel}</span><span class="method-pill">Todo dia ${x.day_of_month}</span></div><div class="payline"><label>Valor pago<input data-pay-amount="${id}" type="number" min="0.01" step="0.01" value="${n(x.amount)}" ${status.cls === "paid" ? "disabled" : ""} /></label><button class="secondary" data-pay-rec="${id}" ${status.cls === "paid" ? "disabled" : ""}>Pago</button></div><div class="account-actions"><button class="secondary" data-edit-rec="${id}" type="button">Editar</button><button class="danger" data-del-rec="${id}" type="button">Remover</button></div></article>`;
         };
         const fixed = state.rec.filter(x => accountKind(x) === "fixa");
         const variable = state.rec.filter(x => accountKind(x) === "variavel");
@@ -1680,7 +1731,7 @@
           if (category !== row.category && row.id && dataSource === "supabase") categoryPatches.push({ id: row.id, category });
           return { ...row, category };
         });
-        state.rec = data.recurring_items || [];
+        state.rec = (data.recurring_items || []).filter(x => x.active !== false);
         state.budgets = data.budgets || [];
         state.inv = data.investments || [];
         state.settings = Object.fromEntries(settingsData.map(x => [x.key, x.value]));
@@ -1709,9 +1760,16 @@
       async function load() {
         try {
           const immediateLocal = localFinanceData([], []);
+          let cachedForLoad = null;
           if (immediateLocal) {
             applyLoadedData(immediateLocal, "fallback_local_privado");
             render();
+          } else if (state.session) {
+            cachedForLoad = readFinanceCache();
+            if (cachedForLoad) {
+              applyLoadedData(cachedForLoad, "cache_local");
+              render();
+            }
           }
           if (!state.sb || !state.session) return;
           await refreshStoredSession();
@@ -1729,6 +1787,13 @@
                   app_settings: data.app_settings || [],
                   investments: data.investments || []
                 }, "snapshot");
+                saveFinanceCache({
+                  transactions: data.transactions || [],
+                  recurring_items: data.recurring_items || [],
+                  budgets: data.budgets || [],
+                  app_settings: data.app_settings || [],
+                  investments: data.investments || []
+                });
                 render();
                 return;
               }
@@ -1765,6 +1830,10 @@
               data = localData;
               dataSource = "fallback_local_privado";
             }
+            if ((remoteErrors.length || !(data.transactions || []).length) && cachedForLoad) {
+              data = cachedForLoad;
+              dataSource = "cache_local";
+            }
             txData = data.transactions || [];
             recData = data.recurring_items || [];
             budgetData = data.budgets || [];
@@ -1778,6 +1847,13 @@
             app_settings: settingsData,
             investments: invData
           }, dataSource);
+          saveFinanceCache({
+            transactions: txData,
+            recurring_items: recData,
+            budgets: budgetData,
+            app_settings: settingsData,
+            investments: invData
+          });
           if (!state.tx.length && !hasLocalFinanceData()) {
             state.loadInfo = { ...(state.loadInfo || {}), source: dataSource, error: "Sessao sem acesso aos dados. Entre novamente." };
             await state.sb.auth.signOut().catch(() => {});
@@ -1863,9 +1939,20 @@
         }
       }
       function txFrom(row) {
-        const payment = row.payment_method || (row.type === "diario" ? "cartao_credito" : "conta_corrente");
-        const bill = payment === "cartao_credito" ? `${row.card_bill_month || iso(row.tx_date).slice(0,7)}-01` : null;
+        const payment = row.type === "diario" ? "cartao_credito" : (row.payment_method || "conta_corrente");
+        const billBase = String(row.card_bill_month || iso(row.tx_date).slice(0,7)).slice(0,7);
+        const bill = payment === "cartao_credito" ? `${billBase}-01` : null;
         return { tx_date: row.tx_date, type: row.type, category: row.category, description: row.description || null, amount: n(row.amount), payment_method: payment, card_bill_month: bill, status: "previsto", source: `${row.source || "manual"}|${payment}|${bill ? bill.slice(0,7) : ""}` };
+      }
+      function syncTxPaymentFields() {
+        const f = $("#txForm").elements;
+        if (f.type.value === "diario") f.payment_method.value = "cartao_credito";
+        if (f.type.value === "entrada" || f.type.value === "investimento") f.payment_method.value = "conta_corrente";
+        if (f.payment_method.value === "cartao_credito") {
+          if (!f.card_bill_month.value) f.card_bill_month.value = currentMonth();
+        } else {
+          f.card_bill_month.value = "";
+        }
       }
       function installmentRows(row) {
         const count = Math.max(1, Math.min(120, Math.round(n(row.installments) || 1)));
@@ -1888,6 +1975,7 @@
         f.description.value = row.description || "";
         f.amount.value = row.amount || "";
         f.installments.value = row.installments || 1;
+        syncTxPaymentFields();
       }
       function fillSim(row) {
         setView("simulator");
@@ -1899,8 +1987,98 @@
         f.amount.value = row.amount || "";
         f.installments.value = row.installments || 1;
       }
+      function resetRecurringForm() {
+        const form = $("#recForm");
+        form.reset();
+        form.elements.id.value = "";
+        $("#recFormTitle").textContent = "Nova conta mensal";
+        $("#recSubmit").textContent = "Salvar";
+        $("#cancelRecEdit").classList.add("hidden");
+      }
+      function recurringPayload(row) {
+        return {
+          name: String(row.name || "").trim(),
+          account_kind: row.account_kind || "fixa",
+          day_of_month: Math.min(31, Math.max(1, Math.round(n(row.day_of_month) || 1))),
+          type: row.type || "saida",
+          payment_method: row.payment_method || "conta_corrente",
+          category: String(row.category || "").trim(),
+          amount: n(row.amount),
+          active: true
+        };
+      }
+      function fillRecurringForm(id) {
+        const item = state.rec.find(x => String(x.id) === String(id));
+        if (!item) return;
+        setView("recurring");
+        const form = $("#recForm");
+        const f = form.elements;
+        f.id.value = item.id;
+        f.account_kind.value = accountKind(item);
+        f.name.value = cleanAccountName(item);
+        f.day_of_month.value = item.day_of_month || 1;
+        f.type.value = item.type || "saida";
+        f.payment_method.value = method(item);
+        f.category.value = item.category || "";
+        f.amount.value = n(item.amount) || "";
+        $("#recFormTitle").textContent = "Editar conta mensal";
+        $("#recSubmit").textContent = "Salvar alteracao";
+        $("#cancelRecEdit").classList.remove("hidden");
+        form.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      async function saveRecurring(row) {
+        const id = String(row.id || "");
+        const payload = recurringPayload(row);
+        if (!payload.name) throw new Error("Informe o nome da conta.");
+        if (!payload.category) throw new Error("Informe a categoria.");
+        if (!payload.amount) throw new Error("Informe o valor da conta.");
+        if (!id) {
+          await insert("recurring_items", payload);
+          resetRecurringForm();
+          return;
+        }
+        if (!state.session) {
+          state.rec = state.rec.map(x => String(x.id) === id ? { ...x, ...payload } : x);
+          resetRecurringForm();
+          render();
+          return;
+        }
+        let { error } = await state.sb.from("recurring_items").update(payload).eq("id", id);
+        if (error && /payment_method|account_kind|active/i.test(error.message || "")) {
+          const { payment_method, account_kind, active, ...legacy } = payload;
+          if (account_kind === "variavel" && !/^\[\[variavel\]\]/i.test(legacy.name || "")) legacy.name = `[[variavel]] ${legacy.name}`;
+          ({ error } = await state.sb.from("recurring_items").update(legacy).eq("id", id));
+        }
+        if (error) throw error;
+        resetRecurringForm();
+        await load();
+      }
+      async function deleteRecurring(id) {
+        const item = state.rec.find(x => String(x.id) === String(id));
+        if (!item) return;
+        if (!confirm(`Remover "${cleanAccountName(item)}" das contas mensais?`)) return;
+        if (!state.session) {
+          state.rec = state.rec.filter(x => String(x.id) !== String(id));
+          render();
+          return;
+        }
+        let { error } = await state.sb.from("recurring_items").update({ active: false }).eq("id", id);
+        if (error && /active/i.test(error.message || "")) {
+          ({ error } = await state.sb.from("recurring_items").delete().eq("id", id));
+        }
+        if (error) throw error;
+        await load();
+      }
+      function handleRecurringClick(e) {
+        const pay = e.target.closest("[data-pay-rec]");
+        const edit = e.target.closest("[data-edit-rec]");
+        const del = e.target.closest("[data-del-rec]");
+        if (pay) payRecurring(pay.dataset.payRec, document.querySelector(`[data-pay-amount="${pay.dataset.payRec}"]`)?.value).catch(alertErr);
+        if (edit) fillRecurringForm(edit.dataset.editRec);
+        if (del) deleteRecurring(del.dataset.delRec).catch(alertErr);
+      }
       async function payRecurring(id, paidAmount) {
-        const item = state.rec.find(x => x.id === id);
+        const item = state.rec.find(x => String(x.id) === String(id));
         if (!item) return;
         const m = currentMonth();
         await insert("transactions", {
@@ -2142,11 +2320,11 @@
             button.disabled = false;
           }
         };
-        $("#txForm").elements.type.onchange = e => {
-          if (e.target.value === "diario") $("#txForm").elements.payment_method.value = "cartao_credito";
-        };
-        $("#txForm").onsubmit = async e => { e.preventDefault(); await insertRows("transactions", installmentRows(formData(e.currentTarget))).catch(alertErr); e.currentTarget.reset(); setDates(); };
-        $("#recForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await insert("recurring_items", { name: r.name, account_kind: r.account_kind || "fixa", day_of_month: n(r.day_of_month), type: r.type, payment_method: r.payment_method || "conta_corrente", category: r.category, amount: n(r.amount), active: true }).catch(alertErr); e.currentTarget.reset(); };
+        $("#txForm").elements.type.onchange = syncTxPaymentFields;
+        $("#txForm").elements.payment_method.onchange = syncTxPaymentFields;
+        $("#txForm").onsubmit = async e => { e.preventDefault(); syncTxPaymentFields(); await insertRows("transactions", installmentRows(formData(e.currentTarget))).catch(alertErr); e.currentTarget.reset(); setDates(); syncTxPaymentFields(); };
+        $("#recForm").onsubmit = async e => { e.preventDefault(); await saveRecurring(formData(e.currentTarget)).catch(alertErr); };
+        $("#cancelRecEdit").onclick = resetRecurringForm;
         $("#simForm").onsubmit = e => { e.preventDefault(); sim(formData(e.currentTarget)); };
         $("#simResult").onclick = async e => { if (e.target.closest("[data-apply-sim]")) { await insertRows("transactions", state.simRows).catch(alertErr); state.simRows = []; setView("transactions"); } };
         $("#quickProjectionForm").onsubmit = async e => { e.preventDefault(); await saveQuickProjection(formData(e.currentTarget), e.submitter.value).catch(alertErr); e.currentTarget.reset(); setDates(); };
@@ -2161,8 +2339,8 @@
         $("#budgetForm").onsubmit = async e => { e.preventDefault(); const r = formData(e.currentTarget); await upsertBudget(r).catch(alertErr); };
         $("#txRows").onclick = async e => { const b = e.target.closest("[data-del]"); if (b && confirm("Excluir lancamento?")) { if (!state.session) { state.tx = state.tx.filter(x => x.id !== b.dataset.del); render(); return; } const { error } = await state.sb.from("transactions").delete().eq("id", b.dataset.del); if (error) alertErr(error); else await load(); } };
         $("#invRows").onclick = async e => { const b = e.target.closest("[data-inv-del]"); if (b && confirm("Excluir ativo?")) { if (!state.session) { state.inv = state.inv.filter(x => x.id !== b.dataset.invDel); render(); return; } const { error } = await state.sb.from("investments").delete().eq("id", b.dataset.invDel); if (error) alertErr(error); else await load(); } };
-        $("#fixedRows").onclick = e => { const b = e.target.closest("[data-pay-rec]"); if (b) payRecurring(b.dataset.payRec, document.querySelector(`[data-pay-amount="${b.dataset.payRec}"]`)?.value).catch(alertErr); };
-        $("#variableRows").onclick = e => { const b = e.target.closest("[data-pay-rec]"); if (b) payRecurring(b.dataset.payRec, document.querySelector(`[data-pay-amount="${b.dataset.payRec}"]`)?.value).catch(alertErr); };
+        $("#fixedRows").onclick = handleRecurringClick;
+        $("#variableRows").onclick = handleRecurringClick;
         $("#importFile").onchange = async e => { const f = e.target.files[0]; if (f) await importFinancialFile(f).catch(alertErr); e.target.value = ""; };
       }
       async function upsertSettings(obj) {
@@ -2348,6 +2526,8 @@
         setDateMode("month", false);
         setDates();
         bind();
+        syncTxPaymentFields();
+        resetRecurringForm();
         if (!(await waitForConfig())) { showAuth(); render(); return; }
         showAuth();
         $("#authMsg").textContent = "Preparando conexao...";
