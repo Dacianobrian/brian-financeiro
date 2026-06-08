@@ -9,7 +9,7 @@
     <title>Brian Financeiro</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2335d2ff'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-size='24' font-family='Arial' font-weight='700' fill='white'%3EBF%3C/text%3E%3C/svg%3E" />
     <script>
-      window.BRIAN_FINANCE_APP_VERSION = "20260607-logout-1";
+      window.BRIAN_FINANCE_APP_VERSION = "20260608-logout-visual-1";
       (function () {
         if (!/^https?:$/.test(window.location.protocol)) return;
         var current = window.BRIAN_FINANCE_APP_VERSION;
@@ -30,7 +30,7 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
     <script src="./bootstrap-data.js" defer></script>
-    <script src="./config.js?v=20260607-logout-1" defer></script>
+    <script src="./config.js?v=20260608-logout-visual-1" defer></script>
     <style>
       :root {
         color-scheme: dark;
@@ -274,10 +274,15 @@
       .account-title strong { line-height: 1.15; }
       .account-title span { white-space: nowrap; font-size: 18px; font-weight: 900; }
       .installment-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; margin-top: 10px; }
-      .installment-title { grid-column: 1 / -1; margin-top: 2px; }
-      .installment-card { border: 1px solid var(--line); border-radius: 8px; padding: 12px; background: var(--card-2); display: grid; gap: 8px; }
-      .installment-card strong { line-height: 1.1; }
-      .installment-card .row span { color: var(--danger); font-weight: 900; }
+      .installment-title { grid-column: 1 / -1; margin-top: 2px; flex-wrap: wrap; }
+      .installment-title .pill { white-space: nowrap; }
+      .installment-card { border: 1px solid var(--line); border-radius: 8px; padding: 12px; background: var(--card-2); display: grid; gap: 8px; min-width: 0; overflow: hidden; }
+      .installment-card strong { line-height: 1.1; overflow-wrap: anywhere; }
+      .installment-card .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(112px, auto); align-items: start; gap: 12px; }
+      .installment-card .row span { color: var(--danger); font-weight: 900; white-space: normal; overflow-wrap: anywhere; text-align: right; font-size: clamp(17px, 1.45vw, 21px); line-height: 1.12; max-width: 100%; }
+      .installment-card .ratio-meta { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, auto); gap: 10px; align-items: center; }
+      .installment-card .ratio-meta span { min-width: 0; overflow-wrap: anywhere; }
+      .installment-card .ratio-meta span:last-child { text-align: right; }
       .bar { height: 8px; border-radius: 999px; background: #0a1016; overflow: hidden; margin-top: 8px; border: 1px solid rgba(255,255,255,.04); }
       .bar span { display: block; height: 100%; background: linear-gradient(90deg, #2be07f, #35d2ff); box-shadow: 0 0 18px rgba(53,210,255,.18); }
       .bar.over span { background: linear-gradient(90deg, #ff5f78, #ff4fa3); }
@@ -305,6 +310,10 @@
         .goal-strip, .goal-summary { grid-template-columns: 1fr; }
         .projection-row, .quick-projection { grid-template-columns: 1fr; }
         .projection-actions { justify-content: stretch; }
+        .installment-card .row,
+        .installment-card .ratio-meta { grid-template-columns: 1fr; }
+        .installment-card .row span,
+        .installment-card .ratio-meta span:last-child { text-align: left; }
       }
       @media (max-width: 620px) {
         main, .shell > aside { padding: 16px; }
@@ -1790,17 +1799,17 @@
       async function logout() {
         state.localLogout = true;
         localStorageSet(localLogoutKey, "1");
-        try {
-          if (state.sb?.auth) await state.sb.auth.signOut({ scope: "local" });
-        } catch (err) {
-          console.warn("Falha no signOut remoto, bloqueando localmente mesmo assim", err);
-        }
         state.session = null;
         clearFinanceState();
         setSessionLabel();
         showAuth();
         $("#authMsg").textContent = "Sessao encerrada. Digite sua senha para entrar.";
         render();
+        try {
+          if (state.sb?.auth) await state.sb.auth.signOut({ scope: "local" });
+        } catch (err) {
+          console.warn("Falha no signOut remoto, bloqueando localmente mesmo assim", err);
+        }
       }
       function txFrom(row) {
         const payment = row.payment_method || (row.type === "diario" ? "cartao_credito" : "conta_corrente");
@@ -2132,6 +2141,15 @@
         const c = window.BRIAN_FINANCE_CONFIG;
         state.sb = createClient(c.supabaseUrl, c.supabaseAnonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
         state.sb.auth.onAuthStateChange(async (_event, session) => {
+          if (state.localLogout && session) {
+            await state.sb.auth.signOut({ scope: "local" }).catch(() => {});
+            state.session = null;
+            clearFinanceState();
+            setSessionLabel();
+            showAuth();
+            render();
+            return;
+          }
           const wasLocked = !state.session;
           state.session = session;
           if (session) {
@@ -2161,8 +2179,13 @@
         });
         const { data, error } = await state.sb.auth.getSession();
         if (error) throw error;
-        state.session = data.session;
-        if (state.session) {
+        if (state.localLogout && data.session) {
+          await state.sb.auth.signOut({ scope: "local" }).catch(() => {});
+          state.session = null;
+        } else {
+          state.session = data.session;
+        }
+        if (state.session && !state.localLogout) {
           state.localLogout = false;
           localStorageRemove(localLogoutKey);
         }
